@@ -1,0 +1,68 @@
+{
+  "schema": "phrase_normalize",
+  "protocol_version": "v0.1",
+  "spec_section": "protocol.md §7.4",
+  "description": "Pins protocol::phrase::normalize_user_phrase byte mapping for cross-implementation conformance. Input and expected output strings are UTF-8 byte sequences hex-encoded; consumers decode as UTF-8 strings before piping through their language's normalize_user_phrase port. The pipeline is: (1) NFKD compatibility decomposition; (2) ASCII lowercase; (3) trim leading and trailing whitespace; (4) collapse runs of whitespace between tokens to a single ASCII space U+0020. Wordlist validation is intentionally NOT applied here per recovery-flow.md §3.2 — invalid phrases produce a normalized string that fails AEAD-tag verification at the recovery_wrap unwrap stage.",
+  "cases": [
+    {
+      "vector_id": "phrase_normalize/v0.1/identity-canonical",
+      "description": "Already-canonical 24-word ASCII single-space-joined BIP-39 phrase passes through unchanged.",
+      "input_utf8_hex": "6162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e20617274",
+      "expected_output_utf8_hex": "6162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e20617274"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/fullwidth-digits",
+      "description": "Full-width digits U+FF10..U+FF19 NFKD-decompose to ASCII 0..9. Input substring '\\uFF10\\uFF11\\uFF12' becomes '012'.",
+      "input_utf8_hex": "61626320efbc90efbc91efbc9220646566",
+      "expected_output_utf8_hex": "6162632030313220646566"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/no-break-space",
+      "description": "NO-BREAK SPACE U+00A0 NFKD-decomposes to ASCII U+0020 and is then folded by the trim + whitespace-coalesce step.",
+      "input_utf8_hex": "616263c2a0646566",
+      "expected_output_utf8_hex": "61626320646566"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/ligature-fi",
+      "description": "Ligature U+FB01 (ﬁ) NFKD-decomposes to two ASCII chars f + i; output byte length differs from input. Implementations that allocate output strictly against input byte length must handle the expansion.",
+      "input_utf8_hex": "6f66efac81636572",
+      "expected_output_utf8_hex": "6f666669636572"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/ascii-uppercase-lowercased",
+      "description": "ASCII uppercase input lowercased to match the BIP-39 English wordlist's lowercase canonical form.",
+      "input_utf8_hex": "41424320444546",
+      "expected_output_utf8_hex": "61626320646566"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/multi-whitespace-collapse",
+      "description": "Runs of one or more whitespace characters between tokens collapse to a single ASCII space U+0020. Input contains four ASCII spaces and two tab characters between distinct tokens.",
+      "input_utf8_hex": "616263202020206465660909676869",
+      "expected_output_utf8_hex": "6162632064656620676869"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/trim-leading-trailing",
+      "description": "Leading and trailing whitespace runs are trimmed without leaving an emitted space at either end.",
+      "input_utf8_hex": "20202061626320646566202020",
+      "expected_output_utf8_hex": "61626320646566"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/realistic-paste",
+      "description": "Realistic password-manager paste exercising every step in one input: leading + trailing ASCII space, full-width Latin letter U+FF21 (Ａ) appended to ASCII ABC, two consecutive NO-BREAK SPACE U+00A0 between words, mixed case, full-width Latin letter U+FF22 (Ｂ) appended after def. Final output is 'abca defb'.",
+      "input_utf8_hex": "2020414243efbca1c2a0c2a0646566efbca22020",
+      "expected_output_utf8_hex": "616263612064656662"
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/empty-input",
+      "description": "Empty input yields empty output.",
+      "input_utf8_hex": "",
+      "expected_output_utf8_hex": ""
+    },
+    {
+      "vector_id": "phrase_normalize/v0.1/whitespace-only",
+      "description": "Pure whitespace input (ASCII spaces, tab, newline, NO-BREAK SPACE) has no tokens to emit; output is empty.",
+      "input_utf8_hex": "202020090ac2a02020",
+      "expected_output_utf8_hex": ""
+    }
+  ]
+}
