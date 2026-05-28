@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault_meta_rewrite.json",
+  "title": "vault_meta_rewrite — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::rewrite_vault_meta_password_side: re-derives password-side fields (password_wrap_key from new_password + fresh_salt + existing.account_number_hash + preserved KDF params) and produces a fresh 345-byte MYV1 blob with recovery-side + items_key fields byte-preserved from the existing input. Spec contract: docs/spec/protocol.md §9.3 + docs/spec/recovery-flow.md §4.2/§4.4. Single case_kind — no discriminator. The Rust reference implementation lives at protocol/src/vault_meta.rs (main myne repository).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "input_existing_vault_meta_hex",
+    "input_root_key_hex",
+    "input_new_password_utf8_hex",
+    "input_fresh_salt_hex",
+    "input_fresh_nonce_hex",
+    "expected_vault_meta_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault_meta_rewrite/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault_meta_rewrite/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_existing_vault_meta_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{690}$",
+      "description": "Existing 345-byte MYV1 vault.meta blob (hex). The decoder reads account_number_hash, kdf_params, random_salt_recovery, nonce_recovery_wrap, enc_root_key_recovery, and the items_key block; rewrite preserves recovery + items_key bytes verbatim."
+    },
+    "input_root_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte root_key (hex). The function AEAD-seals this under the freshly-derived password_wrap_key."
+    },
+    "input_new_password_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "New password (UTF-8 bytes, hex-encoded). Fed directly into Argon2id without normalization (passwords are not BIP-39 phrases; spec §3 only normalizes the recovery phrase)."
+    },
+    "input_fresh_salt_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte Argon2id salt for the new password derivation (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+    },
+    "input_fresh_nonce_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{48}$",
+      "description": "24-byte XChaCha20-Poly1305 nonce for sealing root_key under the new password_wrap_key (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+    },
+    "informational_kdf_params_from_existing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["m_kib", "t", "p", "argon2_version_hex"],
+      "properties": {
+        "m_kib": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Argon2id memory parameter in KiB (preserved from the existing vault.meta — the rewrite does NOT change KDF params)."
+        },
+        "t": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Argon2id time / iterations parameter."
+        },
+        "p": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Argon2id parallelism parameter."
+        },
+        "argon2_version_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$",
+          "description": "Argon2 version byte (0x13 for v1.3 — the v0.1 baseline)."
+        }
+      },
+      "description": "Informational — the KDF parameter block extracted from the existing vault.meta. The encoder pulls these from input_existing_vault_meta_hex; this object is not consumed by the encoder, it's carried so reviewers can verify intermediate state without re-parsing the existing meta blob."
+    },
+    "expected_vault_meta_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{690}$",
+      "description": "Full 345-byte rewritten MYV1 blob (hex). Implementations compare byte-equal."
+    }
+  }
+}

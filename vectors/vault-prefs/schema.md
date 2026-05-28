@@ -36,62 +36,19 @@ vectors/vault-prefs/
 
 ## JSON shape
 
-Top-level object:
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/vault-prefs.json`](../../schema/v0.1/vault-prefs.json) (per-case shape with a 3-way `case_kind` discriminator: `encrypt`, `decrypt_ok`, `decrypt_aead_fail`). Run the repository's documented `ajv-cli validate` command (see the root `README.md`) to verify any `cases.json` against the canonical schema. The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
-| Field | Type | Description |
-|---|---|---|
-| `schema` | string | Always `"vault-prefs"` for this directory. |
-| `protocol_version` | string | `"v0.1"` for v0.1 vectors. |
-| `spec_section` | string | Anchors the canonical pipeline definition (`"protocol.md §9.5"`). |
-| `description` | string | Human-readable summary of what is pinned. |
-| `cases` | array | One element per test case (see below). 5 cases total per MYND-160 grill Q6.2. |
+Three case kinds carry different field shapes:
 
-Each `cases[i]` element carries a `case_kind` discriminator and a subset of fields. Three kinds:
-
-### `case_kind = "encrypt"` — pin the encoder's byte output
-
-| Field | Type | Description |
-|---|---|---|
-| `vector_id` | string | Stable identifier (`"vault-prefs/v0.1/<slug>"`). Immutable once shipped. |
-| `description` | string | What the case verifies. |
-| `case_kind` | string | `"encrypt"`. |
-| `input_root_key_hex` | string | 32-byte `root_key` (hex). The encoder derives `prefs_key` from this. |
-| `input_account_number_hash_hex` | string | 16-byte `account_number_hash` (hex) — the same field stored at `vault.meta` offset 6, used to build the AAD. |
-| `input_plaintext_canonical_utf8_hex` | string | The exact canonical-JSON plaintext bytes (hex). Implementations MUST emit the same UTF-8 bytes from `PrefsView::default()` (or the toggled-off equivalent) — drift here means the canonical encoder is wrong. |
-| `input_prefs_nonce_hex` | string | 24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant. |
-| `informational_prefs_key_hex` | string | The 32-byte HKDF output (hex), pre-computed. Informational only — the encoder derives this from `input_root_key_hex` + the registered context string; vectors carry it so reviewers don't have to re-derive to verify intermediate state. |
-| `expected_blob_hex` | string | Lowercase hex of the full 100-byte (34-header + 66-ciphertext+tag) blob. Implementations decode every `*_hex` input field, run their encoder, hex-encode the output, compare byte-equal. |
-
-### `case_kind = "decrypt_ok"` — pin the decoder's successful round-trip
-
-| Field | Type | Description |
-|---|---|---|
-| `vector_id` | string | Stable identifier. |
-| `description` | string | What the case verifies. |
-| `case_kind` | string | `"decrypt_ok"`. |
-| `input_blob_hex` | string | The on-disk blob bytes (hex). |
-| `input_root_key_hex` | string | The correct `root_key` (hex). |
-| `input_account_number_hash_hex` | string | The correct `account_number_hash` (hex). |
-| `expected_plaintext_canonical_utf8_hex` | string | The exact canonical-JSON plaintext bytes the decoder recovers (hex). |
-| `expected_prefs_view` | object | The parsed `PrefsView` shape — implementations decode the JSON and assert structural equality. Phase 1: `{"screen_capture_protection": <bool>}`. |
-
-### `case_kind = "decrypt_aead_fail"` — pin the non-distinguishing failure surface
-
-| Field | Type | Description |
-|---|---|---|
-| `vector_id` | string | Stable identifier. |
-| `description` | string | What the case verifies. |
-| `case_kind` | string | `"decrypt_aead_fail"`. |
-| `input_blob_hex` | string | The blob bytes the decoder attempts (hex). May be a valid blob from a different vault (cross-vault attack scenario) OR a tampered blob (one byte flipped, etc.). |
-| `input_root_key_hex` | string | The `root_key` (hex) passed to the decoder. For cross-vault attacks, this is vault-B's `root_key` while `input_blob_hex` is vault-A's. For tampered, this is the original blob's `root_key`. |
-| `input_account_number_hash_hex` | string | The `account_number_hash` (hex) passed to the decoder. For cross-vault attacks, this is vault-B's hash. |
-| `expected_kind` | string | Always `"aead_fail"`. The decoder MUST report a non-distinguishing AEAD failure (`CannotDecrypt` in the Rust reference; "wrong key or tampered" semantically — implementations MUST NOT distinguish key-mismatch from AAD-mismatch from ciphertext-tampering at the caller-visible surface per spec § 6.4). The CTX commitment construction makes the four failure arms (wrong key, wrong AAD, tampered ciphertext, tampered CTX tag) computationally indistinguishable. |
+- **`encrypt`** — pins the encoder's byte output. Inputs: `input_root_key_hex` (32 B), `input_account_number_hash_hex` (16 B), `input_plaintext_canonical_utf8_hex`, `input_prefs_nonce_hex` (24 B). Optional `informational_prefs_key_hex` carries the pre-computed HKDF output for reviewer convenience. Output: `expected_prefs_blob_hex` (the 100-byte `MYP1` blob = 34-header + 66-ciphertext+tag).
+- **`decrypt_ok`** — pins the decoder's successful round-trip. Inputs: `input_blob_hex` + correct `input_root_key_hex` + correct `input_account_number_hash_hex`. Outputs: `expected_plaintext_canonical_utf8_hex` (raw bytes) and `expected_prefs_view` (the parsed `PrefsView` object — implementations parse the recovered JSON and assert structural equality).
+- **`decrypt_aead_fail`** — pins the non-distinguishing failure surface. Inputs: `input_blob_hex` + (intentionally wrong or tampered) `input_root_key_hex` + `input_account_number_hash_hex`. Output: `expected_kind: "aead_fail"`. The decoder MUST collapse cross-vault, wrong-AAD, ciphertext-tamper, and CTX-tamper to a single indistinguishable failure (spec § 6.4 + § 9.5.5).
 
 ## How to consume
 
 A port runs each case based on `case_kind`:
 
-- **`encrypt`**: decode every `input_*_hex`, build a `PrefsView` from the implied plaintext shape, invoke the port's `encode_prefs_blob_raw` equivalent with the supplied nonce, hex-encode the output, compare byte-equal to `expected_blob_hex`. Any non-equal result is a stop-the-world bug (per repo `README.md` "Cross-implementation discipline").
+- **`encrypt`**: decode every `input_*_hex`, build a `PrefsView` from the implied plaintext shape, invoke the port's `encode_prefs_blob_raw` equivalent with the supplied nonce, hex-encode the output, compare byte-equal to `expected_prefs_blob_hex`. Any non-equal result is a stop-the-world bug (per repo `README.md` "Cross-implementation discipline").
 - **`decrypt_ok`**: decode `input_blob_hex` + key + account hash, invoke the port's `decode_prefs_blob` equivalent, hex-encode the recovered plaintext, compare to `expected_plaintext_canonical_utf8_hex`, AND parse the canonical JSON and compare to `expected_prefs_view`.
 - **`decrypt_aead_fail`**: decode inputs, invoke decoder, assert it returns a non-distinguishing AEAD failure (whatever the port's equivalent is — `Err(AeadFailure)`, exception, error code). The port MUST NOT distinguish which failure arm fired beyond "this blob cannot be decrypted with these inputs".
 

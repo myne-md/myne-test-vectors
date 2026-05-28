@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/phrase_normalize.json",
+  "title": "phrase_normalize — case shape (v0.1)",
+  "description": "Pins one input → expected-output case for protocol::phrase::normalize_user_phrase. Inputs and outputs are UTF-8 byte sequences hex-encoded (lowercase, no 0x prefix). The Rust reference implementation lives at protocol/src/phrase.rs (main myne repository); the pipeline contract is docs/spec/protocol.md §7.4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "input_utf8_hex",
+    "expected_output_utf8_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^phrase_normalize/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'phrase_normalize/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "Lowercase hex (no 0x prefix) of the UTF-8 byte encoding of the input string. Even-length; the empty string is permitted to encode an empty input."
+    },
+    "expected_output_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "Lowercase hex (no 0x prefix) of the UTF-8 byte encoding of the expected normalized output. Even-length; the empty string encodes an empty output."
+    }
+  }
+}
