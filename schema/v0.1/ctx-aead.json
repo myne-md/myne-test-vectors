@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/ctx-aead.json",
+  "title": "ctx-aead — case shape (v0.1)",
+  "description": "Pins protocol::aead_seal_ctx + protocol::aead_open_ctx byte mapping (XChaCha20-Poly1305 with CTX commitment outer per Chan & Rogaway 2022) AND every pub aad_* builder's canonical byte output. Four case kinds: 'encrypt' (encoder byte output for raw key+nonce+plaintext+aad inputs), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4), 'aad_canonical_bytes' (per-builder AAD pin — verifies each of the 6 pub aad_* builder functions produces the canonical bytes, exercised independently of the AEAD primitive). Spec contract: docs/spec/protocol.md §5.1 (AEAD construction) + §5.2 (AAD assembly) + §6.4 (non-distinguishing failure).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^ctx-aead/v0\\.1/[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_canonical_bytes"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin aead_seal_ctx byte output for raw inputs",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_key_hex",
+        "input_nonce_hex",
+        "input_aad_hex",
+        "input_plaintext_hex",
+        "expected_sealed_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_aad_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Raw AAD bytes (hex), variable length including zero. The aad parameter is the byte slice fed to aead_seal_ctx — vectors may use a builder-generated AAD (via the aad_canonical_bytes pins) or empty/arbitrary AAD for primitive-level coverage."
+        },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "expected_sealed_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Ciphertext + 32-byte CTX commitment tag, concatenated. Length = plaintext.len() + 32."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin aead_open_ctx successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_key_hex",
+        "input_nonce_hex",
+        "input_aad_hex",
+        "input_sealed_hex",
+        "expected_plaintext_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_aad_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_sealed_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "expected_plaintext_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin non-distinguishing AEAD failure",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_key_hex",
+        "input_nonce_hex",
+        "input_aad_hex",
+        "input_sealed_hex",
+        "expected_kind",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_aad_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_sealed_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "Rust reference returns Err(ProtocolError::AeadFailure) — single non-distinguishing variant per spec §6.4. Ports MUST NOT distinguish wrong-key / wrong-AAD / tampered-ciphertext / tampered-tag beyond the single 'cannot decrypt' outcome."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "aad_canonical_bytes — pin per-builder AAD output bytes (no AEAD invocation)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_builder_name",
+        "expected_aad_bytes_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "aad_canonical_bytes" },
+        "input_builder_name": {
+          "type": "string",
+          "enum": [
+            "aad_password_wrap",
+            "aad_recovery_wrap",
+            "aad_vault_items_key_wrap",
+            "aad_note_item_key_wrap",
+            "aad_note_content_encrypt",
+            "aad_prefs_blob"
+          ],
+          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name."
+        },
+        "input_kdf_params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["m_kib", "t", "p", "argon2_version_hex"],
+          "properties": {
+            "m_kib": { "type": "integer", "minimum": 1 },
+            "t": { "type": "integer", "minimum": 1 },
+            "p": { "type": "integer", "minimum": 1 },
+            "argon2_version_hex": { "type": "string", "pattern": "^[0-9a-f]{2}$" }
+          },
+          "description": "Required for builder_name = aad_password_wrap | aad_recovery_wrap; absent for the others. Runner enforces per-builder presence."
+        },
+        "input_items_key_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Required for builder_name = aad_vault_items_key_wrap | aad_note_item_key_wrap | aad_note_content_encrypt."
+        },
+        "input_note_uuid_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Required for builder_name = aad_note_item_key_wrap | aad_note_content_encrypt."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Required for builder_name = aad_prefs_blob."
+        },
+        "expected_aad_bytes_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Canonical AAD byte sequence the builder produces. Implementations call the matching builder and compare byte-equal."
+        }
+      }
+    }
+  ]
+}

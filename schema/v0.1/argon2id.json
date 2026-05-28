@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/argon2id.json",
+  "title": "argon2id — case shape (v0.1)",
+  "description": "Pins protocol::derive_password_wrap_key + protocol::derive_recovery_wrap_key_from_normalized byte mapping under canonical Phase 1 Argon2id parameters (m_kib=262144 = 256 MiB, t=3, p=2, argon2_version=0x13). Single case_kind (round-trip pin only); the input_path field dispatches password-side vs recovery-side at the runner level. EXPECTED RUNTIME: ~3 seconds per case at canonical params; 6 cases → ~18 seconds added to `cargo test`. Default-on (NOT #[ignore]-gated) — protocol-contract assertion warrants default execution. Spec contract: docs/spec/protocol.md §3 (KDF + salt prefixes) + §4 (KDF parameter block) + decisions.md 2026-04-26 KDF-calibration entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "input_path",
+    "input_password_or_phrase_utf8_hex",
+    "input_salt_random_hex",
+    "input_account_number_hash_hex",
+    "input_kdf_params",
+    "expected_wrap_key_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^argon2id/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'argon2id/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_path": {
+      "type": "string",
+      "enum": ["password", "recovery"],
+      "description": "Which derivation path to exercise. 'password' → derive_password_wrap_key (raw user input, NOT normalized — passwords are not BIP-39 phrases). 'recovery' → derive_recovery_wrap_key_from_normalized (input MUST already be NFKD-normalized per spec §3.4)."
+    },
+    "input_password_or_phrase_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "UTF-8 byte encoding of the password (path=password) or NFKD-normalized phrase (path=recovery). Hex-encoded for cross-language portability."
+    },
+    "input_salt_random_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte Argon2id salt entropy. Combined with account_number_hash + the path-specific salt prefix to produce the canonical salt fed into Argon2id."
+    },
+    "input_account_number_hash_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte SHA-256-truncated account-number hash. Bound into the salt construction per spec §3.1 to prevent precomputation across accounts."
+    },
+    "input_kdf_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["m_kib", "t", "p", "argon2_version_hex"],
+      "properties": {
+        "m_kib": { "type": "integer", "const": 262144, "description": "v0.1 canonical: 256 MiB. Future v0.1.x variants in mobile profile may differ — vectors carry the field for explicit pinning." },
+        "t": { "type": "integer", "const": 3 },
+        "p": { "type": "integer", "const": 2 },
+        "argon2_version_hex": { "type": "string", "const": "13", "description": "Argon2 v1.3 (RFC 9106)." }
+      },
+      "description": "Canonical Phase 1 Argon2id parameter block. All 4 fields pinned to const values in v0.1; relaxed in v005."
+    },
+    "expected_wrap_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte derived wrap-key output. Implementations call the matching derive_* function and compare byte-equal."
+    }
+  }
+}

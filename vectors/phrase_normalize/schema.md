@@ -34,4 +34,4 @@ JSON natively supports Unicode strings via `\uXXXX` escapes, but escape behavior
 ## What this does NOT cover
 
 - Wordlist validation. `normalize_user_phrase` does not check whether the normalized words are in the BIP-39 English wordlist; that is intentional per `recovery-flow.md` § 3.2 (no per-cell wordlist-membership feedback). Invalid phrases produce a normalized string that fails AEAD-tag verification downstream.
-- The full recovery flow (phrase → Argon2id → AEAD-decrypt). That belongs to a future `vectors/bip39-recovery/` directory which composes `phrase_normalize` with `argon2id` + `xchacha20-poly1305-ctx`.
+- The full recovery flow (phrase → Argon2id → AEAD-decrypt). That belongs to a future `vectors/bip39-recovery/` directory which composes `phrase_normalize` with `argon2id` + `ctx-aead`.

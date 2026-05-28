@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/account-number.json",
+  "title": "account-number — case shape (v0.1)",
+  "description": "Pins protocol::parse_account_number byte mapping for cross-implementation conformance: 20-character Crockford-base32 canonical form + Damm-32 check digit + display formatter (`MY-XXXX-XXXX-XXXX-XXXX-X`) + liberal-parsing normalization. Two case kinds: 'parse_ok' (canonical/display/lowercase/whitespace permutations all normalize to the same AccountNumber), 'parse_fail' (wrong length, non-Crockford characters per spec §5 step 7 strict, Damm-32 check failures including single-substitution + adjacent-transposition catches). Spec contract: docs/spec/protocol.md + docs/spec/account-number.md §3 + §5 + decisions.md 2026-04-28 Damm-32 polynomial form freeze.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^account-number/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'account-number/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse_ok", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "parse_ok — pin the liberal-parse normalization output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_candidate_utf8_hex",
+        "expected_canonical_utf8_hex",
+        "expected_display_utf8_hex",
+        "expected_hash_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok" },
+        "input_candidate_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Candidate input string as UTF-8 bytes (hex). May be canonical 20-char form, display form (`MY-XXXX-XXXX-XXXX-XXXX-X`), lowercase, missing/extra hyphens, with/without `MY-` prefix, with surrounding whitespace — all liberal-parse variants per spec §5."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "20-byte canonical form (19 entropy + 1 Damm-32 check) as uppercase Crockford-base32 ASCII bytes (hex). Implementations decode the input, run their parse equivalent, and assert AccountNumber.canonical bytes match."
+        },
+        "expected_display_utf8_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{54}$",
+          "description": "27-byte display form (`MY-` + four 4-char groups + dashes + final 4-char group with suffix + check) as ASCII bytes (hex). Implementations assert AccountNumber.display matches."
+        },
+        "expected_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte `SHA-256(canonical_ascii)[:16]` — the account_number_hash bound into both Argon2id salts (`protocol.md §3.1`) and stored at `vault.meta` offset 6 (`protocol.md §9.3`)."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin the strict-reject failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_candidate_utf8_hex",
+        "expected_kind",
+        "informational_failure_reason"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_candidate_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "expected_kind": {
+          "const": "parse_fail",
+          "description": "Rust reference returns Err(ProtocolError::AccountNumberInvalid) — a single non-distinguishing variant per spec §5 closed-error discipline. Ports MUST NOT distinguish which rule fired (length / Crockford-alphabet / Damm-32) beyond a single 'invalid account number' outcome at the user-visible surface."
+        },
+        "informational_failure_reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable note on which rule fired (e.g., 'wrong length: 19 chars after normalization', 'contains non-Crockford character O — spec §5 step 7 rejects strict, no I/L/O/U substitution', 'Damm-32 check fails: entropy char index 5 swapped'). Informational only — runner does not consume this field."
+        }
+      }
+    }
+  ]
+}

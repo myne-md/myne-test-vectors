@@ -62,6 +62,6 @@ The regenerator test lives in `protocol/src/vault_meta.rs::tests::emit_vector_he
 
 ## What this does NOT cover
 
-- The full `vault.meta` serialization vectors (`vectors/vault-meta/`, planned). Those pin the create-time encoder's byte mapping; this directory pins only the password-side rewrite path.
+- The full `vault.meta` serialization vectors ([`vectors/vault-meta/`](../vault-meta/), **landed**). Those pin the create-time `serialize_vault_meta` + `parse_vault_meta` byte mapping; this directory pins only the password-side rewrite path.
 - The post-rewrite atomic-write step (tempfile + fsync + rename). That happens at the Tauri-layer in `vault_complete_recovery`; this primitive is filesystem-agnostic.
 - Vault-side AEAD verification through the rewritten password wrap. That is covered indirectly by the in-crate test `rewrite_password_side_round_trips_root_key` (re-derives wrap-key, AEAD-decrypts, asserts recovered root_key matches input).
