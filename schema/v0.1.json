@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1.json",
+  "title": "Myne test vector — v0.1 root schema",
+  "description": "Canonical machine-readable contract for every cases.json file under vectors/<category>/v0.1/. Cross-category top-level shape lives here; per-category case shapes live in schema/v0.1/<category>.json and are dispatched via the `schema` field. v0.1 and v005 are forward-incompatible by design (see myne-test-vectors/CLAUDE.md). The local validation command is documented in the repository README.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "protocol_version",
+    "spec_section",
+    "description",
+    "cases"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "description": "Registered category identifier. Selects the sub-schema applied to each cases[] element via the oneOf dispatch below. Adding a new category requires landing its sub-schema file under schema/v0.1/ and extending both this enum and the oneOf branches in lockstep.",
+      "enum": ["phrase_normalize", "vault-prefs", "vault_meta_rewrite", "hkdf-sha256"]
+    },
+    "protocol_version": {
+      "type": "string",
+      "const": "v0.1",
+      "description": "Pins the protocol version this vector set targets."
+    },
+    "spec_section": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Anchor in the main repo's docs/spec/ that pins the byte-level contract being verified (e.g. 'protocol.md §7.4')."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "schema": { "const": "phrase_normalize" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/phrase_normalize.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": { "const": "vault-prefs" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-prefs.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": { "const": "vault_meta_rewrite" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault_meta_rewrite.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": { "const": "hkdf-sha256" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/hkdf-sha256.json"
+          }
+        }
+      }
+    }
+  ]
+}

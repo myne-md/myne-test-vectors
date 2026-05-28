@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/hkdf-sha256.json",
+  "title": "hkdf-sha256 — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::derive_subkey — the canonical HKDF-SHA-256 helper that derives every v0.1 subkey from root_key with salt=zero_32 and info='myne.v0.1 '||role. Each case fixes a (root_key, role) input pair and the 32-byte subkey the helper must produce. Role registry mirrors the type-safe Rust SubkeyRole enum (spec §3.4); only registered role strings are accepted. The Rust reference implementation lives at protocol/src/subkey.rs (main myne repository); spec contract is docs/spec/protocol.md §3.2 (HKDF construction) + §3.4 (role registry).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "input_root_key_hex",
+    "input_role",
+    "expected_subkey_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^hkdf-sha256/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'hkdf-sha256/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_root_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte root_key (hex). HKDF Extract phase consumes this as the IKM under salt=zero_32."
+    },
+    "input_role": {
+      "type": "string",
+      "enum": ["itemsKey-wrap", "prefs-key"],
+      "description": "Registered role string (spec §3.4). MUST appear in protocol::SubkeyRole::role_str. Future v0.1.x revisions extend this enum + the Rust SubkeyRole enum in lockstep — additive only, immutable for existing variants."
+    },
+    "informational_info_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "Informational — the canonical HKDF info bytes the helper assembles from the (prefix, role) pair: '\"myne.v0.1 \"' (10 bytes, trailing space included) concatenated with the role string (no separator, no length prefix). Hex-encoded UTF-8 bytes. Not consumed by the runner — verified implicitly via the expected_subkey_hex assertion; carried so independent implementers verifying their port assemble the same info parameter can do so without re-parsing the spec. Optional per-vector."
+    },
+    "expected_subkey_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Full 32-byte subkey output (hex, lowercase, no 0x prefix). Implementations decode input_root_key_hex + input_role, run their derive_subkey equivalent, hex-encode the output, compare byte-equal."
+    }
+  }
+}

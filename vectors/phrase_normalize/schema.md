@@ -21,24 +21,7 @@ vectors/phrase_normalize/
 
 ## JSON shape
 
-Top-level object:
-
-| Field | Type | Description |
-|---|---|---|
-| `schema` | string | Always `"phrase_normalize"` for this directory. |
-| `protocol_version` | string | `"v0.1"` for v0.1 vectors. |
-| `spec_section` | string | Anchors the canonical pipeline definition (`"protocol.md §7.4"`). |
-| `description` | string | Human-readable summary of what is pinned. |
-| `cases` | array | One element per test case (see below). |
-
-Each `cases[i]` element:
-
-| Field | Type | Description |
-|---|---|---|
-| `vector_id` | string | Stable identifier (`"phrase_normalize/v0.1/<slug>"`). Immutable once shipped. |
-| `description` | string | What the case verifies. |
-| `input_utf8_hex` | string | Lowercase hex (no `0x` prefix) of the UTF-8 byte encoding of the input string. |
-| `expected_output_utf8_hex` | string | Lowercase hex (no `0x` prefix) of the UTF-8 byte encoding of the expected normalized output string. |
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/phrase_normalize.json`](../../schema/v0.1/phrase_normalize.json) (per-case shape). Run the repository's documented `ajv-cli validate` command (see the root `README.md`) to verify any `cases.json` against the canonical schema. The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
 ## How to consume
 

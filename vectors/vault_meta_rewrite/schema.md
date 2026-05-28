@@ -25,33 +25,13 @@ vectors/vault_meta_rewrite/
 
 ## JSON shape
 
-Top-level object:
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/vault_meta_rewrite.json`](../../schema/v0.1/vault_meta_rewrite.json) (per-case shape; single `case_kind`, no discriminator). Run the repository's documented `ajv-cli validate` command (see the root `README.md`) to verify any `cases.json` against the canonical schema. The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
-| Field | Type | Description |
-|---|---|---|
-| `schema` | string | Always `"vault_meta_rewrite"` for this directory. |
-| `protocol_version` | string | `"v0.1"` for v0.1 vectors. |
-| `spec_section` | string | Anchors the canonical pipeline definition (`"protocol.md §9.3 + recovery-flow.md §4.2 §4.4"`). |
-| `description` | string | Human-readable summary of what is pinned. |
-| `cases` | array | One element per test case (see below). |
-
-Each `cases[i]` element:
-
-| Field | Type | Description |
-|---|---|---|
-| `vector_id` | string | Stable identifier (`"vault_meta_rewrite/v0.1/<slug>"`). Immutable once shipped. |
-| `description` | string | What the case verifies. |
-| `input_existing_vault_meta_hex` | string | Lowercase hex (no `0x` prefix) of the 345-byte serialized `vault.meta` that exists prior to the password rewrite. |
-| `input_root_key_hex` | string | 32-byte `root_key` (hex) — the unwrapped key the rewrite re-seals under the new password. |
-| `input_new_password_utf8_hex` | string | UTF-8 bytes (hex) of the new master password. |
-| `input_fresh_salt_hex` | string | 16-byte fresh Argon2id salt (hex). Production callers source this from OS CSPRNG; vectors pin a constant for reproducibility. |
-| `input_fresh_nonce_hex` | string | 24-byte fresh XChaCha20-Poly1305 nonce (hex). Production callers source this from OS CSPRNG. |
-| `informational_kdf_params_from_existing` | object | The KDF parameters carried inside `input_existing_vault_meta_hex` at offset 22. Informational-only — the helper reads them from the parsed input, NOT from a separate parameter. Mirrored here so reviewers don't have to decode the existing-meta hex. Fields: `m_kib` (u32), `t` (u32), `p` (u8), `argon2_version_hex` (one-byte hex, `"13"` for Argon2 v1.3). |
-| `expected_output_hex` | string | Lowercase hex of the 345-byte rewritten `vault.meta`. |
+Each case pins one rewrite: an `input_existing_vault_meta_hex` (345-byte `MYV1` blob) plus the new password material (`input_new_password_utf8_hex` + `input_fresh_salt_hex` + `input_fresh_nonce_hex`) plus the unwrapped `input_root_key_hex` produces a fresh `expected_vault_meta_hex` (also 345 bytes). The informational `informational_kdf_params_from_existing` object mirrors the KDF parameters carried inside the existing blob's offset 22 so reviewers can verify intermediate state without re-decoding the existing-meta hex; the helper reads them from the parsed input, NOT from this informational field.
 
 ## How to consume
 
-A port runs each case as: decode every `*_hex` input field, parse the `kdf_params` object into the port's KDF-params type, invoke the port's `rewrite_vault_meta_password_side` equivalent, hex-encode the output, compare byte-equal to `expected_output_hex`. Any non-equal result is a stop-the-world bug (per repo `README.md` "Cross-implementation discipline").
+A port runs each case as: decode every `*_hex` input field (the KDF parameters used by the helper are read from `input_existing_vault_meta_hex` itself, not from `informational_kdf_params_from_existing` — the informational object mirrors them for reviewer convenience), invoke the port's `rewrite_vault_meta_password_side` equivalent, hex-encode the output, compare byte-equal to `expected_vault_meta_hex`. Any non-equal result is a stop-the-world bug (per repo `README.md` "Cross-implementation discipline").
 
 ## Why hex, not JSON-native UTF-8 strings or numeric arrays
 
@@ -65,7 +45,7 @@ For the canonical case in `cases.json`:
 - **Recovery-side fields byte-preserved (recovery-flow.md § 4.4).** Output `[49..65]` (random_salt_recovery), `[153..177]` (nonce_recovery_wrap), `[177..241]` (enc_root_key_recovery) equal the corresponding `existing` slices.
 - **`items_key_id` + `items_key_nonce` + `enc_items_key` byte-preserved.** Output `[241..345]` equals `existing[241..345]`. The AEAD AAD on `enc_items_key` binds `items_key_id`; binary copy is the only safe path.
 - **Password-side fresh.** Output `[33..49]` equals `fresh_salt`; output `[65..89]` equals `fresh_nonce`. Output `[89..153]` is the new AEAD-sealed `enc_root_key_password` derived from the new inputs.
-- **KDF parameter block matches input.** Output `[22..33]` equals the canonical 11-byte serialization of `input_kdf_params` (per protocol § 4.3).
+- **KDF parameter block matches input.** Output `[22..33]` equals the canonical 11-byte serialization of the KDF params parsed from `input_existing_vault_meta_hex` (per protocol § 4.3) — the helper preserves these from the input meta, not from a separate parameter; the `informational_kdf_params_from_existing` object mirrors the same bytes for reviewer convenience.
 - **Magic / version / reserved.** Output `[0..4]` = `MYV1`, `[4]` = `0x01`, `[5]` = `0x00`.
 
 ## Regeneration

@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-prefs.json",
+  "title": "vault-prefs — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::encode_prefs_blob_raw + protocol::decode_prefs_blob. Three case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure surface per spec §6.4 + §9.5.5). The Rust reference implementation lives at protocol/src/prefs.rs (main myne repository); spec contract is docs/spec/protocol.md §9.5 + §3.4 + §5.2.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-prefs/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-prefs/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_plaintext_canonical_utf8_hex",
+        "input_prefs_nonce_hex",
+        "expected_prefs_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). The encoder derives prefs_key from this via the canonical derive_subkey helper (SubkeyRole::PrefsKey)."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex). Bound into the 39-byte AAD via aad_prefs_blob."
+        },
+        "input_plaintext_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Canonical-JSON plaintext bytes (hex). The encoder produces this from the PrefsView via canonical_json_encode; pinning the bytes catches canonical-encoding drift."
+        },
+        "input_prefs_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+        },
+        "informational_prefs_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte HKDF output (hex), pre-computed from the root_key. Informational — verified implicitly via the expected_prefs_blob_hex assertion; carried so reviewers don't have to re-derive to inspect intermediate state."
+        },
+        "expected_prefs_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full encoder output (34-header + ciphertext + 32-CTX-tag), hex-encoded lowercase. Decoders compare byte-equal."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_plaintext_canonical_utf8_hex",
+        "expected_prefs_view"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_plaintext_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "expected_prefs_view": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["screen_capture_protection"],
+          "properties": {
+            "screen_capture_protection": { "type": "boolean" }
+          },
+          "description": "Parsed PrefsView shape — v0.1 is the single screen_capture_protection bool. Future v0.1.x revisions appending optional fields will relax this object's additionalProperties or extend properties; the cases-array shape stays additive (new cases, immutable old ones)."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: PrefsBlobError::CannotDecrypt). Implementations MUST NOT distinguish cross-vault vs tampered vs wrong-key beyond the single 'cannot decrypt' outcome."
+        }
+      }
+    }
+  ]
+}
