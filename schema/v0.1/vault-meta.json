@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-meta.json",
+  "title": "vault-meta — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::serialize_vault_meta + protocol::parse_vault_meta — the create-time MYV1 encoder/decoder pair (distinct from the landed vault_meta_rewrite which pins only the password-side rewrite path). Two case kinds: 'roundtrip' (input field-by-field → expected 345-byte blob, plus parse round-trip), 'parse_fail' (tampered blob → structural rejection via ProtocolError::InvalidVaultMeta). Spec contract: docs/spec/protocol.md §9.3.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-meta/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-meta/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["roundtrip", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "roundtrip — pin serialize_vault_meta byte output + parse round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_account_number_hash_hex",
+        "input_kdf_params",
+        "input_random_salt_password_hex",
+        "input_random_salt_recovery_hex",
+        "input_nonce_password_wrap_hex",
+        "input_enc_root_key_password_hex",
+        "input_nonce_recovery_wrap_hex",
+        "input_enc_root_key_recovery_hex",
+        "input_items_key_id_hex",
+        "input_items_key_nonce_hex",
+        "input_enc_items_key_hex",
+        "expected_vault_meta_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "roundtrip" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_kdf_params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["m_kib", "t", "p", "argon2_version_hex"],
+          "properties": {
+            "m_kib": { "type": "integer", "minimum": 1 },
+            "t": { "type": "integer", "minimum": 1 },
+            "p": { "type": "integer", "minimum": 1 },
+            "argon2_version_hex": { "type": "string", "pattern": "^[0-9a-f]{2}$" }
+          }
+        },
+        "input_random_salt_password_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_random_salt_recovery_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_nonce_password_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_root_key_password_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "input_nonce_recovery_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_root_key_recovery_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "expected_vault_meta_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{690}$",
+          "description": "Full 345-byte serialized MYV1 blob (hex). Implementations call serialize_vault_meta with the reconstructed VaultMeta and compare byte-equal; round-trip property additionally requires parse_vault_meta(expected) to succeed without error."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin structural rejection of malformed MYV1 blob",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_kind",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Tampered or malformed blob bytes (hex). May have wrong magic, wrong protocol_version byte, non-zero reserved byte, malformed KDF params block, or short/long length."
+        },
+        "expected_kind": {
+          "const": "parse_fail",
+          "description": "Rust reference returns Err(ProtocolError::InvalidVaultMeta) — a single non-distinguishing variant per spec §6.4 closed-enum discipline. Ports MUST NOT distinguish which structural rule fired beyond 'this is not a valid vault.meta'."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable note on which byte(s) were tampered with relative to the canonical roundtrip case (e.g., 'byte 0 (magic[0]) 0x4d → 0x4e' or 'byte 5 (reserved) 0x00 → 0x01'). Informational only — runner does not consume this field."
+        }
+      }
+    }
+  ]
+}

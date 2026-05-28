@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/myn-blob.json",
+  "title": "myn-blob — case shape (v0.1)",
+  "description": "Pins protocol::encode_new_note_blob_raw + protocol::decode_note byte mapping for the MY01 per-note blob format. Three case kinds: 'encrypt' (encoder byte output across plaintext sizes), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD-stage rejection per spec §6.4). Content-type is HARDCODED to 'text/markdown' in v0.1 (bound into aad_note_content_encrypt) — no per-vector variation parameter. Spec contract: docs/spec/protocol.md §9.2 + §6.4 + §6.5.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^myn-blob/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'myn-blob/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output across plaintext sizes",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "input_note_uuid_hex",
+        "input_item_key_hex",
+        "input_item_key_nonce_hex",
+        "input_content_nonce_hex",
+        "input_plaintext_hex",
+        "expected_myn_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_note_uuid_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_item_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_item_key_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_content_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Plaintext bytes (hex). Variable length up to MAX_PLAINTEXT_LEN (16 MiB) — vectors cover 10 B / 1 KB / 100 KB representative sizes."
+        },
+        "expected_myn_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full MY01 blob (header_prefix + content_nonce + ciphertext_len_be32 + ciphertext + CTX tag). Length = 76 + plaintext.len() + 32 bytes."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_note_uuid_hex",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "expected_plaintext_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_note_uuid_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Recovered plaintext bytes (hex). The decode_note caller compares its DecryptedNote.plaintext() output byte-equal."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing AEAD-stage failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_note_uuid_hex",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "expected_kind",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_note_uuid_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "Rust reference returns Err(DecryptError::CannotDecrypt) — single non-distinguishing variant per spec §6.4. Ports MUST NOT distinguish wrong-key / wrong-AAD / tampered-ciphertext / tampered-tag beyond a single 'cannot decrypt' outcome at the caller-visible surface."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  ]
+}
