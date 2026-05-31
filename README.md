@@ -6,19 +6,20 @@ For the protocol specification, see [`docs/spec/protocol.md`](https://github.com
 
 ## Status
 
-**Phase 1, nine of eleven planned v0.1 categories landed.** Each landed category has a JSON-Schema-validated `cases.json` plus a domain-semantic `schema.md`. The remaining two are planned but currently have no Plane task tracking them — they land when their parent feature stabilizes and a Plane work item is created. The canonical machine-readable contract lives at [`schema/v0.1.json`](schema/v0.1.json) and dispatches per-category sub-schemas under [`schema/v0.1/`](schema/v0.1/).
+**Phase 1, ten v0.1 categories landed.** This is the original nine planned categories plus `vault-search` (the `MYS1` / `vault.search` codec, MYND-29) — which had shipped in the protocol crate without vectors and was an untracked gap until it landed here. Each landed category has a JSON-Schema-validated `cases.json` plus a domain-semantic `schema.md`. Two further categories (`bip39-recovery`, `aad-construction`) remain planned with no Plane task tracking them yet — they land when their parent feature stabilizes and a Plane work item is created. The canonical machine-readable contract lives at [`schema/v0.1.json`](schema/v0.1.json) and dispatches per-category sub-schemas under [`schema/v0.1/`](schema/v0.1/).
 
 ### Landed (v0.1)
 
 - **[`vectors/phrase_normalize/`](vectors/phrase_normalize/)** — `protocol::phrase::normalize_user_phrase` NFKD + ASCII-lowercase + whitespace pipeline.
 - **[`vectors/vault-prefs/`](vectors/vault-prefs/)** — `MYP1` encrypted-preferences blob codec (`encode_prefs_blob_raw` / `decode_prefs_blob`), with encrypt + decrypt-success + non-distinguishing AEAD-failure cases.
 - **[`vectors/vault_meta_rewrite/`](vectors/vault_meta_rewrite/)** — `rewrite_vault_meta_password_side` password-side rewrite producing the 345-byte `MYV1` blob.
-- **[`vectors/hkdf-sha256/`](vectors/hkdf-sha256/)** — `derive_subkey` canonical HKDF-SHA-256 helper exercising every registered `SubkeyRole`.
+- **[`vectors/hkdf-sha256/`](vectors/hkdf-sha256/)** — `derive_subkey` canonical HKDF-SHA-256 helper exercising every registered `SubkeyRole` (`itemsKey-wrap`, `prefs-key`, `search-index-key`).
 - **[`vectors/vault-meta/`](vectors/vault-meta/)** — `serialize_vault_meta` + `parse_vault_meta` create-time `MYV1` encoder/decoder pair: 345-byte round-trip + structural-parse-reject cases (magic / reserved tamper). Distinct from `vault_meta_rewrite` (which pins only the password-side rewrite).
 - **[`vectors/account-number/`](vectors/account-number/)** — `parse_account_number` Crockford-base32 + Damm-32 + liberal-parsing normalization: parse permutations (canonical/display/lowercase/whitespace/prefix-optional) + strict-reject (non-Crockford char, wrong length) + Damm-32 single-substitution + adjacent-transposition catches.
 - **[`vectors/myn-blob/`](vectors/myn-blob/)** — `encode_new_note_blob_raw` + `decode_note` `MY01` per-note blob codec across 10 B / 1 KB / 100 KB plaintext sizes + decrypt round-trip + ciphertext-tamper reject. `content_type` is hardcoded `text/markdown` in v0.1.
-- **[`vectors/ctx-aead/`](vectors/ctx-aead/)** — `aead_seal_ctx` + `aead_open_ctx` (XChaCha20-Poly1305 + CTX commitment outer per Chan & Rogaway 2022) + every pub `aad_*` builder's canonical byte assembly (`aad_password_wrap`, `aad_recovery_wrap`, `aad_vault_items_key_wrap`, `aad_note_item_key_wrap`, `aad_note_content_encrypt`, `aad_prefs_blob` — all 6 pub builders pinned). Note: this category was tracked in the prior planned list as `xchacha20-poly1305-ctx`; landed under `ctx-aead` (same scope).
+- **[`vectors/ctx-aead/`](vectors/ctx-aead/)** — `aead_seal_ctx` + `aead_open_ctx` (XChaCha20-Poly1305 + CTX commitment outer per Chan & Rogaway 2022) + every pub `aad_*` builder's canonical byte assembly (`aad_password_wrap`, `aad_recovery_wrap`, `aad_vault_items_key_wrap`, `aad_note_item_key_wrap`, `aad_note_content_encrypt`, `aad_prefs_blob`, `aad_search_index_blob` — all 7 pub builders pinned). Note: this category was tracked in the prior planned list as `xchacha20-poly1305-ctx`; landed under `ctx-aead` (same scope).
 - **[`vectors/argon2id/`](vectors/argon2id/)** — `derive_password_wrap_key` + `derive_recovery_wrap_key_from_normalized` at canonical Phase 1 parameters (m=256 MiB, t=3, p=2, v=0x13). Password + recovery paths × {short ASCII, long ASCII, unicode}. **Slow tests** (~3s per case at canonical params; ~18s total category runtime).
+- **[`vectors/vault-search/`](vectors/vault-search/)** — `encode_search_index_blob_raw` + `decode_search_index_blob` `MYS1` `vault.search` encrypted search-index codec (MYND-29, spec §9.6). 12 cases: 3 encrypt (empty / small / 1-KB opaque inner plaintext) + decrypt round-trip + 2 non-distinguishing AEAD-failure (CTX-tag tamper + cross-vault `account_number_hash`) + 6 distinguishable structural `parse_fail` (one per `SearchBlobError` reject — bad magic / protocol_version / `index_format_version` / header-too-short / truncated / `ciphertext_len` overflow). KEK is `derive_subkey(root_key, SubkeyRole::SearchIndexKey)` (role `search-index-key`); `account_number_hash` binds via `aad_search_index_blob` (role `search-index-blob` — a **distinct** string from the KEK role). The third member of the singleton-blob family alongside `vault-prefs` (MYP1) and `myn-blob` (MY01).
 
 ### Planned (no Plane task yet — land when a Plane work item is created)
 
@@ -41,7 +42,8 @@ schema/
     ├── account-number.json
     ├── myn-blob.json
     ├── ctx-aead.json
-    └── argon2id.json
+    ├── argon2id.json
+    └── vault-search.json
 ```
 
 Adding a new category requires landing its sub-schema file under `schema/v0.1/` and extending both the `schema` enum and the `oneOf` branches in the root schema in lockstep.
@@ -62,6 +64,7 @@ npx -y ajv-cli@5 validate \
   -r schema/v0.1/myn-blob.json \
   -r schema/v0.1/ctx-aead.json \
   -r schema/v0.1/argon2id.json \
+  -r schema/v0.1/vault-search.json \
   -d "vectors/phrase_normalize/v0.1/cases.json" \
   -d "vectors/vault-prefs/v0.1/cases.json" \
   -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
@@ -71,6 +74,7 @@ npx -y ajv-cli@5 validate \
   -d "vectors/myn-blob/v0.1/cases.json" \
   -d "vectors/ctx-aead/v0.1/cases.json" \
   -d "vectors/argon2id/v0.1/cases.json" \
+  -d "vectors/vault-search/v0.1/cases.json" \
   --spec=draft2020
 ```
 
