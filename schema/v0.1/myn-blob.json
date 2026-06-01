@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/myn-blob.json",
   "title": "myn-blob — case shape (v0.1)",
-  "description": "Pins protocol::encode_new_note_blob_raw + protocol::decode_note byte mapping for the MY01 per-note blob format. Three case kinds: 'encrypt' (encoder byte output across plaintext sizes), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD-stage rejection per spec §6.4). Content-type is HARDCODED to 'text/markdown' in v0.1 (bound into aad_note_content_encrypt) — no per-vector variation parameter. Spec contract: docs/spec/protocol.md §9.2 + §6.4 + §6.5.",
+  "description": "Pins protocol::encode_new_note_blob_raw + protocol::encode_update_blob_raw + protocol::decode_note byte mapping for the MY01 per-note blob format. Four case kinds: 'encrypt' (encoder byte output across plaintext sizes), 'encrypt_update' (§6.3 note-update path — header_prefix spliced verbatim, only content_nonce + ciphertext change), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD-stage rejection per spec §6.4). Content-type is HARDCODED to 'text/markdown' in v0.1 (bound into aad_note_content_encrypt) — no per-vector variation parameter. Spec contract: docs/spec/protocol.md §9.2 + §6.3 + §6.4 + §6.5.",
   "type": "object",
   "required": ["vector_id", "description", "case_kind"],
   "unevaluatedProperties": false,
@@ -18,7 +18,7 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail"]
+      "enum": ["encrypt", "encrypt_update", "decrypt_ok", "decrypt_aead_fail"]
     }
   },
   "oneOf": [
@@ -57,6 +57,55 @@
           "type": "string",
           "pattern": "^([0-9a-f]{2})+$",
           "description": "Full MY01 blob (header_prefix + content_nonce + ciphertext_len_be32 + ciphertext + CTX tag). Length = 76 + plaintext.len() + 32 bytes."
+        }
+      }
+    },
+    {
+      "title": "encrypt_update — pin the §6.3 note-update encoder (header_prefix spliced verbatim)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_source_blob_hex",
+        "input_note_uuid_hex",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "input_new_content_nonce_hex",
+        "input_new_plaintext_hex",
+        "expected_myn_blob_hex",
+        "informational_header_prefix_preserved"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt_update" },
+        "input_source_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The original MY01 blob being updated. A port decodes it (decode_note) to recover the DecryptedNote handle, then re-encodes content via encode_update_blob_raw."
+        },
+        "input_note_uuid_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_new_content_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "Fresh 24-byte content_nonce for the re-encryption. MUST differ from the source blob's content_nonce — nonce reuse under a fixed item_key is catastrophic (spec §6.3)."
+        },
+        "input_new_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "New plaintext bytes (hex). May be larger or smaller than the source's plaintext; the update encoder tracks the new ciphertext_len."
+        },
+        "expected_myn_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full updated MY01 blob. Bytes [0..112] (header_prefix) MUST equal the source blob's bytes [0..112] verbatim; only content_nonce + ciphertext_len + ciphertext change. Length = 76 + new_plaintext.len() + 32 bytes."
+        },
+        "informational_header_prefix_preserved": {
+          "const": true,
+          "description": "Asserts the §3.3 invariant: the 112-byte header_prefix (magic, version, reserved, items_key_id, item_key_nonce, enc_item_key_len, enc_item_key) is spliced verbatim from the source — enc_item_key is never re-wrapped across an update, which is what lets password rotation leave every .myn file untouched."
         }
       }
     },

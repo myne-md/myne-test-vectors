@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/bip39-recovery.json",
+  "title": "bip39-recovery — case shape (v0.1)",
+  "description": "Pins the END-TO-END recovery composition protocol::phrase::normalize_user_phrase (§7.4) -> protocol::derive_recovery_wrap_key_from_normalized (§3.1): a raw user-typed 24-word phrase is NFKD-normalized then fed DIRECTLY to Argon2id (NOT through BIP-39's PBKDF2 step). Composes the existing phrase_normalize + argon2id category pipelines into one vector. The defining property: distinct raw inputs that normalize to the same phrase MUST derive the same recovery_wrap_key — this is what pins the NFKD-before-Argon2id ordering. Argon2id at canonical Phase 1 params (m=256 MiB, t=3, p=2, v=0x13) — ~3s per case. Spec contract: docs/spec/protocol.md §3.1 (recovery KDF) + §7.4 (phrase normalization).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "input_raw_phrase_utf8_hex",
+    "input_salt_random_hex",
+    "input_account_number_hash_hex",
+    "input_kdf_params",
+    "informational_normalized_phrase_utf8_hex",
+    "expected_recovery_wrap_key_hex"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^bip39-recovery/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'bip39-recovery/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_raw_phrase_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "The raw user-typed recovery phrase as UTF-8 bytes (hex). May carry mixed case, padding/irregular whitespace, and NFKD-foldable characters (full-width Latin, no-break / ideographic spaces). A port runs its normalize_user_phrase equivalent over these bytes before deriving."
+    },
+    "input_salt_random_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte random salt component (salt_random) for the recovery Argon2id derivation."
+    },
+    "input_account_number_hash_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte account_number_hash bound into the recovery salt domain."
+    },
+    "input_kdf_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["m_kib", "t", "p", "argon2_version_hex"],
+      "properties": {
+        "m_kib": { "type": "integer", "description": "Argon2id memory cost in KiB (262144 = 256 MiB at canonical v0.1 params)." },
+        "t": { "type": "integer", "description": "Argon2id time cost (iterations); 3 at canonical params." },
+        "p": { "type": "integer", "description": "Argon2id parallelism (lanes); 2 at canonical params." },
+        "argon2_version_hex": { "type": "string", "pattern": "^[0-9a-f]{2}$", "description": "Argon2 version byte (0x13 = v1.3)." }
+      }
+    },
+    "informational_normalized_phrase_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "The normalized phrase bytes (output of normalize_user_phrase) that are fed to Argon2id. Informational — a port computes it itself — but pinned so the NFKD/lowercase/whitespace folding is auditable. Across all three cases this value is IDENTICAL (the raw inputs differ only in foldable presentation)."
+    },
+    "expected_recovery_wrap_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The 32-byte recovery_wrap_key. IDENTICAL across all cases in a set whose raw phrases normalize to the same string — the cross-impl invariant a port must reproduce."
+    }
+  }
+}
