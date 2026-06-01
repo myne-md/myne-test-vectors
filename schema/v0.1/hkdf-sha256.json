@@ -29,8 +29,8 @@
     },
     "input_role": {
       "type": "string",
-      "enum": ["itemsKey-wrap", "prefs-key"],
-      "description": "Registered role string (spec §3.4). MUST appear in protocol::SubkeyRole::role_str. Future v0.1.x revisions extend this enum + the Rust SubkeyRole enum in lockstep — additive only, immutable for existing variants."
+      "enum": ["itemsKey-wrap", "prefs-key", "search-index-key"],
+      "description": "Registered role string (spec §3.4). MUST appear in protocol::SubkeyRole::role_str. Future v0.1.x revisions extend this enum + the Rust SubkeyRole enum in lockstep — additive only, immutable for existing variants. 'search-index-key' is the KEK for the vault.search blob (MYND-29, §9.6) — note it differs from the AAD role string 'search-index-blob' used by aad_search_index_blob."
     },
     "informational_info_utf8_hex": {
       "type": "string",

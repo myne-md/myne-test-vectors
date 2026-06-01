@@ -8,7 +8,7 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 
 ## Status
 
-**Phase 1, nine of eleven planned v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`. The remaining two (`bip39-recovery`, `aad-construction`) have no Plane work item yet and land when one is created. CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories) and `agent tooling/features/lane-d-completion/` (the next 5) for the landing plans.
+**Phase 1, ten v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`, `vault-search`. The last (`vault-search`, MYND-29) was an untracked gap — the `MYS1` codec shipped in the protocol crate without vectors — closed under D8. Two categories (`bip39-recovery`, `aad-construction`) have no Plane work item yet and land when one is created. CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories) and `agent tooling/features/lane-d-completion/` (the next 5) for the landing plans.
 
 ## Vector categories
 
@@ -17,12 +17,13 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 - `vectors/phrase_normalize/` — `protocol::phrase::normalize_user_phrase` NFKD + ASCII-lowercase + whitespace pipeline (spec §7.4).
 - `vectors/vault-prefs/` — `MYP1` encrypted-preferences blob codec; encrypt + decrypt + non-distinguishing AEAD-failure case_kinds (spec §9.5 + §6.4).
 - `vectors/vault_meta_rewrite/` — `MYV1` password-side rewrite producing the 345-byte vault.meta (spec §9.3 + recovery-flow §4.2/§4.4).
-- `vectors/hkdf-sha256/` — Subkey derivations through `derive_subkey` exercising every registered `SubkeyRole` with `myne.v0.1 ` info-prefix (spec §3.2 + §3.4).
+- `vectors/hkdf-sha256/` — Subkey derivations through `derive_subkey` exercising every registered `SubkeyRole` (`itemsKey-wrap`, `prefs-key`, `search-index-key`) with `myne.v0.1 ` info-prefix (spec §3.2 + §3.4).
 - `vectors/vault-meta/` — `serialize_vault_meta` + `parse_vault_meta` create-time MYV1 encoder/decoder pair; round-trip + structural-parse-reject (magic / reserved tamper) (spec §9.3).
 - `vectors/account-number/` — `parse_account_number` Crockford-base32 + Damm-32 + liberal-parsing normalization; parse permutations + strict-reject + Damm-32 substitution/transposition catches (spec §5 + decisions.md 2026-04-28 polynomial freeze).
 - `vectors/myn-blob/` — `encode_new_note_blob_raw` + `decode_note` MY01 per-note blob across 10 B / 1 KB / 100 KB plaintext + decrypt round-trip + ciphertext-tamper reject (spec §9.2 + §6.4); `content_type` hardcoded `text/markdown`.
-- `vectors/ctx-aead/` — `aead_seal_ctx` + `aead_open_ctx` AEAD primitive + every pub `aad_*` builder's canonical bytes (4-way `case_kind` including `aad_canonical_bytes`); 6 builders pinned individually (spec §5.1 + §5.2 + §6.4). Tracked in earlier planned list as `xchacha20-poly1305-ctx`; renamed `ctx-aead` on landing.
+- `vectors/ctx-aead/` — `aead_seal_ctx` + `aead_open_ctx` AEAD primitive + every pub `aad_*` builder's canonical bytes (4-way `case_kind` including `aad_canonical_bytes`); 7 builders pinned individually (incl. `aad_search_index_blob`, MYND-29) (spec §5.1 + §5.2 + §6.4). Tracked in earlier planned list as `xchacha20-poly1305-ctx`; renamed `ctx-aead` on landing.
 - `vectors/argon2id/` — `derive_password_wrap_key` + `derive_recovery_wrap_key_from_normalized` at canonical Phase 1 Argon2id params (m=256 MiB, t=3, p=2, v=0x13); password + recovery paths × {short, long, unicode} (spec §3 + decisions.md 2026-04-26 KDF calibration). **~18s runtime cost** at canonical params; vectors are default-on (not `#[ignore]`-gated).
+- `vectors/vault-search/` — `encode_search_index_blob_raw` + `decode_search_index_blob` `MYS1` `vault.search` encrypted search-index codec (MYND-29 / D8, spec §9.6). Opaque inner plaintext (no canonical-JSON, unlike vault-prefs); KEK `derive_subkey(root_key, SubkeyRole::SearchIndexKey)` (role `search-index-key`) and AAD `aad_search_index_blob` (role `search-index-blob` — a **distinct** load-bearing string). 12 cases: 3 encrypt + 1 decrypt_ok + 2 decrypt_aead_fail (non-distinguishing, §6.4) + 6 `parse_fail` (distinguishable pre-decryption structural rejects). Third member of the singleton-blob family with `vault-prefs` (MYP1) + `myn-blob` (MY01).
 
 ### Planned (no Plane work item yet)
 
@@ -71,6 +72,7 @@ npx -y ajv-cli@5 validate \
   -r schema/v0.1/myn-blob.json \
   -r schema/v0.1/ctx-aead.json \
   -r schema/v0.1/argon2id.json \
+  -r schema/v0.1/vault-search.json \
   -d "vectors/phrase_normalize/v0.1/cases.json" \
   -d "vectors/vault-prefs/v0.1/cases.json" \
   -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
@@ -80,6 +82,7 @@ npx -y ajv-cli@5 validate \
   -d "vectors/myn-blob/v0.1/cases.json" \
   -d "vectors/ctx-aead/v0.1/cases.json" \
   -d "vectors/argon2id/v0.1/cases.json" \
+  -d "vectors/vault-search/v0.1/cases.json" \
   --spec=draft2020
 
 # Inspect a single case via jq:
@@ -100,6 +103,7 @@ Each category's vector set is generated by a corresponding `#[ignore]`-gated tes
 | `myn-blob` | `cargo test -p protocol --lib emit_myn_blob_vectors_for_paste -- --ignored` | `/tmp/myne_myn_blob_vectors.json` (full JSON; ~425 KB due to 100-KB plaintext case) |
 | `ctx-aead` | `cargo test -p protocol --lib emit_ctx_aead_vectors_for_paste -- --ignored` | `/tmp/myne_ctx_aead_vectors.json` (full JSON) |
 | `argon2id` | `cargo test -p protocol --lib emit_argon2id_wrap_vectors_for_paste -- --ignored` | `/tmp/myne_argon2id_vectors.json` (full JSON; **~18 s runtime** at canonical params) |
+| `vault-search` | `cargo test -p protocol --lib emit_vault_search_vectors_for_paste -- --ignored` | `/tmp/myne_vault_search_vectors.json` (full JSON) |
 
 `phrase_normalize` vectors are hand-curated against the protocol §7.4 pipeline; no generator. The newer (Lane D) generators all emit ready-to-copy JSON; the two oldest (`vault-prefs`, `vault_meta_rewrite`) still emit paste-format text — both patterns coexist.
 
