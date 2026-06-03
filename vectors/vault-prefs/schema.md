@@ -10,7 +10,7 @@ Pins the byte mapping of `protocol::encode_prefs_blob_raw` + `protocol::decode_p
 **Encrypt side** (`encode_prefs_blob_raw`):
 
 1. **Derive `prefs_key`** via the canonical helper: `derive_subkey(root_key, SubkeyRole::PrefsKey)`. HKDF-SHA-256 with `info = "myne.v0.1 prefs-key"`, `salt = zero_32`. Output is 32 bytes, deterministic. The same `root_key` always produces the same `prefs_key`.
-2. **Canonical-JSON encode the `PrefsView`.** v0.1's single-field schema renders as `{"screen_capture_protection":true}` or `{"screen_capture_protection":false}` — lexicographically sorted keys, no whitespace, UTF-8 NFC strings, no floating-point per spec § 9.5.2.
+2. **Canonical-JSON encode the `PrefsView`.** v0.1's schema (MYND-160 + MYND-183) carries `screen_capture_protection` (bool) plus the omitted-when-default optionals `deliberate_folders` (sorted-set array), `auto_lock_seconds` (integer), `editor_layout` (nested object), and the unified manual-sidebar sequences `favorites` + `item_order` (the latter **heterogeneous**: note UUIDs + canonical trailing-slash folder paths interleaved, replacing the pre-MYND-183 `note_order`/`folder_order` pair). Lexicographically sorted keys (`auto_lock_seconds < deliberate_folders < editor_layout < favorites < item_order < screen_capture_protection`), no whitespace, UTF-8 NFC strings, no floating-point per spec § 9.5.2; the **sequence** arrays (`favorites`, `item_order`) preserve element order verbatim while the `deliberate_folders` **set** is sorted + deduped. A screen-capture-only vault still renders as `{"screen_capture_protection":true}` (all optionals omitted), byte-identical to a pre-MYND-183 blob.
 3. **Build the AAD** via `aad_prefs_blob(account_number_hash)`: 39-byte concatenation of `"myne.v0.1|"` (10 B) + protocol_version `0x01` (1 B) + length-prefixed UTF-8 role `"prefs-blob"` (2-B BE length + 10 ASCII bytes = 12 B) + `account_number_hash` (16 B) per spec § 9.5.3.
 4. **AEAD-seal** the canonical JSON plaintext under `prefs_key` + `prefs_nonce` + AAD using XChaCha20-Poly1305 with the CTX (Chan & Rogaway 2022) outer commitment per spec § 5.1. Output is `plaintext.len() + 32` bytes (CTX tag is 32 bytes).
 5. **Assemble the outer envelope** per spec § 9.5.1 fixed-offset layout (total `34 + ciphertext_len` bytes):
@@ -31,7 +31,7 @@ The encode side is **pure and deterministic** given the caller-supplied `prefs_n
 vectors/vault-prefs/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 5 KAT cases (encrypt + decrypt + failure-mode)
+    └── cases.json         ← array of 7 KAT cases (encrypt + decrypt + failure-mode, incl. a fully-populated encrypt/decrypt pair — MYND-183)
 ```
 
 ## JSON shape
@@ -40,7 +40,7 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 
 Three case kinds carry different field shapes:
 
-- **`encrypt`** — pins the encoder's byte output. Inputs: `input_root_key_hex` (32 B), `input_account_number_hash_hex` (16 B), `input_plaintext_canonical_utf8_hex`, `input_prefs_nonce_hex` (24 B). Optional `informational_prefs_key_hex` carries the pre-computed HKDF output for reviewer convenience. Output: `expected_prefs_blob_hex` (the 100-byte `MYP1` blob = 34-header + 66-ciphertext+tag).
+- **`encrypt`** — pins the encoder's byte output. Inputs: `input_root_key_hex` (32 B), `input_account_number_hash_hex` (16 B), `input_plaintext_canonical_utf8_hex`, `input_prefs_nonce_hex` (24 B). Optional `informational_prefs_key_hex` carries the pre-computed HKDF output for reviewer convenience. Output: `expected_prefs_blob_hex` (the `MYP1` blob = 34-byte header + ciphertext + 32-byte CTX tag; e.g. 100 bytes for the single-field default, larger for the fully-populated case).
 - **`decrypt_ok`** — pins the decoder's successful round-trip. Inputs: `input_blob_hex` + correct `input_root_key_hex` + correct `input_account_number_hash_hex`. Outputs: `expected_plaintext_canonical_utf8_hex` (raw bytes) and `expected_prefs_view` (the parsed `PrefsView` object — implementations parse the recovered JSON and assert structural equality).
 - **`decrypt_aead_fail`** — pins the non-distinguishing failure surface. Inputs: `input_blob_hex` + (intentionally wrong or tampered) `input_root_key_hex` + `input_account_number_hash_hex`. Output: `expected_kind: "aead_fail"`. The decoder MUST collapse cross-vault, wrong-AAD, ciphertext-tamper, and CTX-tamper to a single indistinguishable failure (spec § 6.4 + § 9.5.5).
 

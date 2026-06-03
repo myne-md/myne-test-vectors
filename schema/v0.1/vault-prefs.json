@@ -109,9 +109,24 @@
           "additionalProperties": false,
           "required": ["screen_capture_protection"],
           "properties": {
-            "screen_capture_protection": { "type": "boolean" }
+            "screen_capture_protection": { "type": "boolean" },
+            "deliberate_folders": { "type": "array", "items": { "type": "string" } },
+            "auto_lock_seconds": { "type": "integer", "minimum": 0 },
+            "favorites": { "type": "array", "items": { "type": "string" } },
+            "item_order": { "type": "array", "items": { "type": "string" } },
+            "editor_layout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["left_collapsed", "left_width", "right_collapsed", "right_width"],
+              "properties": {
+                "left_collapsed": { "type": "boolean" },
+                "left_width": { "type": "integer", "minimum": 0 },
+                "right_collapsed": { "type": "boolean" },
+                "right_width": { "type": "integer", "minimum": 0 }
+              }
+            }
           },
-          "description": "Parsed PrefsView shape — v0.1 is the single screen_capture_protection bool. Future v0.1.x revisions appending optional fields will relax this object's additionalProperties or extend properties; the cases-array shape stays additive (new cases, immutable old ones)."
+          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths). The cases-array shape stays additive — new cases, immutable old ones."
         }
       }
     },
