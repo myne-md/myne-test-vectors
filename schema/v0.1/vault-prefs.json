@@ -124,9 +124,14 @@
                 "right_collapsed": { "type": "boolean" },
                 "right_width": { "type": "integer", "minimum": 0 }
               }
+            },
+            "theme": {
+              "type": "string",
+              "enum": ["light", "dark"],
+              "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); only an explicit light/dark choice emits the key (lexicographically LAST, after screen_capture_protection)."
             }
           },
-          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths). The cases-array shape stays additive — new cases, immutable old ones."
+          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system). The cases-array shape stays additive — new cases, immutable old ones."
         }
       }
     },
