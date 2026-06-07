@@ -8,7 +8,7 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 
 ## Status
 
-**Phase 1, thirteen v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`, `vault-search`, `password-policy`, `bip39-recovery`, `aad-construction`. The last three closed the remaining implementation-vs-vectors gaps — surfaces implemented in the protocol crate but unpinned by cross-impl vectors: `password-policy` (`validate_min_length` floor), `bip39-recovery` (end-to-end recovery composition), `aad-construction` (per-call-site AAD framing decomposition atop `ctx-aead`). **No categories remain planned.** CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories) and `agent tooling/features/lane-d-completion/` (the next 5) for the landing plans.
+**Phase 1, fourteen v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`, `vault-search`, `password-policy`, `bip39-recovery`, `aad-construction`, `damm32-table`. `password-policy` / `bip39-recovery` / `aad-construction` closed the implementation-vs-vectors gaps for surfaces unpinned by cross-impl vectors; `damm32-table` (MYND-74) pins the frozen Damm-32 quasigroup table itself as cross-impl ground truth alongside the existing `account-number` parse-behavior vectors. **No categories remain planned.** CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories), `agent tooling/features/lane-d-completion/` (the next 5), and `agent tooling/features/damm32-table-freeze/` (`damm32-table`) for the landing plans.
 
 ## Vector categories
 
@@ -27,6 +27,7 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 - `vectors/password-policy/` — `validate_min_length` master-password floor (`MIN_PASSWORD_LEN = 12`); **boolean accept/reject conformance** (not byte-output). Counts USVs (`str::chars().count()`), NOT UTF-8 bytes (decisions.md 2026-05-06). 7 cases: ASCII boundary (11 reject / 12 / 13 accept) + empty + the USV-vs-byte discriminators (`á`×12 accept / `á`×11 reject / mixed-script). Single case shape, `expected_kind` discriminator (no `case_kind`).
 - `vectors/bip39-recovery/` — end-to-end recovery composition `normalize_user_phrase` (§7.4) → `derive_recovery_wrap_key_from_normalized` (§3.1): raw 24-word phrase NFKD-normalized then fed **directly** to Argon2id (NOT BIP-39's PBKDF2 step). 3 cases type the canonical all-zero phrase three ways (canonical / mixed-case+whitespace / NFKD full-width+exotic-space); all derive the **identical** wrap key, pinning NFKD-before-Argon2id. **~3s/case, default-on** like `argon2id`.
 - `vectors/aad-construction/` — per-call-site AAD framing decomposition for all 7 pub `aad_*` builders. Pins the full AAD bytes (== `ctx-aead`'s `aad_canonical_bytes` pins) **plus** the segment breakdown (`aad_prefix` / `protocol_version` / `role_length_be16` / `role_label` / bound params) with offsets — a decomposition layer atop `ctx-aead`, not a duplicate. 7 cases (one per builder); harness asserts full builder coverage.
+- `vectors/damm32-table/` — the frozen Damm-32 order-32 quasigroup table (`account-number.md` §4.2) as cross-impl ground truth (MYND-74). 4 cases via a 2-way `case_kind`: 1 `table` (the full 1024-byte row-major table as hex — `table[interim][symbol]`, GF(2⁵) with x∗y=α·(x⊕y), poly `0b100101=37`, Crockford index order) + 3 `checksum` (left-fold-from-0 orientation: single-step `[1]→2`, baseline `0..18→26`, all-high `31×19`). Reference: `protocol::damm32_table()` / `damm32_step`. Complements `account-number` (which pins `parse_account_number` behavior); this pins the table + raw index checksum beneath it.
 
 ### Planned
 
@@ -78,6 +79,7 @@ npx -y ajv-cli@5 validate \
   -r schema/v0.1/password-policy.json \
   -r schema/v0.1/bip39-recovery.json \
   -r schema/v0.1/aad-construction.json \
+  -r schema/v0.1/damm32-table.json \
   -d "vectors/phrase_normalize/v0.1/cases.json" \
   -d "vectors/vault-prefs/v0.1/cases.json" \
   -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
@@ -91,6 +93,7 @@ npx -y ajv-cli@5 validate \
   -d "vectors/password-policy/v0.1/cases.json" \
   -d "vectors/bip39-recovery/v0.1/cases.json" \
   -d "vectors/aad-construction/v0.1/cases.json" \
+  -d "vectors/damm32-table/v0.1/cases.json" \
   --spec=draft2020
 
 # Inspect a single case via jq:
@@ -115,6 +118,7 @@ Each category's vector set is generated by a corresponding `#[ignore]`-gated tes
 | `password-policy` | `cargo test -p protocol --lib emit_password_policy_vectors_for_paste -- --ignored` | `/tmp/myne_password_policy_vectors.json` (full JSON; generator in `protocol/src/password_policy.rs`) |
 | `bip39-recovery` | `cargo test -p protocol --lib emit_bip39_recovery_vectors_for_paste -- --ignored` | `/tmp/myne_bip39_recovery_vectors.json` (full JSON; **~9 s runtime**; generator in `protocol/src/kdf.rs`, asserts all variants derive the same key) |
 | `aad-construction` | `cargo test -p protocol --lib emit_aad_construction_vectors_for_paste -- --ignored` | `/tmp/myne_aad_construction_vectors.json` (full JSON; generator in `protocol/src/aead.rs`) |
+| `damm32-table` | `cargo test -p protocol --lib emit_damm32_table_vectors_for_paste -- --ignored` | `/tmp/myne_damm32_table_vectors.json` (full JSON; generator in `protocol/src/account_number.rs`, cross-checks the table vs an independent srobo/damm32 transcription at mint) |
 
 `phrase_normalize` vectors are hand-curated against the protocol §7.4 pipeline; no generator. The newer (Lane D) generators all emit ready-to-copy JSON; the two oldest (`vault-prefs`, `vault_meta_rewrite`) still emit paste-format text — both patterns coexist.
 

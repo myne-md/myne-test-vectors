@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/damm32-table.json",
+  "title": "damm32-table — case shape (v0.1)",
+  "description": "Pins the frozen Damm-32 order-32 quasigroup table (account-number.md §4.2) for cross-implementation byte-identity, plus running-checksum orientation cases. The table is derived over GF(2⁵) ≅ GF(2)[x]/(x⁵+x²+1) with the operation x∗y = α·(x⊕y) (α the field element 2; reduction bitmask 0b100101 = 37) over Crockford-base32 indices. The literal table is the normative artifact; the construction is informative. Two case kinds: 'table' (the full 1024-byte table as row-major hex, table[interim][symbol]), 'checksum' (running-checksum over a sequence of entropy indices, pinning direction/orientation). Reference: protocol/src/account_number.rs (damm32_table / damm32_step); decisions.md 2026-04-28 polynomial-form freeze + the table-freeze follow-on.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^damm32-table/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'damm32-table/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["table", "checksum"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "table — pin the full 1024-byte quasigroup table",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "expected_table_hex",
+        "informational_polynomial",
+        "informational_alphabet",
+        "informational_provenance"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "table" },
+        "expected_table_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2048}$",
+          "description": "The full 32×32 = 1024-byte table, row-major: byte at offset (32*interim + symbol) is table[interim][symbol]. Each byte is a Crockford-base32 index 0..31. A port derives its own order-32 quasigroup over GF(2⁵) and asserts byte-equality against this value."
+        },
+        "informational_polynomial": {
+          "type": "string",
+          "description": "The GF(2⁵) reduction polynomial, e.g. 'x^5 + x^2 + 1 (0b100101 = 37)'. Informational — the table is the contract."
+        },
+        "informational_alphabet": {
+          "type": "string",
+          "description": "The Crockford-base32 alphabet whose positions are the 0..31 indices, e.g. '0123456789ABCDEFGHJKMNPQRSTVWXYZ'. The table is alphabet-independent at the index level; this records which glyph order maps to which index in Myne. Informational."
+        },
+        "informational_provenance": {
+          "type": "string",
+          "description": "Provenance note for the table (e.g. 'matches published srobo/damm32 reference (MIT)'). Provenance/citability only — not an independent-correctness claim. Informational."
+        }
+      }
+    },
+    {
+      "title": "checksum — pin the running-checksum direction/orientation",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_entropy_indices",
+        "expected_check_index"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "checksum" },
+        "input_entropy_indices": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 31 },
+          "description": "Sequence of 0..31 Crockford indices, processed left-to-right from interim 0: interim := table[interim][index]. Pins the running-checksum direction (left fold) and orientation (row = interim, column = symbol)."
+        },
+        "expected_check_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31,
+          "description": "The final interim after folding all input_entropy_indices from 0 — i.e. the Damm-32 check index. A port computes its fold and asserts equality."
+        },
+        "informational_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable note on what the case demonstrates. Informational — runners do not consume it."
+        }
+      }
+    }
+  ]
+}
