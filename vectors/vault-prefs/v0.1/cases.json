@@ -77,9 +77,14 @@
       "expected_plaintext_canonical_utf8_hex": "7b226175746f5f6c6f636b5f7365636f6e6473223a3330302c2264656c696265726174655f666f6c64657273223a5b22417263686976652f323032352f222c2250726f6a656374732f4d796e652f225d2c22656469746f725f6c61796f7574223a7b226c6566745f636f6c6c6170736564223a66616c73652c226c6566745f7769647468223a3331322c2272696768745f636f6c6c6170736564223a747275652c2272696768745f7769647468223a3238387d2c226661766f7269746573223a5b2230313930613030302d303030302d373030302d383030302d303030303030303030303032225d2c226974656d5f6f72646572223a5b2230313930613030302d303030302d373030302d383030302d303030303030303030303032222c2250726f6a656374732f4d796e652f222c2230313930613030302d303030302d373030302d383030302d303030303030303030303031222c22417263686976652f323032352f225d2c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
       "expected_prefs_view": {
         "screen_capture_protection": true,
-        "deliberate_folders": ["Archive/2025/", "Projects/Myne/"],
+        "deliberate_folders": [
+          "Archive/2025/",
+          "Projects/Myne/"
+        ],
         "auto_lock_seconds": 300,
-        "favorites": ["0190a000-0000-7000-8000-000000000002"],
+        "favorites": [
+          "0190a000-0000-7000-8000-000000000002"
+        ],
         "item_order": [
           "0190a000-0000-7000-8000-000000000002",
           "Projects/Myne/",
@@ -116,6 +121,32 @@
       "expected_prefs_view": {
         "screen_capture_protection": true,
         "theme": "dark"
+      }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-daily",
+      "description": "Encode case with the three MYND-191 daily-notes fields set (daily_date_format=YYYY-MM-DD, daily_folder=Daily/, daily_template=<uuid>) + screen_capture_protection=true. Pins the canonical key order daily_date_format < daily_folder < daily_template < screen_capture_protection and the omitted-when-default discipline (a vault without these fields encodes to the shorter encrypt-default blob). Inputs: root_key=0x42x32, account_hash=0x33x16, nonce=0xBBx24.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b226461696c795f646174655f666f726d6174223a22595959592d4d4d2d4444222c226461696c795f666f6c646572223a224461696c792f222c226461696c795f74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303033222c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000000b397680ffe02e6f8815315e6be73032878034fb0c6a48288d8fecd936d3092b905ace43ea129f5c5c41abd2b4565d3270cddda1bcb6bf82c0014a0c9cb07d8fc6020a178a688472ff5adf2b77a1c8e7b4c16f624d693b81d22c68cedb19b245aa8d8a774552c20c4bad6aab2e52204f0c33b9ea32c7a9f2871120b48beaa724187cb1567dbe8dca133726f66ca86c450ff978e4960e29c5609a627035493c774faa4715709e9c84ac140c5c98b969ed3d57dc212"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-daily",
+      "description": "Round-trip with encrypt-daily: the blob decodes back to a PrefsView carrying the three daily-notes fields + screen_capture_protection=true under the same root_key + account_number_hash.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000000b397680ffe02e6f8815315e6be73032878034fb0c6a48288d8fecd936d3092b905ace43ea129f5c5c41abd2b4565d3270cddda1bcb6bf82c0014a0c9cb07d8fc6020a178a688472ff5adf2b77a1c8e7b4c16f624d693b81d22c68cedb19b245aa8d8a774552c20c4bad6aab2e52204f0c33b9ea32c7a9f2871120b48beaa724187cb1567dbe8dca133726f66ca86c450ff978e4960e29c5609a627035493c774faa4715709e9c84ac140c5c98b969ed3d57dc212",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b226461696c795f646174655f666f726d6174223a22595959592d4d4d2d4444222c226461696c795f666f6c646572223a224461696c792f222c226461696c795f74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303033222c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "screen_capture_protection": true,
+        "daily_date_format": "YYYY-MM-DD",
+        "daily_folder": "Daily/",
+        "daily_template": "0190a000-0000-7000-8000-000000000003"
       }
     }
   ]

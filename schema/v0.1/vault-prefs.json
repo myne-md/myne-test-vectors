@@ -4,7 +4,11 @@
   "title": "vault-prefs — case shape (v0.1)",
   "description": "Pins one byte-level case for protocol::encode_prefs_blob_raw + protocol::decode_prefs_blob. Three case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure surface per spec §6.4 + §9.5.5). The Rust reference implementation lives at protocol/src/prefs.rs (main myne repository); spec contract is docs/spec/protocol.md §9.5 + §3.4 + §5.2.",
   "type": "object",
-  "required": ["vector_id", "description", "case_kind"],
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
   "unevaluatedProperties": false,
   "properties": {
     "vector_id": {
@@ -18,7 +22,11 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail"]
+      "enum": [
+        "encrypt",
+        "decrypt_ok",
+        "decrypt_aead_fail"
+      ]
     }
   },
   "oneOf": [
@@ -36,9 +44,15 @@
         "expected_prefs_blob_hex"
       ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "encrypt" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "encrypt"
+        },
         "input_root_key_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$",
@@ -85,9 +99,15 @@
         "expected_prefs_view"
       ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "decrypt_ok" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "decrypt_ok"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})+$"
@@ -107,28 +127,80 @@
         "expected_prefs_view": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["screen_capture_protection"],
+          "required": [
+            "screen_capture_protection"
+          ],
           "properties": {
-            "screen_capture_protection": { "type": "boolean" },
-            "deliberate_folders": { "type": "array", "items": { "type": "string" } },
-            "auto_lock_seconds": { "type": "integer", "minimum": 0 },
-            "favorites": { "type": "array", "items": { "type": "string" } },
-            "item_order": { "type": "array", "items": { "type": "string" } },
+            "screen_capture_protection": {
+              "type": "boolean"
+            },
+            "deliberate_folders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "auto_lock_seconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "favorites": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "item_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "editor_layout": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["left_collapsed", "left_width", "right_collapsed", "right_width"],
+              "required": [
+                "left_collapsed",
+                "left_width",
+                "right_collapsed",
+                "right_width"
+              ],
               "properties": {
-                "left_collapsed": { "type": "boolean" },
-                "left_width": { "type": "integer", "minimum": 0 },
-                "right_collapsed": { "type": "boolean" },
-                "right_width": { "type": "integer", "minimum": 0 }
+                "left_collapsed": {
+                  "type": "boolean"
+                },
+                "left_width": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "right_collapsed": {
+                  "type": "boolean"
+                },
+                "right_width": {
+                  "type": "integer",
+                  "minimum": 0
+                }
               }
             },
             "theme": {
               "type": "string",
-              "enum": ["light", "dark"],
+              "enum": [
+                "light",
+                "dark"
+              ],
               "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); only an explicit light/dark choice emits the key (lexicographically LAST, after screen_capture_protection)."
+            },
+            "daily_date_format": {
+              "type": "string",
+              "description": "MYND-191 daily-notes date-format string (e.g. YYYY-MM-DD). Option<String>; absent ≡ host-applied default YYYY-MM-DD."
+            },
+            "daily_folder": {
+              "type": "string",
+              "description": "MYND-191 daily-notes folder path (canonical trailing-slash). Option<String>; absent ≡ host-applied default Daily/."
+            },
+            "daily_template": {
+              "type": "string",
+              "description": "MYND-191 daily-notes template pointer (UUIDv7). Option<String>; absent ≡ blank daily note."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system). The cases-array shape stays additive — new cases, immutable old ones."
@@ -148,9 +220,15 @@
         "expected_kind"
       ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "decrypt_aead_fail" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "decrypt_aead_fail"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})+$"
