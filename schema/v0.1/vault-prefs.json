@@ -201,6 +201,20 @@
             "daily_template": {
               "type": "string",
               "description": "MYND-191 daily-notes template pointer (UUIDv7). Option<String>; absent ≡ blank daily note."
+            },
+            "folder_icons": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "MYND-185 per-folder custom sidebar icons. BTreeMap<String, String> — canonical trailing-slash folder path → icon name. Omitted-when-empty; members emitted in lexicographic key order. Canonical key 'f' — after favorites, before item_colors."
+            },
+            "item_colors": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "MYND-184 per-item color labels. BTreeMap<String, String> — a heterogeneous note-UUID-or-folder-path key (discriminated by the trailing /) → color-slot name. Omitted-when-empty; members emitted in lexicographic key order. Canonical key 'i' — after folder_icons, before item_order."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system). The cases-array shape stays additive — new cases, immutable old ones."
