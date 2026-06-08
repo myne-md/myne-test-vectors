@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/attachment-blob.json",
+  "title": "attachment-blob — case shape (v0.1)",
+  "description": "Pins one byte-level case for the MYA1 attachment blob. Reference impl: protocol/src/attachment_blob.rs (main myne repository); spec contract: docs/spec/protocol.md §9.9 + §5.2. Five case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per §6.4), 'aad_construction' (the two attachment AAD builders' canonical bytes), 'id_determinism' (compute_attachment_id content-addressed id mapping). Key lineage: itemsKey -> attachment_key -> file bytes; attachment_id bound into both AADs, content_type bound into AAD_encrypt_attachment.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^attachment-blob/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier 'attachment-blob/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction", "id_determinism"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's MYA1 byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_items_key_hex", "input_items_key_id_hex", "input_attachment_id_hex",
+        "input_content_type_utf8_hex", "input_attachment_key_hex",
+        "input_attachment_key_nonce_hex", "input_content_nonce_hex",
+        "input_file_plaintext_hex", "expected_attachment_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte vault itemsKey (hex)." },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$", "description": "16-byte items_key_id (UUIDv7) (hex)." },
+        "input_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte attachment_id (hex). The on-disk filename; bound into both AADs but not in the blob bytes." },
+        "input_content_type_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "content_type MIME bytes (hex), bound into AAD_encrypt_attachment." },
+        "input_attachment_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte per-attachment random key (hex)." },
+        "input_attachment_key_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$", "description": "24-byte nonce wrapping attachment_key under itemsKey (hex)." },
+        "input_content_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$", "description": "24-byte nonce encrypting the file under attachment_key (hex)." },
+        "input_file_plaintext_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "File plaintext bytes (hex)." },
+        "expected_attachment_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$", "description": "Full MYA1 blob output (140-byte fixed prefix + ciphertext + 32-byte CTX tag), hex." }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_attachment_blob_hex", "input_attachment_id_hex", "input_content_type_utf8_hex",
+        "input_items_key_hex", "input_items_key_id_hex", "expected_file_plaintext_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_attachment_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_content_type_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_file_plaintext_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_attachment_blob_hex", "input_attachment_id_hex", "input_content_type_utf8_hex",
+        "input_items_key_hex", "input_items_key_id_hex", "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_attachment_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_content_type_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": { "const": "aead_fail", "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust: AttachmentBlobError::CannotDecrypt)." }
+      }
+    },
+    {
+      "title": "aad_construction — pin an attachment AAD builder's canonical bytes",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_aad_builder", "input_items_key_id_hex", "input_attachment_id_hex", "expected_aad_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "aad_construction" },
+        "input_aad_builder": { "type": "string", "enum": ["aad_wrap_attachment_key", "aad_encrypt_attachment"] },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_content_type_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "Present only for aad_encrypt_attachment (bound length-prefixed)." },
+        "expected_aad_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" }
+      }
+    },
+    {
+      "title": "id_determinism — pin compute_attachment_id mapping",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_root_key_hex", "input_file_plaintext_hex", "expected_attachment_id_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "id_determinism" },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte root_key (hex). The id HMAC key is DeriveSubkey(root_key,'attachments-id-hmac')." },
+        "input_file_plaintext_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "informational_id_hmac_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte derived HMAC key (hex). Informational — verified implicitly via expected_attachment_id_hex." },
+        "expected_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte content-addressed id = HMAC-SHA-256(id_hmac_key, file_plaintext)." }
+      }
+    }
+  ]
+}

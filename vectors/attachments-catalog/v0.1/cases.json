@@ -1,0 +1,64 @@
+{
+  "schema": "attachments-catalog",
+  "protocol_version": "v0.1",
+  "spec_section": "protocol.md §9.10 + §5.2 + §3.4",
+  "description": "Pins protocol::encode_attachments_catalog_raw + decode_attachments_catalog (MYC1) + aad_attachments_catalog. Inner plaintext is canonical JSON: object mapping lowercase-hex attachment-id -> {content_type,created_at,filename,size} with keys in lexicographic order; empty catalog = {}. KEK = DeriveSubkey(root,'attachments-catalog-key'). Reference impl: protocol/src/attachments_catalog.rs.",
+  "cases": [
+    {
+      "vector_id": "attachments-catalog/v0.1/encrypt-empty",
+      "description": "Empty catalog encodes inner plaintext {} then a MYC1 blob.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b7d",
+      "input_catalog_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_catalog_key_hex": "7166331f75468f64efbd7989b270412089ded4667519066ce8c34bdf730aff0b",
+      "expected_catalog_blob_hex": "4d59433101007777777777777777777777777777777777777777777777770000002256c611e89c558b453efc8159c8eeb21062871483f466ff98ea90ea7adef14e8e083f"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/encrypt-populated",
+      "description": "Two-entry catalog; pins canonical-JSON key ordering (id keys sorted; per-entry content_type<created_at<filename<size) and full MYC1 byte output.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c2273697a65223a31323334357d2c2262623232223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303530302c2266696c656e616d65223a22646f632e706466222c2273697a65223a39383736357d7d",
+      "input_catalog_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_catalog_key_hex": "7166331f75468f64efbd7989b270412089ded4667519066ce8c34bdf730aff0b",
+      "expected_catalog_blob_hex": "4d5943310100777777777777777777777777777777777777777777777777000000e5569951b0b3dcc7aa49e5e901149532a6d84f7925096e7b9a79d4596d81125379e96451288c7f13f8b5195faa60c71bdbcd471bee224b517b080cdb5ee473232d0222a5006542506ac0568e5ea7f429fa6b27545299d438ff9aefb3bbb0367442da8bcbdbbc9cd1cac7743eeb6f2f8a66e50885bace34d41a04c13db7128962fc9b8eccb0e601d3e0da9eb29705bd9a92d71604a39a96a69c5da600bf8eb78a5c46ce4731f1f31755ceb359ca2a975c8977f0cbdbbbf862d31652b8e04882be3b0a10a2d6eb29b725bb0df98837ae9908f9e30f01d7f567a15a1292d21cc411069df79f5283"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-ok",
+      "description": "Decode the populated MYC1 blob back to canonical-JSON plaintext.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5943310100777777777777777777777777777777777777777777777777000000e5569951b0b3dcc7aa49e5e901149532a6d84f7925096e7b9a79d4596d81125379e96451288c7f13f8b5195faa60c71bdbcd471bee224b517b080cdb5ee473232d0222a5006542506ac0568e5ea7f429fa6b27545299d438ff9aefb3bbb0367442da8bcbdbbc9cd1cac7743eeb6f2f8a66e50885bace34d41a04c13db7128962fc9b8eccb0e601d3e0da9eb29705bd9a92d71604a39a96a69c5da600bf8eb78a5c46ce4731f1f31755ceb359ca2a975c8977f0cbdbbbf862d31652b8e04882be3b0a10a2d6eb29b725bb0df98837ae9908f9e30f01d7f567a15a1292d21cc411069df79f5283",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c2273697a65223a31323334357d2c2262623232223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303530302c2266696c656e616d65223a22646f632e706466222c2273697a65223a39383736357d7d"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-fail-tamper",
+      "description": "Tampered CTX tag byte → non-distinguishing AEAD failure; under read_or_empty semantics the caller falls back to {}.",
+      "case_kind": "decrypt_aead_fail",
+      "input_blob_hex": "4d5943310100777777777777777777777777777777777777777777777777000000e5569951b0b3dcc7aa49e5e901149532a6d84f7925096e7b9a79d4596d81125379e96451288c7f13f8b5195faa60c71bdbcd471bee224b517b080cdb5ee473232d0222a5006542506ac0568e5ea7f429fa6b27545299d438ff9aefb3bbb0367442da8bcbdbbc9cd1cac7743eeb6f2f8a66e50885bace34d41a04c13db7128962fc9b8eccb0e601d3e0da9eb29705bd9a92d71604a39a96a69c5da600bf8eb78a5c46ce4731f1f31755ceb359ca2a975c8977f0cbdbbbf862d31652b8e04882be3b0a10a2d6eb29b725bb0df98837ae9908f9e30f01d7f567a15a1292d21cc411069df79f527c",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-fail-cross-vault",
+      "description": "Valid blob, wrong account_number_hash (cross-vault AAD bind) → non-distinguishing AEAD failure.",
+      "case_kind": "decrypt_aead_fail",
+      "input_blob_hex": "4d5943310100777777777777777777777777777777777777777777777777000000e5569951b0b3dcc7aa49e5e901149532a6d84f7925096e7b9a79d4596d81125379e96451288c7f13f8b5195faa60c71bdbcd471bee224b517b080cdb5ee473232d0222a5006542506ac0568e5ea7f429fa6b27545299d438ff9aefb3bbb0367442da8bcbdbbc9cd1cac7743eeb6f2f8a66e50885bace34d41a04c13db7128962fc9b8eccb0e601d3e0da9eb29705bd9a92d71604a39a96a69c5da600bf8eb78a5c46ce4731f1f31755ceb359ca2a975c8977f0cbdbbbf862d31652b8e04882be3b0a10a2d6eb29b725bb0df98837ae9908f9e30f01d7f567a15a1292d21cc411069df79f5283",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "34343434343434343434343434343434",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/aad-construction",
+      "description": "AAD_attachments_catalog canonical bytes: prefix || 0x01 || u16_be(19)||'attachments-catalog' || account_number_hash(16). 48 bytes total.",
+      "case_kind": "aad_construction",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_aad_hex": "6d796e652e76302e317c0100136174746163686d656e74732d636174616c6f6733333333333333333333333333333333"
+    }
+  ]
+}

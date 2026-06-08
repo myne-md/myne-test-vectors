@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/attachments-catalog.json",
+  "title": "attachments-catalog — case shape (v0.1)",
+  "description": "Pins one byte-level case for the MYC1 attachments catalog (vault.attachments). Reference impl: protocol/src/attachments_catalog.rs (main myne repository); spec contract: docs/spec/protocol.md §9.10 + §5.2 + §3.4. Four case kinds: 'encrypt' (encoder byte output over canonical JSON, incl. empty {}), 'decrypt_ok' (round-trip), 'decrypt_aead_fail' (non-distinguishing AEAD failure per §6.4 / §9.10.4; read_or_empty falls to {} on these), 'aad_construction' (aad_attachments_catalog canonical bytes). KEK = DeriveSubkey(root_key,'attachments-catalog-key'). Inner plaintext maps lowercase-hex attachment-id -> {content_type,created_at,filename,size} with keys lexicographically sorted.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^attachments-catalog/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier 'attachments-catalog/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's MYC1 byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_root_key_hex", "input_account_number_hash_hex",
+        "input_plaintext_canonical_utf8_hex", "input_catalog_nonce_hex",
+        "expected_catalog_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte root_key (hex). The encoder derives the catalog KEK via DeriveSubkey(root_key, AttachmentsCatalogKey)." },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$", "description": "16-byte account_number_hash (hex), bound into the 48-byte AAD." },
+        "input_plaintext_canonical_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "Canonical-JSON inner plaintext bytes (hex). Empty catalog = {} = 7b7d." },
+        "input_catalog_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$", "description": "24-byte nonce (hex)." },
+        "informational_catalog_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte derived KEK (hex). Informational — verified implicitly via expected_catalog_blob_hex." },
+        "expected_catalog_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$", "description": "Full encoder output (34-byte header + ciphertext + 32-byte CTX tag), hex." }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex",
+        "expected_plaintext_canonical_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_plaintext_canonical_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex", "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": { "const": "aead_fail", "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust: CatalogBlobError::CannotDecrypt); read_or_empty collapses it to the empty catalog {}." }
+      }
+    },
+    {
+      "title": "aad_construction — pin aad_attachments_catalog canonical bytes",
+      "additionalProperties": false,
+      "required": [
+        "vector_id", "description", "case_kind",
+        "input_account_number_hash_hex", "expected_aad_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "aad_construction" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_aad_hex": { "type": "string", "pattern": "^[0-9a-f]{96}$", "description": "48-byte AAD: prefix(10) || 0x01 || u16_be(19)||'attachments-catalog' || account_number_hash(16)." }
+      }
+    }
+  ]
+}

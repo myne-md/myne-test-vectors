@@ -6,7 +6,7 @@ For the protocol specification, see [`docs/spec/protocol.md`](https://github.com
 
 ## Status
 
-**Phase 1, thirteen v0.1 categories landed.** The original nine planned categories plus `vault-search` (the `MYS1` / `vault.search` codec, MYND-29), `password-policy` (the `validate_min_length` master-password floor), `bip39-recovery` (the end-to-end recovery composition), and `aad-construction` (per-call-site AAD framing decomposition). The last three closed the remaining implementation-vs-vectors gaps — surfaces implemented in the protocol crate but unpinned by cross-impl vectors. Each landed category has a JSON-Schema-validated `cases.json` plus a domain-semantic `schema.md`. **No categories remain planned.** The canonical machine-readable contract lives at [`schema/v0.1.json`](schema/v0.1.json) and dispatches per-category sub-schemas under [`schema/v0.1/`](schema/v0.1/).
+**Phase 1, sixteen v0.1 categories landed.** The original nine planned categories plus `vault-search` (the `MYS1` / `vault.search` codec, MYND-29), `password-policy` (the `validate_min_length` master-password floor), `bip39-recovery` (the end-to-end recovery composition), and `aad-construction` (per-call-site AAD framing decomposition) — which closed the remaining implementation-vs-vectors gaps — plus `damm32-table` (the frozen Damm-32 quasigroup table + checksum orientation cases, MYND-74) and the attachments pair `attachment-blob` (`MYA1`) + `attachments-catalog` (`MYC1`, MYND-164). Each landed category has a JSON-Schema-validated `cases.json` plus a domain-semantic `schema.md`. **No categories remain planned.** The canonical machine-readable contract lives at [`schema/v0.1.json`](schema/v0.1.json) and dispatches per-category sub-schemas under [`schema/v0.1/`](schema/v0.1/).
 
 ### Landed (v0.1)
 
@@ -73,6 +73,9 @@ npx -y ajv-cli@5 validate \
   -r schema/v0.1/password-policy.json \
   -r schema/v0.1/bip39-recovery.json \
   -r schema/v0.1/aad-construction.json \
+  -r schema/v0.1/damm32-table.json \
+  -r schema/v0.1/attachment-blob.json \
+  -r schema/v0.1/attachments-catalog.json \
   -d "vectors/phrase_normalize/v0.1/cases.json" \
   -d "vectors/vault-prefs/v0.1/cases.json" \
   -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
@@ -86,6 +89,9 @@ npx -y ajv-cli@5 validate \
   -d "vectors/password-policy/v0.1/cases.json" \
   -d "vectors/bip39-recovery/v0.1/cases.json" \
   -d "vectors/aad-construction/v0.1/cases.json" \
+  -d "vectors/damm32-table/v0.1/cases.json" \
+  -d "vectors/attachment-blob/v0.1/cases.json" \
+  -d "vectors/attachments-catalog/v0.1/cases.json" \
   --spec=draft2020
 ```
 
