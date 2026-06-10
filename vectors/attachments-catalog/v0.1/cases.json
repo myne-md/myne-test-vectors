@@ -59,6 +59,16 @@
       "case_kind": "aad_construction",
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "expected_aad_hex": "6d796e652e76302e317c0100136174746163686d656e74732d636174616c6f6733333333333333333333333333333333"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-unknown-field-tolerated",
+      "description": "Forward-compat (§9.10.2): the sealed plaintext carries an unknown additive per-entry field (future_flag, in sorted position filename<future_flag<size); decoders must ignore it and recover the known fields. expected_plaintext_canonical_utf8_hex is the canonical re-encode of the decoded catalog (without the unknown field), NOT the sealed bytes; informational_sealed_plaintext_utf8_hex carries the sealed plaintext verbatim.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d594331010088888888888888888888888888888888888888888888888800000094e5cbb5638dffff6d0f2b436f3c8ce33ec84b3349c6ad8d693856cc17f714108c52ab075058a6c0399f3d471e476951c49125ab6f0c491cbb7f08dbb2f888d34b06ea965855a265759d433ff333735914f6904393974ee6b3dc4a1a40fb891547f2b1c90d5be8ba11e2b6a4998e01b470effc661482da934b81fd76853421020b99e89ef82717062601b71374611b5ee7f93e29df",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "informational_sealed_plaintext_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c226675747572655f666c6167223a747275652c2273697a65223a31323334357d7d",
+      "expected_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c2273697a65223a31323334357d7d"
     }
   ]
 }

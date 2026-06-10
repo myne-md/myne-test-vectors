@@ -54,7 +54,8 @@
         "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
         "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "expected_plaintext_canonical_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" }
+        "expected_plaintext_canonical_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "The canonical-JSON re-encode of the decoded catalog (hex). For ordinary round-trip cases this equals the sealed inner plaintext; for forward-compat tolerance cases (sealed plaintext carries unknown additive per-entry fields, spec §9.10.2) it is the canonical form WITHOUT the unknown fields — comparison is structural, the sealed bytes then live in informational_sealed_plaintext_utf8_hex." },
+        "informational_sealed_plaintext_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$", "description": "Optional. The verbatim inner plaintext sealed into input_blob_hex, when it differs from expected_plaintext_canonical_utf8_hex (forward-compat tolerance cases only). Informational — lets reviewers inspect the unknown-field payload without an AEAD implementation." }
       }
     },
     {

@@ -8,16 +8,16 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 
 ## Status
 
-**Phase 1, fourteen v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`, `vault-search`, `password-policy`, `bip39-recovery`, `aad-construction`, `damm32-table`. `password-policy` / `bip39-recovery` / `aad-construction` closed the implementation-vs-vectors gaps for surfaces unpinned by cross-impl vectors; `damm32-table` (MYND-74) pins the frozen Damm-32 quasigroup table itself as cross-impl ground truth alongside the existing `account-number` parse-behavior vectors. **No categories remain planned.** CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories), `agent tooling/features/lane-d-completion/` (the next 5), and `agent tooling/features/damm32-table-freeze/` (`damm32-table`) for the landing plans.
+**Phase 1, sixteen v0.1 categories landed.** The `schema/v0.1.json` root schema + per-category sub-schemas under `schema/v0.1/` are the authoritative machine-readable contract. Landed: `phrase_normalize`, `vault-prefs`, `vault_meta_rewrite`, `hkdf-sha256`, `vault-meta`, `account-number`, `myn-blob`, `ctx-aead`, `argon2id`, `vault-search`, `password-policy`, `bip39-recovery`, `aad-construction`, `damm32-table`, `attachment-blob`, `attachments-catalog`. `password-policy` / `bip39-recovery` / `aad-construction` closed the implementation-vs-vectors gaps for surfaces unpinned by cross-impl vectors; `damm32-table` (MYND-74) pins the frozen Damm-32 quasigroup table itself as cross-impl ground truth alongside the existing `account-number` parse-behavior vectors; the attachments pair `attachment-blob` (`MYA1`) + `attachments-catalog` (`MYC1`) landed with MYND-164. **No categories remain planned.** CI integration is currently deferred — schema validation and byte-level integration run as developer-side steps. See main repo `agent tooling/features/test-vector-schema/` (the canonical schema mechanism + first 4 categories), `agent tooling/features/lane-d-completion/` (the next 5), and `agent tooling/features/damm32-table-freeze/` (`damm32-table`) for the landing plans.
 
 ## Vector categories
 
 ### Landed (v0.1)
 
 - `vectors/phrase_normalize/` — `protocol::phrase::normalize_user_phrase` NFKD + ASCII-lowercase + whitespace pipeline (spec §7.4).
-- `vectors/vault-prefs/` — `MYP1` encrypted-preferences blob codec; encrypt + decrypt + non-distinguishing AEAD-failure case_kinds (spec §9.5 + §6.4).
-- `vectors/vault_meta_rewrite/` — `MYV1` password-side rewrite producing the 345-byte vault.meta (spec §9.3 + recovery-flow §4.2/§4.4).
-- `vectors/hkdf-sha256/` — Subkey derivations through `derive_subkey` exercising every registered `SubkeyRole` (`itemsKey-wrap`, `prefs-key`, `search-index-key`) with `myne.v0.1 ` info-prefix (spec §3.2 + §3.4).
+- `vectors/vault-prefs/` — `MYP1` encrypted-preferences blob codec; encrypt + decrypt + non-distinguishing AEAD-failure case_kinds (spec §9.5 + §6.4). Includes the MYND-205 `label` cases (NFD→NFC normalization + `item_order` < `label` < `screen_capture_protection` canonical ordering) and the §9.5.2 forward-compat unknown-field tolerance case (`decrypt-unknown-field-tolerated`).
+- `vectors/vault_meta_rewrite/` — `MYV1` password-side rewrite producing the 345-byte vault.meta (spec §9.3 + recovery-flow §4.2/§4.4). 3 cases: fast-KDF canonical + unicode-password (UTF-8 bytes fed verbatim to Argon2id, no normalization on this path) + `canonical-kdf-params` (existing-meta params are USED by the derivation, not just copied — **~3 s + 256 MiB** per runner execution for that case).
+- `vectors/hkdf-sha256/` — Subkey derivations through `derive_subkey` exercising every registered `SubkeyRole` (`itemsKey-wrap`, `prefs-key`, `search-index-key`, `attachments-catalog-key`, `attachments-id-hmac`) with `myne.v0.1 ` info-prefix (spec §3.2 + §3.4). 16 cases; the alpha-root pairs carry `informational_info_utf8_hex` per role.
 - `vectors/vault-meta/` — `serialize_vault_meta` + `parse_vault_meta` create-time MYV1 encoder/decoder pair; round-trip + structural-parse-reject (magic / reserved tamper) (spec §9.3).
 - `vectors/account-number/` — `parse_account_number` Crockford-base32 + Damm-32 + liberal-parsing normalization; parse permutations + strict-reject + Damm-32 substitution/transposition catches (spec §5 + decisions.md 2026-04-28 polynomial freeze).
 - `vectors/myn-blob/` — `encode_new_note_blob_raw` + `encode_update_blob_raw` + `decode_note` MY01 per-note blob. 9 cases: 3 encrypt (10 B / 1 KB / 100 KB) + 3 `encrypt_update` (§6.3 note-update: same-size/grow/shrink, each pinning the verbatim 112-byte `header_prefix` splice — `enc_item_key` never re-wraps, §3.3) + 2 `decrypt_ok` (round-trip + post-update) + 1 ciphertext-tamper reject (spec §9.2 + §6.3 + §6.4); `content_type` hardcoded `text/markdown`.
@@ -28,6 +28,8 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 - `vectors/bip39-recovery/` — end-to-end recovery composition `normalize_user_phrase` (§7.4) → `derive_recovery_wrap_key_from_normalized` (§3.1): raw 24-word phrase NFKD-normalized then fed **directly** to Argon2id (NOT BIP-39's PBKDF2 step). 3 cases type the canonical all-zero phrase three ways (canonical / mixed-case+whitespace / NFKD full-width+exotic-space); all derive the **identical** wrap key, pinning NFKD-before-Argon2id. **~3s/case, default-on** like `argon2id`.
 - `vectors/aad-construction/` — per-call-site AAD framing decomposition for all 7 pub `aad_*` builders. Pins the full AAD bytes (== `ctx-aead`'s `aad_canonical_bytes` pins) **plus** the segment breakdown (`aad_prefix` / `protocol_version` / `role_length_be16` / `role_label` / bound params) with offsets — a decomposition layer atop `ctx-aead`, not a duplicate. 7 cases (one per builder); harness asserts full builder coverage.
 - `vectors/damm32-table/` — the frozen Damm-32 order-32 quasigroup table (`account-number.md` §4.2) as cross-impl ground truth (MYND-74). 4 cases via a 2-way `case_kind`: 1 `table` (the full 1024-byte row-major table as hex — `table[interim][symbol]`, GF(2⁵) with x∗y=α·(x⊕y), poly `0b100101=37`, Crockford index order) + 3 `checksum` (left-fold-from-0 orientation: single-step `[1]→2`, baseline `0..18→26`, all-high `31×19`). Reference: `protocol::damm32_table()` / `damm32_step`. Complements `account-number` (which pins `parse_account_number` behavior); this pins the table + raw index checksum beneath it.
+- `vectors/attachment-blob/` — `MYA1` per-attachment blob codec (MYND-164, spec §9.9): `encode_attachment_blob_raw` + `decode_attachment_blob` + `compute_attachment_id` + both attachment AAD builders. 9 cases via a 5-way `case_kind` (`encrypt`, `decrypt_ok`, `decrypt_aead_fail`, `aad_construction`, `id_determinism`). Key lineage itemsKey → attachment_key → file bytes (mirrors `myn-blob`); content-addressed ids via HMAC-SHA-256 keyed by `DeriveSubkey(root, 'attachments-id-hmac')`.
+- `vectors/attachments-catalog/` — `MYC1` `vault.attachments` catalog codec (MYND-164, spec §9.10): `encode_attachments_catalog_raw` + `decode_attachments_catalog` + `aad_attachments_catalog`. 7 cases via a 4-way `case_kind` (`encrypt` incl. empty `{}`, `decrypt_ok` incl. the §9.10.2 forward-compat unknown-field tolerance case, `decrypt_aead_fail`, `aad_construction`). KEK = `DeriveSubkey(root, 'attachments-catalog-key')`; canonical-JSON inner plaintext (sorted id keys, fixed per-entry key order, NFC strings).
 
 ### Planned
 
@@ -80,6 +82,8 @@ npx -y ajv-cli@5 validate \
   -r schema/v0.1/bip39-recovery.json \
   -r schema/v0.1/aad-construction.json \
   -r schema/v0.1/damm32-table.json \
+  -r schema/v0.1/attachment-blob.json \
+  -r schema/v0.1/attachments-catalog.json \
   -d "vectors/phrase_normalize/v0.1/cases.json" \
   -d "vectors/vault-prefs/v0.1/cases.json" \
   -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
@@ -94,6 +98,8 @@ npx -y ajv-cli@5 validate \
   -d "vectors/bip39-recovery/v0.1/cases.json" \
   -d "vectors/aad-construction/v0.1/cases.json" \
   -d "vectors/damm32-table/v0.1/cases.json" \
+  -d "vectors/attachment-blob/v0.1/cases.json" \
+  -d "vectors/attachments-catalog/v0.1/cases.json" \
   --spec=draft2020
 
 # Inspect a single case via jq:
@@ -107,7 +113,8 @@ Each category's vector set is generated by a corresponding `#[ignore]`-gated tes
 | Category | Generator | Output |
 |---|---|---|
 | `vault-prefs` | `cargo test -p protocol --lib emit_prefs_vectors_for_paste -- --ignored` | `/tmp/myne_vault_prefs_vectors.txt` (paste-format) |
-| `vault_meta_rewrite` | `cargo test -p protocol --lib emit_vector_hex_for_paste -- --ignored` | `/tmp/myne_vault_meta_rewrite_vector.txt` (paste-format) |
+| `vault-prefs` (label + tolerance cases) | `cargo test -p protocol --lib emit_label_and_tolerance_prefs_vectors -- --ignored` | `/tmp/myne_vault_prefs_label_vectors.txt` (paste-format; MYND-205 label pair + §9.5.2 unknown-field tolerance case) |
+| `vault_meta_rewrite` | `cargo test -p protocol --lib emit_vector_hex_for_paste -- --ignored` | `/tmp/myne_vault_meta_rewrite_vector.txt` (paste-format; 3 blocks, **~6 s** — two canonical Argon2id derivations for the `canonical-kdf-params` block + its self-validation) |
 | `hkdf-sha256` | `cargo test -p protocol --lib emit_subkey_vectors_for_paste -- --ignored` | `/tmp/myne_hkdf_sha256_vectors.json` (full JSON, copy verbatim) |
 | `vault-meta` | `cargo test -p protocol --lib emit_vault_meta_vectors_for_paste -- --ignored` | `/tmp/myne_vault_meta_vectors.json` (full JSON) |
 | `account-number` | `cargo test -p protocol --lib emit_account_number_vectors_for_paste -- --ignored` | `/tmp/myne_account_number_vectors.json` (full JSON) |

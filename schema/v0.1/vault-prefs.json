@@ -122,7 +122,13 @@
         },
         "expected_plaintext_canonical_utf8_hex": {
           "type": "string",
-          "pattern": "^([0-9a-f]{2})+$"
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The canonical-JSON re-encode of the decoded PrefsView (hex). For ordinary round-trip cases this equals the sealed inner plaintext; for forward-compat tolerance cases (sealed plaintext carries unknown additive fields, spec §9.5.2) it is the canonical form WITHOUT the unknown fields — the sealed bytes then live in informational_sealed_plaintext_utf8_hex."
+        },
+        "informational_sealed_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Optional. The verbatim inner plaintext that was sealed into input_blob_hex, when it differs from expected_plaintext_canonical_utf8_hex (forward-compat tolerance cases only). Informational — runners decrypt the blob; this field lets reviewers inspect the unknown-field payload without an AEAD implementation."
         },
         "expected_prefs_view": {
           "type": "object",
@@ -215,9 +221,13 @@
                 "type": "string"
               },
               "description": "MYND-184 per-item color labels. BTreeMap<String, String> — a heterogeneous note-UUID-or-folder-path key (discriminated by the trailing /) → color-slot name. Omitted-when-empty; members emitted in lexicographic key order. Canonical key 'i' — after folder_icons, before item_order."
+            },
+            "label": {
+              "type": "string",
+              "description": "MYND-205 per-vault display name (the in-app vault switcher label). Option<String>; absent ≡ unlabelled (client shows a neutral 'Vault N' fallback). Encrypted-only — lives solely inside vault.prefs. NFC-normalized on encode. Canonical key 'l' — after item_order, before screen_capture_protection."
             }
           },
-          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system). The cases-array shape stays additive — new cases, immutable old ones."
+          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones."
         }
       }
     },

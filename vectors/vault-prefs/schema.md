@@ -41,7 +41,7 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 Three case kinds carry different field shapes:
 
 - **`encrypt`** — pins the encoder's byte output. Inputs: `input_root_key_hex` (32 B), `input_account_number_hash_hex` (16 B), `input_plaintext_canonical_utf8_hex`, `input_prefs_nonce_hex` (24 B). Optional `informational_prefs_key_hex` carries the pre-computed HKDF output for reviewer convenience. Output: `expected_prefs_blob_hex` (the `MYP1` blob = 34-byte header + ciphertext + 32-byte CTX tag; e.g. 100 bytes for the single-field default, larger for the fully-populated case).
-- **`decrypt_ok`** — pins the decoder's successful round-trip. Inputs: `input_blob_hex` + correct `input_root_key_hex` + correct `input_account_number_hash_hex`. Outputs: `expected_plaintext_canonical_utf8_hex` (raw bytes) and `expected_prefs_view` (the parsed `PrefsView` object — implementations parse the recovered JSON and assert structural equality).
+- **`decrypt_ok`** — pins the decoder's successful round-trip. Inputs: `input_blob_hex` + correct `input_root_key_hex` + correct `input_account_number_hash_hex`. Outputs: `expected_plaintext_canonical_utf8_hex` (the canonical re-encode of the decoded view) and `expected_prefs_view` (the parsed `PrefsView` object — implementations parse the recovered JSON and assert structural equality). For ordinary round-trips the canonical re-encode equals the sealed plaintext byte-for-byte; for the forward-compat tolerance case (`decrypt-unknown-field-tolerated`, spec § 9.5.2) the sealed plaintext carries an unknown additive field (carried verbatim in the optional `informational_sealed_plaintext_utf8_hex`) that decoders MUST ignore — there the comparison is against the re-encode WITHOUT the unknown field.
 - **`decrypt_aead_fail`** — pins the non-distinguishing failure surface. Inputs: `input_blob_hex` + (intentionally wrong or tampered) `input_root_key_hex` + `input_account_number_hash_hex`. Output: `expected_kind: "aead_fail"`. The decoder MUST collapse cross-vault, wrong-AAD, ciphertext-tamper, and CTX-tamper to a single indistinguishable failure (spec § 6.4 + § 9.5.5).
 
 ## How to consume
@@ -49,7 +49,7 @@ Three case kinds carry different field shapes:
 A port runs each case based on `case_kind`:
 
 - **`encrypt`**: decode every `input_*_hex`, build a `PrefsView` from the implied plaintext shape, invoke the port's `encode_prefs_blob_raw` equivalent with the supplied nonce, hex-encode the output, compare byte-equal to `expected_prefs_blob_hex`. Any non-equal result is a stop-the-world bug (per repo `README.md` "Cross-implementation discipline").
-- **`decrypt_ok`**: decode `input_blob_hex` + key + account hash, invoke the port's `decode_prefs_blob` equivalent, hex-encode the recovered plaintext, compare to `expected_plaintext_canonical_utf8_hex`, AND parse the canonical JSON and compare to `expected_prefs_view`.
+- **`decrypt_ok`**: decode `input_blob_hex` + key + account hash, invoke the port's `decode_prefs_blob` equivalent, parse the recovered JSON tolerantly (unknown additive fields ignored per § 9.5.2), compare the parsed view to `expected_prefs_view`, AND canonical-re-encode the parsed view and compare byte-equal to `expected_plaintext_canonical_utf8_hex`. (Comparing the raw recovered plaintext directly works for ordinary round-trips but NOT for the tolerance case — compare the re-encode.)
 - **`decrypt_aead_fail`**: decode inputs, invoke decoder, assert it returns a non-distinguishing AEAD failure (whatever the port's equivalent is — `Err(AeadFailure)`, exception, error code). The port MUST NOT distinguish which failure arm fired beyond "this blob cannot be decrypted with these inputs".
 
 ## Why hex, not JSON-native UTF-8 strings or numeric arrays
@@ -58,11 +58,13 @@ JSON natively supports UTF-8 strings via `\uXXXX` escapes, but escape behavior v
 
 ## Invariants the vectors pin
 
-For the 5 cases in `cases.json`:
+For the 16 cases in `cases.json`:
 
 - **MYP1 magic + version + reserved bytes.** Encoder output `[0..4]` = `MYP1`, `[4]` = `0x01`, `[5]` = `0x00`. Decoder rejects any other value at parse time before reaching AEAD verification.
 - **Header byte layout.** Encoder output `[6..30]` = supplied `prefs_nonce` (24 B); `[30..34]` = `ciphertext_len` as big-endian uint32; `[34..]` = ciphertext + 32-byte CTX tag.
-- **Canonical JSON discipline.** v0.1 plaintext is exactly `{"screen_capture_protection":true}` (34 bytes) or `{"screen_capture_protection":false}` (35 bytes). No whitespace, no key reordering, no trailing characters, no leading BOM.
+- **Canonical JSON discipline.** The baseline v0.1 plaintext is exactly `{"screen_capture_protection":true}` (34 bytes) or `{"screen_capture_protection":false}` (35 bytes); later cases pin the additive v0.1.x fields in lexicographic key order with omit-when-default semantics (see spec § 9.5.2 for the full key registry). No whitespace, no key reordering, no trailing characters, no leading BOM.
+- **MYND-205 `label` field.** The `encrypt-labeled` / `decrypt-labeled` pair pins the per-vault display name: NFC normalization on encode (the generator supplies the label in NFD; the canonical bytes are NFC) and the canonical position `item_order` (i) < `label` (l) < `screen_capture_protection` (s).
+- **Forward-compat tolerance (§ 9.5.2).** `decrypt-unknown-field-tolerated` pins that an unknown additive field in the sealed plaintext is ignored, not rejected — the load-bearing schema-evolution hook for v0.1.x additive fields.
 - **AAD binds account identity, not items_key lineage.** Cross-vault attack (case 4): a blob encoded under vault A's `account_number_hash` MUST fail to decrypt under vault B's `account_number_hash`, even if `prefs_key` somehow matched. The AAD difference is structural defense alongside the key mismatch.
 - **Tamper rejection (case 5).** Flipping a single bit anywhere in the ciphertext / CTX tag MUST cause the decoder to return a non-distinguishing AEAD failure — the CTX commitment construction guarantees this without depending on the underlying Poly1305 tag's malleability properties.
 - **Non-distinguishing failure surface (cases 4 + 5).** A port's decoder MUST emit identical observable behavior for cross-vault AND tampered cases — both are "AEAD failure"; implementations MUST NOT leak which failure mode triggered.
@@ -75,13 +77,17 @@ If the reference implementation changes (must not happen byte-stably without a m
 cargo test -p protocol --lib emit_prefs_vectors_for_paste -- --ignored
 cat /tmp/myne_vault_prefs_vectors.txt
 # paste hex outputs into cases.json
+
+# MYND-205 label + §9.5.2 tolerance cases (separate per-feature generator):
+cargo test -p protocol --lib emit_label_and_tolerance_prefs_vectors -- --ignored
+cat /tmp/myne_vault_prefs_label_vectors.txt
 ```
 
-The regenerator test lives in `protocol/src/prefs.rs::tests::emit_prefs_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations.
+The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector` and `emit_label_and_tolerance_prefs_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are paste-format generators: **append** the new blocks to `cases.json` by hand; never regenerate-and-replace the whole file.
 
 ## What this does NOT cover
 
 - The full `vault.meta` serialization vectors (`vectors/vault_meta_rewrite/`) — those pin the password-rewrite path; this directory pins only the standalone vault.prefs codec.
 - The Tauri-layer `prefs_read` / `set_screen_capture_protection` IPC commands — those wrap this codec with Slot::Unlocked-gating, account-hash extraction from vault.meta, and atomic disk write. Wrapper-layer behavior is verified by `src-tauri/src/plugins/prefs/commands.rs` integration tests, NOT cross-implementation vectors (the wrapper is Rust/Tauri-specific).
 - The native `screen_capture::apply` side-effect — platform-specific, no cross-implementation contract.
-- Schema evolution within v0.1 (additive optional fields per spec § 9.5.2 forward-compat). When v0.1.x ships a second pref field, this vector set extends with a new case rather than mutating existing entries (immutable `vector_id`s).
+- Exhaustive schema-evolution permutations. The `decrypt-unknown-field-tolerated` case pins the § 9.5.2 unknown-field tolerance principle with one representative future field; each shipped v0.1.x field addition extends this vector set with new cases rather than mutating existing entries (immutable `vector_id`s).

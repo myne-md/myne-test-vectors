@@ -39,13 +39,15 @@ JSON natively supports UTF-8 strings via `\uXXXX` escapes, but escape behavior v
 
 ## Invariants the vectors pin
 
-For the canonical case in `cases.json`:
+For the 3 cases in `cases.json` (fast-KDF canonical + unicode-password + production-canonical KDF params):
 
 - **`account_number_hash` byte-preserved.** Output `[6..22]` equals `existing[6..22]`.
 - **Recovery-side fields byte-preserved (recovery-flow.md § 4.4).** Output `[49..65]` (random_salt_recovery), `[153..177]` (nonce_recovery_wrap), `[177..241]` (enc_root_key_recovery) equal the corresponding `existing` slices.
 - **`items_key_id` + `items_key_nonce` + `enc_items_key` byte-preserved.** Output `[241..345]` equals `existing[241..345]`. The AEAD AAD on `enc_items_key` binds `items_key_id`; binary copy is the only safe path.
 - **Password-side fresh.** Output `[33..49]` equals `fresh_salt`; output `[65..89]` equals `fresh_nonce`. Output `[89..153]` is the new AEAD-sealed `enc_root_key_password` derived from the new inputs.
 - **KDF parameter block matches input.** Output `[22..33]` equals the canonical 11-byte serialization of the KDF params parsed from `input_existing_vault_meta_hex` (per protocol § 4.3) — the helper preserves these from the input meta, not from a separate parameter; the `informational_kdf_params_from_existing` object mirrors the same bytes for reviewer convenience.
+- **KDF params are USED, not just copied (`canonical-kdf-params`).** The existing meta carries the production `DEFAULT_V0_1_KDF_PARAMS` (m_kib=262144, t=3, p=2); the Argon2id derivation MUST run at those params — a port that hardcodes test-grade params produces a different `enc_root_key_password` and fails the vector. **Costs ~3 s + 256 MiB peak per runner execution.**
+- **Password UTF-8 bytes fed verbatim (`unicode-password-fast-kdf`).** The non-ASCII password's UTF-8 bytes go to Argon2id exactly as given — the rewrite path performs NO normalization (`derive_password_wrap_key` takes `password.as_bytes()`).
 - **Magic / version / reserved.** Output `[0..4]` = `MYV1`, `[4]` = `0x01`, `[5]` = `0x00`.
 
 ## Regeneration
@@ -58,7 +60,7 @@ cat /tmp/myne_vault_meta_rewrite_vector.txt
 # paste hex outputs into cases.json
 ```
 
-The regenerator test lives in `protocol/src/vault_meta.rs::tests::emit_vector_hex_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations.
+The regenerator test lives in `protocol/src/vault_meta.rs::tests::emit_vector_hex_for_paste`; it emits all 3 paste-format blocks (~6 s — the `canonical-kdf-params` block runs two canonical Argon2id derivations including its self-validation). It is `#[ignore]`-gated so it never runs in default `cargo test` invocations. **Append** new blocks to `cases.json` by hand; never regenerate-and-replace shipped entries.
 
 ## What this does NOT cover
 

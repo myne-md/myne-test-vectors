@@ -14,12 +14,15 @@ The output is wrapped in `Zeroizing<[u8; 32]>` in the Rust reference so the byte
 
 ## Role registry (spec § 3.4)
 
-v0.1 registers exactly two roles:
+v0.1 registers five roles:
 
-| `input_role` string | Rust variant                | Where it's used |
-|---------------------|-----------------------------|-----------------|
-| `itemsKey-wrap`     | `SubkeyRole::ItemsKeyWrap`  | Wraps the singleton `itemsKey` (spec § 3.3, § 9.3 offset 281) |
-| `prefs-key`         | `SubkeyRole::PrefsKey`      | KEK for the `vault.prefs` blob (spec § 3.4, § 9.5)            |
+| `input_role` string       | Rust variant                          | Where it's used |
+|---------------------------|---------------------------------------|-----------------|
+| `itemsKey-wrap`           | `SubkeyRole::ItemsKeyWrap`            | Wraps the singleton `itemsKey` (spec § 3.3, § 9.3 offset 281) |
+| `prefs-key`               | `SubkeyRole::PrefsKey`                | KEK for the `vault.prefs` blob (spec § 3.4, § 9.5)            |
+| `search-index-key`        | `SubkeyRole::SearchIndexKey`          | KEK for the `vault.search` blob (MYND-29, § 9.6) — distinct from the AAD role `search-index-blob` |
+| `attachments-catalog-key` | `SubkeyRole::AttachmentsCatalogKey`   | KEK for the `vault.attachments` catalog (MYND-164, § 9.10)    |
+| `attachments-id-hmac`     | `SubkeyRole::AttachmentsIdHmac`       | Keys the HMAC-SHA-256 deriving content-addressed attachment-ids (§ 9.9) — NOT a blob KEK; § 9.10.1 domain-separation pair with the catalog KEK |
 
 Future v0.1.x revisions register additional roles by appending to the type-safe `SubkeyRole` enum AND the schema's `input_role` enum in lockstep — additive only; existing variant strings are immutable.
 
@@ -35,11 +38,11 @@ A port runs each case as: decode `input_root_key_hex` (32 bytes), map `input_rol
 
 ## Invariants the vectors pin
 
-For the 10 cases in `cases.json`:
+For the 16 cases in `cases.json`:
 
 - **HKDF prefix is exactly `"myne.v0.1 "`.** Trailing space is load-bearing. Drift here surfaces as a mismatch across every vector.
-- **Role-string registry is exact.** `"itemsKey-wrap"` and `"prefs-key"` only — case-sensitive, no whitespace, no separator. The `informational_info_utf8_hex` field documents the exact 23-byte and 19-byte info-parameter assemblies.
-- **Cross-role independence.** Every root key appears with both roles; the two outputs MUST differ byte-for-byte. Enforced implicitly via the byte-equality of each independent vector.
+- **Role-string registry is exact.** The five registered strings only — case-sensitive, no whitespace, no separator. The `informational_info_utf8_hex` field documents the exact info-parameter assemblies (23 B `itemsKey-wrap`, 19 B `prefs-key`, 26 B `search-index-key`, 33 B `attachments-catalog-key`, 29 B `attachments-id-hmac`, each including the 10-byte prefix).
+- **Cross-role independence.** The all-zero root and the alpha pseudorandom root each appear with multiple roles; the outputs MUST differ byte-for-byte (includes the § 9.10.1 attachments domain-separation pair). Enforced implicitly via the byte-equality of each independent vector.
 - **Determinism.** `derive_subkey` is pure; re-running against the same `(root_key, role)` yields bit-identical output. Enforced implicitly via `cargo test` determinism.
 - **Output length is always 32 bytes.** HKDF-Expand produces 32 bytes regardless of role or root.
 
