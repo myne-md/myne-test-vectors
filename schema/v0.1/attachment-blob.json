@@ -14,7 +14,7 @@
     "description": { "type": "string", "minLength": 1 },
     "case_kind": {
       "type": "string",
-      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction", "id_determinism"]
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction", "id_determinism", "parse_fail"]
     }
   },
   "oneOf": [
@@ -116,6 +116,48 @@
         "input_file_plaintext_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
         "informational_id_hmac_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte derived HMAC key (hex). Informational — verified implicitly via expected_attachment_id_hex." },
         "expected_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte content-addressed id = HMAC-SHA-256(id_hmac_key, file_plaintext)." }
+      }
+    },
+    {
+      "title": "parse_fail — pin a structural reject (non-distinguishing, vault-meta style)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_attachment_blob_hex",
+        "input_attachment_id_hex",
+        "input_content_type_utf8_hex",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "expected_kind",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_attachment_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex, empty allowed): bad magic / protocol_version / reserved byte / enc_attachment_key_len / ciphertext_len bounds / strict-trailing violation. The decoder rejects it before (or instead of) any AEAD verification."
+        },
+        "input_attachment_id_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_content_type_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" },
+        "input_items_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte itemsKey (hex). REAL key, deliberately: header bytes are not AAD-bound, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches."
+        },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": {
+          "const": "parse_fail",
+          "description": "The decoder MUST reject. Rust reference: the single non-distinguishing AttachmentBlobError::CannotDecrypt — identical to the aead_fail surface. Ports MUST NOT distinguish WHICH structural rule fired; the per-case naming documents which check a conforming implementation must perform."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   ]

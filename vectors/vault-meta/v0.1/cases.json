@@ -41,6 +41,38 @@
       "input_blob_hex": "4d5956310101dadadadadadadadadadadadadadadada0100000008000000010113dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdddddddddddddddddddddddddddddddddddddddddddddddddededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
       "expected_kind": "parse_fail",
       "informational_tamper_description": "byte 5 (reserved) 0x00 → 0x01"
+    },
+    {
+      "vector_id": "vault-meta/v0.1/wrong-length-truncated",
+      "description": "Canonical blob from the canonical-roundtrip case truncated to 344 bytes. parse_vault_meta MUST reject with ProtocolError::InvalidVaultMeta — vault.meta is a fixed-width 345-byte record and the length check fires before any field read. Same non-distinguishing variant as every other structural reject.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5956310100dadadadadadadadadadadadadadadada0100000008000000010113dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdddddddddddddddddddddddddddddddddddddddddddddddddededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "expected_kind": "parse_fail",
+      "informational_tamper_description": "final byte dropped (345 → 344 bytes)"
+    },
+    {
+      "vector_id": "vault-meta/v0.1/protocol-version-tamper",
+      "description": "Canonical blob with byte 4 (protocol_version) set to 0x02 instead of 0x01. A v0.1 parser rejects an unknown protocol version before decoding any downstream field — cross-major reads happen only via explicit migration, never via in-place tolerant parsing.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5956310200dadadadadadadadadadadadadadadada0100000008000000010113dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdddddddddddddddddddddddddddddddddddddddddddddddddededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "expected_kind": "parse_fail",
+      "informational_tamper_description": "byte 4 (protocol_version) 0x01 → 0x02"
+    },
+    {
+      "vector_id": "vault-meta/v0.1/kdf-id-tamper",
+      "description": "Canonical blob with byte 22 (kdf_id, first byte of the 11-byte canonical KDF-params block at offset 22..33) set to 0x02. Only Argon2id (0x01) is valid in v0.1; parse_kdf_params rejects inside parse_vault_meta. Pins that a port MUST validate the KDF identity at parse time — accepting an unknown kdf_id yields a vault.meta the client cannot honor.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5956310100dadadadadadadadadadadadadadadada0200000008000000010113dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdddddddddddddddddddddddddddddddddddddddddddddddddededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "expected_kind": "parse_fail",
+      "informational_tamper_description": "byte 22 (kdf_id) 0x01 → 0x02"
+    },
+    {
+      "vector_id": "vault-meta/v0.1/argon2-version-tamper",
+      "description": "Canonical blob with byte 32 (argon2_version, last byte of the canonical KDF-params block) set to 0x10 instead of 0x13. Only Argon2 v1.3 (0x13) is valid in v0.1 — deriving under a different Argon2 version would silently produce a wrong wrap key, so the parse layer rejects up front. Same non-distinguishing InvalidVaultMeta.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5956310100dadadadadadadadadadadadadadadada0100000008000000010110dbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdddddddddddddddddddddddddddddddddddddddddddddddddededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededededfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
+      "expected_kind": "parse_fail",
+      "informational_tamper_description": "byte 32 (argon2_version) 0x13 → 0x10"
     }
   ]
 }

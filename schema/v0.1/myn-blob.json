@@ -18,7 +18,7 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["encrypt", "encrypt_update", "decrypt_ok", "decrypt_aead_fail"]
+      "enum": ["encrypt", "encrypt_update", "decrypt_ok", "decrypt_aead_fail", "parse_fail"]
     }
   },
   "oneOf": [
@@ -162,6 +162,46 @@
         "expected_kind": {
           "const": "aead_fail",
           "description": "Rust reference returns Err(DecryptError::CannotDecrypt) — single non-distinguishing variant per spec §6.4. Ports MUST NOT distinguish wrong-key / wrong-AAD / tampered-ciphertext / tampered-tag beyond a single 'cannot decrypt' outcome at the caller-visible surface."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a structural reject (non-distinguishing, vault-meta style)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_note_uuid_hex",
+        "input_items_key_hex",
+        "input_items_key_id_hex",
+        "expected_kind",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex, empty allowed): bad magic / protocol_version / reserved byte / enc_item_key_len / ciphertext_len bounds / §10.1 strict-trailing violation. The decoder rejects it before (or instead of) any AEAD verification."
+        },
+        "input_note_uuid_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte itemsKey (hex). REAL key, deliberately: the header bytes are not bound into either AAD, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches. With a dummy key the same buggy port would report CannotDecrypt and pass silently."
+        },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": {
+          "const": "parse_fail",
+          "description": "The decoder MUST reject. Rust reference: the single non-distinguishing DecryptError::CannotDecrypt — identical to the aead_fail surface. Ports MUST NOT distinguish WHICH structural rule fired (the reference impl's internal DecryptCause is observability-only and never crosses the IPC boundary); the per-case naming documents which check a conforming implementation must perform, not a distinguishable error."
         },
         "informational_tamper_description": {
           "type": "string",

@@ -69,6 +69,76 @@
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "informational_sealed_plaintext_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c226675747572655f666c6167223a747275652c2273697a65223a31323334357d7d",
       "expected_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a2270686f746f2e706e67222c2273697a65223a31323334357d7d"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-header-too-short",
+      "description": "Only the 4-byte MYC1 magic — no room for the 34-byte header (magic + version + reserved + 24-byte nonce + 4-byte ciphertext_len). Rejected before any field read.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d594331",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "header_too_short",
+      "informational_tamper_description": "blob is the 4 magic bytes only (4 < 34)"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-magic-mismatch",
+      "description": "First byte of the MYC1 magic corrupted to 'X'. Rejected at offset 0 before any decryption — a foreign file, different artifact type, or forward-incompatible MYC5 blob all fail here.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "58594331010099999999999999999999999999999999999999999999999900000022fbc25f7997d1a08587e6c4ee428c60401f3a7fa2e94d36dd71264d5fac1bf34c6702",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "magic_mismatch",
+      "informational_tamper_description": "byte 0 (magic[0]) 'M' → 'X'"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-protocol-version-mismatch",
+      "description": "protocol_version byte (offset 4) set to 0x02 instead of 0x01. A v0.1 decoder rejects an unknown protocol version before decrypting.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d594331020099999999999999999999999999999999999999999999999900000022fbc25f7997d1a08587e6c4ee428c60401f3a7fa2e94d36dd71264d5fac1bf34c6702",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "protocol_version_mismatch",
+      "informational_tamper_description": "byte 4 (protocol_version) 0x01 → 0x02"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-reserved-nonzero",
+      "description": "reserved byte (offset 5) set to 0x01 instead of 0x00. Reserved bytes are flag carriers for future v0.1.x revisions; non-zero is an unconditional parse rejection.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d594331010199999999999999999999999999999999999999999999999900000022fbc25f7997d1a08587e6c4ee428c60401f3a7fa2e94d36dd71264d5fac1bf34c6702",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "reserved_byte_nonzero",
+      "informational_tamper_description": "byte 5 (reserved) 0x00 → 0x01"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-ciphertext-len-overflow",
+      "description": "ciphertext_len field (offset 30..34) set to 0xFFFFFFFF, far above MAX_CATALOG_PLAINTEXT_LEN + 32 (16 MiB + 32). The overflow guard rejects before any slice indexing — a port MUST bound-check ciphertext_len before allocating or indexing (§9.10 DoS-allocation defense).",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5943310100999999999999999999999999999999999999999999999999fffffffffbc25f7997d1a08587e6c4ee428c60401f3a7fa2e94d36dd71264d5fac1bf34c6702",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "ciphertext_len_overflow",
+      "informational_tamper_description": "bytes 30..34 (ciphertext_len) → 0xffffffff"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-ciphertext-truncated",
+      "description": "Valid header advertising ciphertext_len = N, but the blob is one byte shorter than header + N. Rejected before the AEAD stage.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d594331010099999999999999999999999999999999999999999999999900000022fbc25f7997d1a08587e6c4ee428c60401f3a7fa2e94d36dd71264d5fac1bf34c67",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "ciphertext_truncated",
+      "informational_tamper_description": "final byte dropped (blob shorter than header + advertised ciphertext_len)"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/parse-fail-plaintext-parse-failed",
+      "description": "A structurally valid envelope sealed under the REAL catalog_key + AAD whose inner plaintext is 'not a canonical json object'. AEAD verification succeeds — the reject fires at the canonical-JSON parse stage, distinct from CannotDecrypt because the tag check already proved the bytes came from a catalog_key holder. Callers then fall back to the empty catalog per §9.10.4 — but the error surface itself is distinguishable and a port MUST NOT report its AEAD-failure error here.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5943310100aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000003bc3abc69f49e1b281c063e7499adbddd07f1a90b2cb689e702e70077d9c7239b24509a6c8220b72283f54b7433237c1a8ab3244efa4990a35b9f402",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "plaintext_parse_failed",
+      "informational_tamper_description": "validly-sealed non-JSON inner plaintext (nonce 0xaa×24)"
     }
   ]
 }

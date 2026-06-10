@@ -221,6 +221,101 @@
         "screen_capture_protection": true,
         "theme": "dark"
       }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-last-backup-at",
+      "description": "MYND-58 last_backup_at field (vault-backup-restore epic): label + last_backup_at both set so the canonical bytes pin the relative order of the two 'l' keys (label [lab] < last_backup_at [las] < screen_capture_protection) and the bare-decimal u64 epoch-seconds encoding (1765432100, no trailing .0). Same vault-A inputs as the sibling cases (root_key=0x42x32, account_hash=0x33x16); prefs_nonce=0xF1x24, the next free entry in the family's nonce registry.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b226c6162656c223a22576f726b222c226c6173745f6261636b75705f6174223a313736353433323130302c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f10000006de23c08e6ccd64422f22543ed272714d93a3a59394608620a982d3223877960bd831950c1e9c92c9a7f74648c71c2e1e2b2b3bf25d0c025ef3f386c90dba7f4872fc1a25f5e9d59b134dfaf69e2b32b6a72242fa8b75b700b4d4678cc56bdb68c7acb3f20571d29cc206d6d6a96"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-last-backup-at",
+      "description": "Round-trip with encrypt-last-backup-at: the blob decodes back to a PrefsView carrying label='Work' + last_backup_at=1765432100 + screen_capture_protection=true under the same root_key + account_number_hash. Verifies decoders surface the MYND-58 epoch field from its canonical position between label and screen_capture_protection, and that a u64-width epoch parses as a bare decimal integer (floats are FORBIDDEN per spec §9.5.2).",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f10000006de23c08e6ccd64422f22543ed272714d93a3a59394608620a982d3223877960bd831950c1e9c92c9a7f74648c71c2e1e2b2b3bf25d0c025ef3f386c90dba7f4872fc1a25f5e9d59b134dfaf69e2b32b6a72242fa8b75b700b4d4678cc56bdb68c7acb3f20571d29cc206d6d6a96",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b226c6162656c223a22576f726b222c226c6173745f6261636b75705f6174223a313736353433323130302c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "label": "Work",
+        "last_backup_at": 1765432100,
+        "screen_capture_protection": true
+      }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-header-too-short",
+      "description": "Only the 4-byte MYP1 magic — no room for the 34-byte header (magic + version + reserved + 24-byte nonce + 4-byte ciphertext_len). Rejected before any field read.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d595031",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "header_too_short",
+      "informational_tamper_description": "blob is the 4 magic bytes only (4 < 34)"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-magic-mismatch",
+      "description": "First byte of the MYP1 magic corrupted to 'X'. Rejected at offset 0 before any decryption — a foreign file, different artifact type, or forward-incompatible MYP5 blob all fail here.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "585950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f200000042a5b9f42970c24d04b086d811a26bbcf34abc861e5a97d6022a0996d8c4e2274bdf1c341edd46a5cc8cd634e257fe55a85d79d5195a13e032790112b9e11af5cdde8e",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "magic_mismatch",
+      "informational_tamper_description": "byte 0 (magic[0]) 'M' → 'X'"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-protocol-version-mismatch",
+      "description": "protocol_version byte (offset 4) set to 0x02 instead of 0x01. A v0.1 decoder rejects an unknown protocol version before decrypting.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5950310200f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f200000042a5b9f42970c24d04b086d811a26bbcf34abc861e5a97d6022a0996d8c4e2274bdf1c341edd46a5cc8cd634e257fe55a85d79d5195a13e032790112b9e11af5cdde8e",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "protocol_version_mismatch",
+      "informational_tamper_description": "byte 4 (protocol_version) 0x01 → 0x02"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-reserved-nonzero",
+      "description": "reserved byte (offset 5) set to 0x01 instead of 0x00. Spec §9.5.1 makes non-zero an unconditional parse rejection — reserved bytes are flag carriers for future v0.1.x revisions and a v0.1.0 client cannot honor unknown flags.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5950310101f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f200000042a5b9f42970c24d04b086d811a26bbcf34abc861e5a97d6022a0996d8c4e2274bdf1c341edd46a5cc8cd634e257fe55a85d79d5195a13e032790112b9e11af5cdde8e",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "reserved_byte_nonzero",
+      "informational_tamper_description": "byte 5 (reserved) 0x00 → 0x01"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-ciphertext-len-overflow",
+      "description": "ciphertext_len field (offset 30..34) set to 0xFFFFFFFF, far above MAX_PREFS_PLAINTEXT_LEN + 32 (64 KiB + 32). The overflow guard rejects before any slice indexing — a port MUST bound-check ciphertext_len before allocating or indexing (DoS-allocation defense, §9.5.4).",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2ffffffffa5b9f42970c24d04b086d811a26bbcf34abc861e5a97d6022a0996d8c4e2274bdf1c341edd46a5cc8cd634e257fe55a85d79d5195a13e032790112b9e11af5cdde8e",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "ciphertext_len_overflow",
+      "informational_tamper_description": "bytes 30..34 (ciphertext_len) → 0xffffffff"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-ciphertext-truncated",
+      "description": "Valid header advertising ciphertext_len = N, but the blob is one byte shorter than header + N. Rejected before the AEAD stage.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f200000042a5b9f42970c24d04b086d811a26bbcf34abc861e5a97d6022a0996d8c4e2274bdf1c341edd46a5cc8cd634e257fe55a85d79d5195a13e032790112b9e11af5cdde",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "ciphertext_truncated",
+      "informational_tamper_description": "final byte dropped (blob shorter than header + advertised ciphertext_len)"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/parse-fail-plaintext-parse-failed",
+      "description": "A structurally valid envelope sealed under the REAL prefs_key + AAD whose inner plaintext is 'this is not canonical json'. AEAD verification succeeds — the reject fires at the canonical-JSON parse stage. Distinguishable from CannotDecrypt because the tag check already proved the bytes came from a prefs_key holder (corruption past that point is structural, not adversarial). A port that returns its AEAD-failure error here has merged two distinct failure surfaces.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d5950310100f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f30000003a91342b895d4b7b4f27d154219d6dbfc25f14bbfa81c3766ee5cf66bab29c73b00020bdecae9e4056a61143513987e399a5a402b9d9f64f8679b3",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "plaintext_parse_failed",
+      "informational_tamper_description": "validly-sealed non-JSON inner plaintext (nonce 0xf3×24)"
     }
   ]
 }

@@ -17,14 +17,15 @@ Pins the byte mapping of `protocol::encode_new_note_blob_raw` + `protocol::encod
 
 ## JSON shape
 
-The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/myn-blob.json`](../../schema/v0.1/myn-blob.json) (per-case shape with a 4-way `case_kind` discriminator: `encrypt`, `encrypt_update`, `decrypt_ok`, `decrypt_aead_fail`). Run the repository's documented `ajv-cli validate` command (see the root `README.md`) to verify any `cases.json` against the canonical schema. The sub-schema is authoritative — this document covers only the domain-specific semantics.
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/myn-blob.json`](../../schema/v0.1/myn-blob.json) (per-case shape with a 5-way `case_kind` discriminator: `encrypt`, `encrypt_update`, `decrypt_ok`, `decrypt_aead_fail`, `parse_fail`). Run the repository's documented `ajv-cli validate` command (see the root `README.md`) to verify any `cases.json` against the canonical schema. The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
-Four case kinds carry different field shapes:
+Five case kinds carry different field shapes:
 
 - **`encrypt`** — pins the encoder's byte output. Inputs: `items_key`, `items_key_id`, `note_uuid`, `item_key`, `item_key_nonce`, `content_nonce` (each hex), plus `input_plaintext_hex` (variable length). Output: `expected_myn_blob_hex` (full `MY01` blob bytes).
 - **`encrypt_update`** — pins the § 6.3 update encoder. Inputs: `input_source_blob_hex` (the original `MY01` blob) + the decode context (`note_uuid`/`items_key`/`items_key_id`) + `input_new_content_nonce_hex` + `input_new_plaintext_hex`. Output: `expected_myn_blob_hex` (the updated blob) + `informational_header_prefix_preserved: true`. A port decodes the source, then re-encodes content via its `encode_update_blob_raw` equivalent. The 112-byte `header_prefix` (incl. `enc_item_key`) is spliced **verbatim** — only `content_nonce` + `ciphertext` change.
 - **`decrypt_ok`** — pins the decoder's successful round-trip. Inputs: `input_blob_hex` + the correct `note_uuid`/`items_key`/`items_key_id`. Output: `expected_plaintext_hex` (the recovered plaintext bytes).
 - **`decrypt_aead_fail`** — pins the non-distinguishing AEAD-stage failure surface. Inputs: a tampered or wrong-key blob + the supplied note context. Output: `expected_kind: "aead_fail"`. Implementations MUST collapse all rejection causes (wrong key / wrong AAD / tampered ciphertext / tampered tag) to their port's equivalent of `Err(DecryptError::CannotDecrypt)` per spec § 6.4.
+- **`parse_fail`** (MYND-227) — pins the **structural** reject checks (§ 9.2 layout + § 10.1 strict-trailing): header-too-short, magic, protocol_version, reserved byte, `enc_item_key_len` ≠ 64, `ciphertext_len` below-tag / overflow, and a trailing-byte violation. Output: `expected_kind: "parse_fail"` — the SAME non-distinguishing `CannotDecrypt` as the AEAD surface (the separate case_kind documents WHICH checks a port must perform, not a distinguishable error; the reference impl's internal `DecryptCause` never crosses IPC). The cases carry the REAL `items_key` deliberately: header bytes are not AAD-bound, so a port that skips a structural check decodes the tampered blob successfully and returns Ok — which the runner catches.
 
 ## How to consume
 
@@ -34,10 +35,11 @@ A port runs each case based on `case_kind`:
 - **`encrypt_update`**: decode `input_source_blob_hex` + the note context via the port's `decode_note` equivalent to recover the decrypted-note handle, then invoke the port's `encode_update_blob_raw` equivalent with `input_new_content_nonce_hex` + `input_new_plaintext_hex`, hex-encode the output, compare byte-equal to `expected_myn_blob_hex`. Implementations MUST also assert bytes `[0..112]` of the output equal bytes `[0..112]` of the source blob (the `header_prefix` / `enc_item_key`-persistence invariant) — a port that re-wraps `item_key` on update will pass the round-trip but fail this byte check.
 - **`decrypt_ok`**: decode `input_blob_hex` + the note context, invoke the port's `decode_note` equivalent, hex-encode the recovered plaintext, compare byte-equal to `expected_plaintext_hex`. Implementations SHOULD also verify the recovered `items_key_id` + `note_uuid` match the inputs (catches a class of AAD-binding bugs).
 - **`decrypt_aead_fail`**: decode inputs, invoke decoder, assert the port returns its non-distinguishing aead-fail variant. Ports MUST NOT distinguish which arm fired beyond a single 'cannot decrypt' outcome at the caller-visible surface.
+- **`parse_fail`**: decode inputs, invoke decoder, assert the port rejects (its single non-distinguishing variant). The load-bearing assertion is the negative: the decoder MUST NOT return Ok — the AEAD tags in these fixtures still verify, so only the named structural check stands between a tampered blob and a successful decode (sharpest on `parse-fail-trailing-byte`, where a tolerant length check is the only thing that rejects).
 
 ## Invariants the vectors pin
 
-For the 9 cases in `cases.json`:
+For the 18 cases in `cases.json`:
 
 - **`MY01` magic + version + reserved bytes.** Encoder output `[0..4]` = `MY01`, `[4]` = `0x01`, `[5]` = `0x00`. Decoder rejects any other value at parse time before reaching AEAD verification.
 - **Header byte layout (76-byte prefix).** Encoder output `[6..22]` = `items_key_id`, `[22..46]` = `item_key_nonce`, `[46..48]` = wrapped `item_key` length BE-u16 (always 0x0040 = 64 in v0.1), `[48..112]` = wrapped `enc_item_key`, `[112..136]` = `content_nonce`, `[136..140]` = `ciphertext_len` BE-u32.
@@ -58,10 +60,17 @@ cp /tmp/myne_myn_blob_vectors.json vectors/myn-blob/v0.1/cases.json
 
 The regenerator test lives in `protocol/src/blob.rs::tests::emit_myn_blob_vectors_for_paste`. `#[ignore]`-gated. Emits ready-to-copy JSON. Output file is ~425 KB due to the 100-KB plaintext case inlined as a ~205-KB hex string — git-friendly, `jq`-readable.
 
+The MYND-227 structural `parse_fail` family (8 cases + the `decrypt-items-key-id-mismatch` aead-fail case) has its own append generator (the original stays byte-stable — vector_id immutability); the tampers derive from the ~1-KB base blob, not the 100-KB case:
+
+```bash
+cargo test -p protocol --lib emit_myn_blob_parse_fail_vectors -- --ignored
+# splice the JSON array fragment at /tmp/myne_myn_blob_parse_fail_vectors.json into the cases array
+```
+
 ## What this does NOT cover
 
 - **`encode_update` / `encode_new_note`** (the higher-level wrappers that pull randomness internally). The pure deterministic `_raw` path is the cross-implementation contract; the random-source wrappers are Rust/Tauri-specific ergonomics. (`encode_update_blob_raw`, the deterministic § 6.3 update encoder, **is** covered — see the `encrypt_update` cases above.)
-- **AAD construction byte details.** The actual `aad_note_item_key_wrap` + `aad_note_content_encrypt` byte assembly is covered by the future `vectors/aad-construction/` category (not yet a Plane task — placeholder in companion CLAUDE.md). This category's vectors exercise the AAD bytes implicitly (any AAD drift surfaces as a `decode_note` rejection in the round-trip case).
-- **`items_key`-side mismatches.** Cross-vault scenarios (where `items_key` mismatches between encode and decode) are structurally equivalent to the tampering case — both collapse to `CannotDecrypt`. A dedicated cross-vault case could be added in a future expansion if observability needs warrant.
+- **AAD construction byte details.** The actual `aad_note_item_key_wrap` + `aad_note_content_encrypt` byte assembly is covered by the (landed) `vectors/aad-construction/` category. This category's vectors exercise the AAD bytes implicitly (any AAD drift surfaces as a `decode_note` rejection in the round-trip case).
+- **`items_key`-side mismatches.** Cross-vault scenarios (where `items_key` mismatches between encode and decode) are structurally equivalent to the tampering case — both collapse to `CannotDecrypt`. (The `items_key_id` comparison — § 6.4 step 2 — IS now pinned by `decrypt-items-key-id-mismatch`, MYND-227: an intact blob with a mismatched caller id must reject before any AEAD work.)
 - **Content-type variations.** v0.1 has no per-vector content_type parameter; the value is hardcoded `text/markdown`. A future spec revision that introduces content-type negotiation would land vectors here.
-- **`MAX_PLAINTEXT_LEN` cap probe.** The 16 MiB cap is exercised by in-crate unit tests; cross-impl conformance at the cap is high-value but at ~32 MB hex inline cases.json would balloon. Deferred to a future expansion if cross-impl drift is observed at the cap boundary.
+- **`MAX_PLAINTEXT_LEN` cap probe at the encode boundary.** A real ≥16 MiB plaintext would balloon cases.json by ~32 MB of hex and is deliberately not vectored. The cap IS pinned from the read direction (MYND-227): `parse-fail-ciphertext-len-overflow` advertises `0xffffffff` in a normal-sized blob, so a port MUST bound-check `ciphertext_len` before allocating or indexing.

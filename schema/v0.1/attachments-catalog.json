@@ -14,7 +14,7 @@
     "description": { "type": "string", "minLength": 1 },
     "case_kind": {
       "type": "string",
-      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction"]
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "aad_construction", "parse_fail"]
     }
   },
   "oneOf": [
@@ -88,6 +88,53 @@
         "case_kind": { "const": "aad_construction" },
         "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
         "expected_aad_hex": { "type": "string", "pattern": "^[0-9a-f]{96}$", "description": "48-byte AAD: prefix(10) || 0x01 || u16_be(19)||'attachments-catalog' || account_number_hash(16)." }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable structural or inner-plaintext reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_error",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A malformed blob (hex, empty allowed). Six of the seven rejects fire BEFORE the AEAD stage; plaintext_parse_failed fires AFTER a successful AEAD open, on the canonical-JSON parse."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). REAL key, deliberately: header bytes are not AAD-bound, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches. The plaintext_parse_failed case additionally needs the key to get past AEAD."
+        },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "reserved_byte_nonzero",
+            "ciphertext_len_overflow",
+            "ciphertext_truncated",
+            "plaintext_parse_failed"
+          ],
+          "description": "The specific reject the decoder MUST surface (Rust reference: CatalogBlobError::{HeaderTooShort, MagicMismatch, ProtocolVersionMismatch, ReservedByteNonZero, CiphertextLenOverflow, CiphertextTruncated, PlaintextParseFailed}). Intentionally distinguishable for observability — callers then fall back to the empty catalog per §9.10.4."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   ]

@@ -25,7 +25,8 @@
       "enum": [
         "encrypt",
         "decrypt_ok",
-        "decrypt_aead_fail"
+        "decrypt_aead_fail",
+        "parse_fail"
       ]
     }
   },
@@ -225,9 +226,14 @@
             "label": {
               "type": "string",
               "description": "MYND-205 per-vault display name (the in-app vault switcher label). Option<String>; absent ≡ unlabelled (client shows a neutral 'Vault N' fallback). Encrypted-only — lives solely inside vault.prefs. NFC-normalized on encode. Canonical key 'l' — after item_order, before screen_capture_protection."
+            },
+            "last_backup_at": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Unix epoch seconds of the vault's last backup export (MYND-58, vault-backup-restore epic). Absent ≡ never backed up; bare-decimal u64 (floats FORBIDDEN per spec §9.5.2); sorts label < last_backup_at < screen_capture_protection."
             }
           },
-          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones."
+          "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones. / last_backup_at (epoch seconds, absent ≡ never backed up, MYND-58)"
         }
       }
     },
@@ -268,6 +274,62 @@
         "expected_kind": {
           "const": "aead_fail",
           "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: PrefsBlobError::CannotDecrypt). Implementations MUST NOT distinguish cross-vault vs tampered vs wrong-key beyond the single 'cannot decrypt' outcome."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable structural or inner-plaintext reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_error",
+        "informational_tamper_description"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "parse_fail"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A malformed blob (hex, empty allowed). Six of the seven rejects fire BEFORE the AEAD stage (magic / protocol_version / reserved / length checks); plaintext_parse_failed fires AFTER a successful AEAD open, on the canonical-JSON parse."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). REAL key, deliberately: the header bytes are not bound into the AAD, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches. With a dummy key the same buggy port would report an AEAD failure and pass silently. The plaintext_parse_failed case additionally needs the key to get past AEAD at all."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "reserved_byte_nonzero",
+            "ciphertext_len_overflow",
+            "ciphertext_truncated",
+            "plaintext_parse_failed"
+          ],
+          "description": "The specific reject the decoder MUST surface (Rust reference: PrefsBlobError::{HeaderTooShort, MagicMismatch, ProtocolVersionMismatch, ReservedByteNonZero, CiphertextLenOverflow, CiphertextTruncated, PlaintextParseFailed}). Unlike the AEAD-failure surface (case_kind decrypt_aead_fail), these are intentionally distinguishable for observability — though callers MAY collapse them to PrefsView::default() per §9.5.5."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

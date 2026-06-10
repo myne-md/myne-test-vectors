@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/note-template.json",
+  "title": "note-template — case shape (v0.1)",
+  "description": "Pins one behavioral case for protocol::template::render + protocol::template::supported_tokens — the deterministic note-template variable engine (MYND-188). render(template, ctx) is a PURE FUNCTION: one left-to-right pass over {{token}} placeholders matched case-sensitively against a closed 5-token registry (date, time, title, datetime, weekday). Unknown tokens, format-arg shapes ({{title:foo}}) and stray/unbalanced braces pass through verbatim — that passthrough IS the escape mechanism (there is no dedicated escape syntax). Substituted values are NEVER re-scanned (single pass). The engine reads no clock and no locale: every ctx field arrives pre-formatted from the host, and the engine is byte-transparent including NFD combining sequences (NO unicode normalization). Not an on-disk codec and not cryptographic — it is deterministic cross-client behavior in the password-policy class: every independent client renders the same (template, ctx) to bit-identical output. Two case kinds: 'render' (template + ctx → output bytes) and 'token_registry' (supported_tokens() order/set pin). The Rust reference implementation lives at protocol/src/template.rs (main myne repository); contract recorded in decisions.md 2026-06-07 (Note templates).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^note-template/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'note-template/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["render", "token_registry"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "render — pin the engine's exact output bytes for one (template, ctx) pair",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_template_utf8_hex",
+        "input_ctx_title_utf8_hex",
+        "input_ctx_date_utf8_hex",
+        "input_ctx_time_utf8_hex",
+        "input_ctx_datetime_utf8_hex",
+        "input_ctx_weekday_utf8_hex",
+        "expected_output_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "render" },
+        "input_template_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The template body as exact UTF-8 bytes (hex, empty allowed). Hex pinning makes the byte sequence the contract, immune to JSON-tooling normalization — load-bearing for the NFD-unicode case."
+        },
+        "input_ctx_title_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "ctx.title as exact UTF-8 bytes (hex, empty allowed — the empty-title case pins that an empty value substitutes as the empty string; the engine has no empty-title policy of its own)."
+        },
+        "input_ctx_date_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.date as exact UTF-8 bytes (hex). Host-formatted LOCAL calendar date (YYYY-MM-DD); the engine performs no calendar arithmetic or UTC conversion."
+        },
+        "input_ctx_time_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.time as exact UTF-8 bytes (hex). Host-formatted LOCAL 24-hour time (HH:mm)."
+        },
+        "input_ctx_datetime_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.datetime as exact UTF-8 bytes (hex). Host-formatted combined local form."
+        },
+        "input_ctx_weekday_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.weekday as exact UTF-8 bytes (hex). Host-localized day name — the engine carries no locale logic and substitutes the bytes verbatim."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact UTF-8 bytes render() MUST produce (hex, empty allowed). Bit-identical across implementations — no trailing-whitespace, normalization, or escaping differences tolerated."
+        },
+        "informational_template_utf8": {
+          "type": "string",
+          "description": "Human-readable mirror of input_template_utf8_hex. Informational — the runner cross-checks it byte-equal against the hex; the hex is the contract (JSON tooling may silently NFC-normalize this mirror, which a runner cross-check surfaces)."
+        },
+        "informational_output_utf8": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex. Informational — cross-checked against the hex, same caveat as informational_template_utf8."
+        }
+      }
+    },
+    {
+      "title": "token_registry — pin supported_tokens() order and set",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "expected_tokens"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "token_registry" },
+        "expected_tokens": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "The exact return of supported_tokens(), order-sensitive (v1: date, time, title, datetime, weekday — registry order). The SET is load-bearing for render parity (advertised ⇔ substituted, single registry); the ORDER is load-bearing for UI parity (the {{ autocomplete lists tokens in this order)."
+        }
+      }
+    }
+  ]
+}

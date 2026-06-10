@@ -50,12 +50,13 @@ vectors/attachments-catalog/
 
 ## JSON shape
 
-The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/attachments-catalog.json`](../../schema/v0.1/attachments-catalog.json) (per-case shape with a 4-way `case_kind` discriminator). The sub-schema is authoritative — this document covers only the domain-specific semantics.
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/attachments-catalog.json`](../../schema/v0.1/attachments-catalog.json) (per-case shape with a 5-way `case_kind` discriminator). The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
 - **`encrypt`** (`encrypt-empty`, `encrypt-populated`) — pins the encoder's byte output over the canonical JSON, including the empty `{}` catalog. Inputs: `input_root_key_hex` (the runner derives `catalog_key`), `input_account_number_hash_hex`, `input_plaintext_canonical_utf8_hex`, `input_catalog_nonce_hex`; optional `informational_catalog_key_hex`. Output: `expected_catalog_blob_hex`.
 - **`decrypt_ok`** (`decrypt-ok`, `decrypt-unknown-field-tolerated`) — pins the decoder's success path. `expected_plaintext_canonical_utf8_hex` is the **canonical re-encode of the decoded catalog**: for ordinary round-trips it equals the sealed plaintext; for the tolerance case the sealed plaintext (carried verbatim in `informational_sealed_plaintext_utf8_hex`) contains an unknown additive field (`future_flag`, in sorted position between `filename` and `size`) that the decoder MUST ignore — comparison is structural.
 - **`decrypt_aead_fail`** (`decrypt-fail-tamper`, `decrypt-fail-cross-vault`) — non-distinguishing failure surface (`expected_kind: "aead_fail"`).
 - **`aad_construction`** (`aad-construction`) — the 48-byte `aad_attachments_catalog` canonical bytes.
+- **`parse_fail`** (`parse-fail-*`, MYND-227) — the **distinguishable** reject surface, one case per `CatalogBlobError` variant reachable from a decode: the six pre-AEAD structural rejects (`header_too_short`, `magic_mismatch`, `protocol_version_mismatch`, `reserved_byte_nonzero`, `ciphertext_len_overflow`, `ciphertext_truncated`) plus the post-AEAD `plaintext_parse_failed` (a validly-sealed blob whose inner plaintext is not a canonical JSON object). `expected_error` names the variant. The cases carry the REAL `root_key` deliberately: header bytes are not AAD-bound, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches. Callers then fall back to the empty catalog per § 9.10.4 — the distinguishability is an observability contract.
 
 ## How to consume
 
@@ -68,6 +69,7 @@ A port runs each case based on `case_kind`: derive the KEK, invoke the equivalen
 - **Forward-compat tolerance (§ 9.10.2).** `decrypt-unknown-field-tolerated` pins that an unknown additive per-entry field is ignored, not rejected — the load-bearing schema-evolution hook for v0.1.x additive fields.
 - **AAD binds account identity.** `decrypt-fail-cross-vault` pins that a blob sealed under vault A's `account_number_hash` fails under vault B's.
 - **Tamper rejection + non-distinguishing surface.** The two `decrypt_aead_fail` cases MUST be indistinguishable from each other (spec § 6.4).
+- **Distinguishable structural rejects (MYND-227, `parse-fail-*`).** Each `CatalogBlobError` decode reject pinned individually; the `ciphertext-len-overflow` case pins the 16 MiB + 32 cap from the read direction with a 34-byte fixture (header advertises `0xffffffff` without carrying it), and `plaintext_parse_failed` is distinct from `CannotDecrypt` (the tag check already proved key possession).
 
 ## Regeneration
 
@@ -79,9 +81,16 @@ cat /tmp/myne_attachments_catalog_vectors.json
 
 The regenerator lives in `protocol/src/attachments_catalog.rs`; it is `#[ignore]`-gated so it never runs in default `cargo test` invocations. It emits the **whole file** (fully deterministic inputs) — diff against the shipped `cases.json` and confirm existing cases regenerate byte-identically before pasting.
 
+The MYND-227 `parse_fail` family (7 cases) has its own append generator (the original stays byte-stable — vector_id immutability):
+
+```bash
+cargo test -p protocol --lib emit_catalog_parse_fail_vectors -- --ignored
+# splice the JSON array fragment at /tmp/myne_attachments_catalog_parse_fail_vectors.json into the cases array
+```
+
 ## What this does NOT cover
 
-- **Encode-only error modes.** `PlaintextTooLarge` (16-MiB cap) and `RandomnessUnavailable` cannot be expressed as decode-a-blob cases.
+- **Encode-only error modes.** Encode-side `CiphertextLenOverflow` (oversized plaintext at the 16-MiB cap) and `RandomnessUnavailable` cannot be expressed as decode-a-blob cases; the cap IS pinned from the read direction by `parse-fail-ciphertext-len-overflow` (MYND-227).
 - **`read_or_empty` collapse behavior** — the missing-file → `{}` fallback is a host-layer call-site policy; the vectors pin only the codec underneath it.
 - **Per-attachment blob bytes** — the sibling `attachment-blob` category.
 - **The Tauri-layer attachments library UI + ingest flow** (MYND-164 desktop side) — verified by `src-tauri` integration tests, not cross-implementation vectors.

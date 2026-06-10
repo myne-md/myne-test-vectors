@@ -46,12 +46,12 @@ A port runs each case based on `case_kind`:
 
 ## Invariants the vectors pin
 
-For the 3 cases in `cases.json`:
+For the 7 cases in `cases.json` (1 `roundtrip` + 6 `parse_fail`):
 
 - **Magic / version / reserved bytes.** Output `[0..4]` = `MYV1`, `[4]` = `0x01`, `[5]` = `0x00`. Decoder rejects any other value at parse time.
 - **Field offsets are absolute.** Byte 33 is always the first byte of `random_salt_password`; byte 281 is always the first byte of `enc_items_key`. The 11-byte canonical KDF params block at offset 22..33 is the only variable-content portion of the header.
 - **Distinct byte patterns per field.** The canonical fixture uses 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, 0xE0, 0xE1, 0xE2, 0xE3 for the 10 fixed-offset fields (distinct from the `vault_meta_rewrite` fixture's 0xAC/0x11../0x99 patterns) so any swap or off-by-one surfaces as a clear hex mismatch in test assertions. Ports SHOULD use any distinguishable patterns; nothing in the protocol mandates these specific bytes.
-- **Non-distinguishing structural-parse-reject surface.** Magic-byte tamper (byte 0 flipped) and reserved-byte tamper (byte 5 set to 0x01) both collapse to `ProtocolError::InvalidVaultMeta` in the Rust reference. The CTX commitment construction inside the wrapped-key regions makes the AEAD-stage tampering computationally indistinguishable from cross-vault mismatches — but those are verified separately by the `ctx-aead` vector category, not here.
+- **Non-distinguishing structural-parse-reject surface.** Six tampers — magic byte (byte 0 flipped), reserved byte (byte 5 → 0x01), wrong length (truncated to 344), protocol_version (byte 4 → 0x02), kdf_id (byte 22 → 0x02) and argon2_version (byte 32 → 0x10, the two `parse_kdf_params` rejects, MYND-227) — all collapse to the same `ProtocolError::InvalidVaultMeta` in the Rust reference. The KDF-byte pair pins that a port MUST validate the KDF identity at parse time: accepting an unknown kdf_id/argon2_version yields a vault.meta the client cannot honor (or silently derives a wrong wrap key under). The CTX commitment construction inside the wrapped-key regions makes the AEAD-stage tampering computationally indistinguishable from cross-vault mismatches — but those are verified separately by the `ctx-aead` vector category, not here.
 
 ## Regeneration
 
@@ -62,11 +62,18 @@ cargo test -p protocol --lib emit_vault_meta_vectors_for_paste -- --ignored
 cp /tmp/myne_vault_meta_vectors.json vectors/vault-meta/v0.1/cases.json
 ```
 
-The regenerator test lives in `protocol/src/vault_meta.rs::tests::emit_vault_meta_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations. Emits ready-to-copy JSON (matches the `subkey.rs` HKDF generator pattern); the 3-case matrix is too small to warrant paste-format hex dumps.
+The regenerator test lives in `protocol/src/vault_meta.rs::tests::emit_vault_meta_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations. Emits ready-to-copy JSON (matches the `subkey.rs` HKDF generator pattern); the original 3-case matrix is too small to warrant paste-format hex dumps.
+
+The four MYND-227 structural `parse_fail` additions have their own append generator (the original stays byte-stable — vector_id immutability):
+
+```bash
+cargo test -p protocol --lib emit_vault_meta_parse_fail_vectors -- --ignored
+# splice the JSON array fragment at /tmp/myne_vault_meta_parse_fail_vectors.json into the cases array
+```
 
 ## What this does NOT cover
 
 - **Password-side rewrite path.** Pinned by `vectors/vault_meta_rewrite/` — that category covers the `rewrite_vault_meta_password_side` function which preserves the recovery + items_key fields byte-for-byte while re-deriving the password-side under fresh KDF inputs. This category covers the full create-time encoder.
 - **AEAD-stage tampering reject cases.** The 64-byte `enc_root_key_*` and `enc_items_key` regions carry CTX-committed ciphertext + tag pairs. Tampering inside those regions surfaces at `aead_open_ctx` time (downstream of `parse_vault_meta`), not at parse time. Covered by the `ctx-aead` vector category.
-- **KDF params canonical-form validation edge cases.** Padding bytes, range checks on `m_kib`/`t`/`p`, version-byte validation — exercised at parse time by `parse_kdf_params` which `parse_vault_meta` delegates to. Dedicated coverage in the future `vectors/argon2id/` category.
-- **Empty / short / oversize blob lengths.** Non-345-byte inputs also surface `InvalidVaultMeta`. The current 3-case set focuses on byte-level offset discipline; a future expansion could add length-rejection probes if cross-impl drift is observed.
+- **KDF params range checks.** The kdf_id + argon2_version byte rejects ARE pinned here (MYND-227); range checks on `m_kib`/`t`/`p` are deliberately deferred to the Argon2id call site in the reference implementation (a parse-layer range gate would hard-code runtime affordability into the format) and are not vectorable as parse rejects.
+- **Oversize blob lengths.** The wrong-length case pins truncation (344 bytes); a 346-byte probe would exercise the same `len != 345` check from the other side and is omitted as redundant.

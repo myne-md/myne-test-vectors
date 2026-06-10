@@ -55,13 +55,14 @@ vectors/attachment-blob/
 
 ## JSON shape
 
-The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/attachment-blob.json`](../../schema/v0.1/attachment-blob.json) (per-case shape with a 5-way `case_kind` discriminator). The sub-schema is authoritative — this document covers only the domain-specific semantics.
+The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/attachment-blob.json`](../../schema/v0.1/attachment-blob.json) (per-case shape with a 6-way `case_kind` discriminator). The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
 - **`encrypt`** (`encrypt-small`, `encrypt-1kb`) — pins the encoder's full `MYA1` byte output. Inputs: `input_items_key_hex` + `input_items_key_id_hex` + `input_attachment_id_hex` + `input_content_type_utf8_hex` + `input_attachment_key_hex` + both nonces + `input_file_plaintext_hex`. Output: `expected_attachment_blob_hex`.
 - **`decrypt_ok`** (`decrypt-ok`) — round-trip: blob + correct itemsKey/ids/content_type → `expected_file_plaintext_hex`.
-- **`decrypt_aead_fail`** (`decrypt-fail-tamper`, `decrypt-fail-cross-vault`) — non-distinguishing failure surface (`expected_kind: "aead_fail"`): ciphertext tamper and wrong-vault inputs MUST be indistinguishable.
+- **`decrypt_aead_fail`** (`decrypt-fail-tamper`, `decrypt-fail-cross-vault`, `decrypt-items-key-id-mismatch`) — non-distinguishing failure surface (`expected_kind: "aead_fail"`): ciphertext tamper, wrong-vault inputs, and a mismatched caller `items_key_id` against an intact blob MUST all be indistinguishable.
 - **`aad_construction`** (`aad-wrap-attachment-key`, `aad-encrypt-attachment`) — the two builders' canonical bytes (`input_aad_builder` names which); `aad_encrypt_attachment` additionally binds the length-prefixed `content_type`.
 - **`id_determinism`** (`id-determinism-a`, `id-determinism-b`) — `input_root_key_hex` + `input_file_plaintext_hex` → `expected_attachment_id_hex`; optional `informational_id_hmac_key_hex` carries the derived HMAC key for reviewer convenience.
+- **`parse_fail`** (`parse-fail-*`, MYND-227) — the structural reject checks (§ 9.9 layout + strict-trailing): header-too-short, magic, protocol_version, reserved byte, `enc_attachment_key_len` ≠ 64, `ciphertext_len` below-tag / overflow, trailing byte. `expected_kind: "parse_fail"` — the SAME non-distinguishing `CannotDecrypt` as the AEAD surface (the case_kind documents WHICH checks a port must perform, not a distinguishable error). The cases carry the REAL `items_key` deliberately: header bytes are not AAD-bound, so a port that skips a structural check decodes the tampered blob successfully and returns Ok — which the runner catches.
 
 ## How to consume
 
@@ -72,8 +73,9 @@ A port runs each case based on `case_kind`: invoke the equivalent encoder/decode
 - **MYA1 magic + version + reserved bytes** and the full fixed-offset header layout above, including the always-64 `enc_attachment_key_len` field.
 - **Two-layer key wrap byte mapping.** `enc_attachment_key` and the content ciphertext are pinned in one output; a port that wraps with the wrong AAD or layers in the wrong order produces different bytes.
 - **`attachment_id` binding without storage.** The id appears in both AADs but not in the blob; `decrypt-fail-cross-vault` pins that wrong identity inputs fail AEAD.
-- **Tamper rejection + non-distinguishing surface.** The two `decrypt_aead_fail` cases MUST be indistinguishable from each other (spec § 6.4).
+- **Tamper rejection + non-distinguishing surface.** The `decrypt_aead_fail` cases MUST be indistinguishable from each other (spec § 6.4) — including the `items_key_id`-mismatch case, which pins that the embedded-vs-caller id comparison happens at all (skipping it would let an intact blob decode under the right key).
 - **Content-addressed id determinism.** Same (root_key, bytes) → same id; different bytes → different id; the HMAC key derives via the canonical `DeriveSubkey` helper only.
+- **Structural reject checks (MYND-227, `parse-fail-*`).** Every § 9.9 layout check is pinned by a tamper that the AEAD tags alone would NOT reject (the fixtures stay otherwise valid) — sharpest on `parse-fail-trailing-byte`, where strict-trailing length discipline is the only thing standing between a 1-byte-appended blob and a successful decode. The `ciphertext-len-overflow` case pins the 64 MiB + 32 cap from the read direction with a normal-sized fixture.
 
 ## Regeneration
 
@@ -85,9 +87,16 @@ cat /tmp/myne_attachment_blob_vectors.json
 
 The regenerator lives in `protocol/src/attachment_blob.rs`; it is `#[ignore]`-gated so it never runs in default `cargo test` invocations.
 
+The MYND-227 `parse_fail` family (8 cases + the `decrypt-items-key-id-mismatch` aead-fail case) has its own append generator (the original stays byte-stable — vector_id immutability):
+
+```bash
+cargo test -p protocol --lib emit_attachment_blob_parse_fail_vectors -- --ignored
+# splice the JSON array fragment at /tmp/myne_attachment_blob_parse_fail_vectors.json into the cases array
+```
+
 ## What this does NOT cover
 
-- **Encode-only error modes.** `AttachmentTooLarge` (above the 64-MiB cap) and `RandomnessUnavailable` (CSPRNG failure in the non-`_raw` wrapper) cannot be expressed as decode-a-blob cases.
+- **Encode-only error modes.** `AttachmentTooLarge` (above the 64-MiB cap) and `RandomnessUnavailable` (CSPRNG failure in the non-`_raw` wrapper) cannot be expressed as decode-a-blob cases — a real ≥64 MiB fixture would balloon cases.json by ~128 MB of hex. The cap IS pinned from the read direction (MYND-227): `parse-fail-ciphertext-len-overflow` advertises `0xffffffff` in a normal-sized blob, so a port MUST bound-check before allocating.
 - **The `vault.attachments` catalog** — its codec + canonical JSON live in the sibling `attachments-catalog` category.
 - **The Tauri-layer `attachment://` serve scheme, editor embeds, media ingest** (MYND-164 desktop side) — verified by `src-tauri` integration tests, not cross-implementation vectors.
 - **Filename/path discipline** (`attachments/<attachment-id-hex>`) — a host-layer storage concern (spec § 9.1), not a byte-level codec surface.
