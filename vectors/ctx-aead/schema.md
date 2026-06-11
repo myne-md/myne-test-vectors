@@ -2,7 +2,7 @@
 
 Pins the byte mapping of `protocol::aead_seal_ctx` + `protocol::aead_open_ctx` (XChaCha20-Poly1305 with CTX commitment outer per Chan & Rogaway 2022) AND the canonical byte assembly of every pub `aad_*` builder in `protocol/src/aead.rs`. Together these capture the entire AEAD layer's cross-implementation contract.
 
-**Reference implementation:** `protocol/src/aead.rs::{aead_seal_ctx, aead_open_ctx, aad_password_wrap, aad_recovery_wrap, aad_vault_items_key_wrap, aad_note_item_key_wrap, aad_note_content_encrypt, aad_prefs_blob}`.
+**Reference implementation:** `protocol/src/aead.rs::{aead_seal_ctx, aead_open_ctx, aad_password_wrap, aad_recovery_wrap, aad_vault_items_key_wrap, aad_note_item_key_wrap, aad_note_content_encrypt, aad_prefs_blob, aad_search_index_blob, aad_workspace_blob}`.
 **Spec:** `docs/spec/protocol.md` § 5.1 (AEAD construction — XChaCha20-Poly1305 + CTX commitment) + § 5.2 (AAD byte assembly) + § 6.4 (non-distinguishing failure surface).
 
 ## Pipeline (as fixed by spec § 5.1)
@@ -14,7 +14,7 @@ Pins the byte mapping of `protocol::aead_seal_ctx` + `protocol::aead_open_ctx` (
 
 **AEAD open** (`aead_open_ctx`): the inverse — recompute Poly1305 tag from `(key, nonce, ciphertext, aad)`, recompute CTX commitment, constant-time compare against the stored 32-byte tag. Any mismatch surfaces non-distinguishing `Err(ProtocolError::AeadFailure)` per spec § 6.4. Decrypt the ciphertext only after the commitment check passes.
 
-**AAD builders** (`aad_*` functions): pure functions producing the canonical AAD byte sequence for each AEAD call site per spec § 5.2. Each builder follows the `"myne.v0.1|"` prefix + version byte + role marker + role-specific bound bytes pattern. Six builders cover every AEAD invocation site in the protocol crate:
+**AAD builders** (`aad_*` functions): pure functions producing the canonical AAD byte sequence for each AEAD call site per spec § 5.2. Each builder follows the `"myne.v0.1|"` prefix + version byte + role marker + role-specific bound bytes pattern. Eight builders cover every AEAD invocation site in the protocol crate:
 
 | Builder | Bound bytes | Spec § | Notes |
 |---|---|---|---|
@@ -24,6 +24,8 @@ Pins the byte mapping of `protocol::aead_seal_ctx` + `protocol::aead_open_ctx` (
 | `aad_note_item_key_wrap(items_key_id, note_uuid)` | items_key_id (16 B) + note_uuid (16 B) | §5.2 | Per-note item_key wrap. One-character name difference from `aad_vault_items_key_wrap` (`items_key` vs `item_key`) is a documented type-confusion hazard class. |
 | `aad_note_content_encrypt(items_key_id, note_uuid)` | items_key_id + note_uuid + length-prefixed `"text/markdown"` | §5.2 | Content encryption — content_type is HARDCODED to `text/markdown`. |
 | `aad_prefs_blob(account_number_hash)` | account_number_hash (16 B) | §9.5.3 | `vault.prefs` AEAD AAD. Binds the blob to its specific vault. |
+| `aad_search_index_blob(account_number_hash)` | account_number_hash (16 B) | §9.6.3 | `vault.search` AEAD AAD (MYND-29). Same shape as `aad_prefs_blob`, distinct 17-byte role `search-index-blob`. |
+| `aad_workspace_blob(account_number_hash)` | account_number_hash (16 B) | §9.7.3 | `vault.workspace` AEAD AAD (MYND-254). Same shape, distinct 14-byte role `workspace-blob` — NOT the HKDF KEK role `session-state-key`. |
 
 ## JSON shape
 
@@ -41,13 +43,13 @@ Four case kinds carry different field shapes:
 A port runs each case based on `case_kind`:
 
 - **`encrypt`** / **`decrypt_ok`** / **`decrypt_aead_fail`**: standard primitive byte-level assertions against `aead_seal_ctx` / `aead_open_ctx`.
-- **`aad_canonical_bytes`**: dispatch on `input_builder_name` to the matching builder, decode the builder's required input fields, call the builder, compare output byte-equal to `expected_aad_bytes_hex`. Ports MUST cover all 6 builders (the Rust integration runner enforces a `HashSet`-tracked completeness check per category).
+- **`aad_canonical_bytes`**: dispatch on `input_builder_name` to the matching builder, decode the builder's required input fields, call the builder, compare output byte-equal to `expected_aad_bytes_hex`. Ports MUST cover all 8 builders (the Rust integration runner enforces a `HashSet`-tracked completeness check per category).
 
 ## Invariants the vectors pin
 
-For the 11 cases in `cases.json`:
+For the 13 cases in `cases.json`:
 
-- **Every pub `aad_*` builder gets at least one canonical-bytes pin.** The 6 `aad_canonical_bytes` cases collectively name each builder by `input_builder_name`. Drift in any builder's byte assembly surfaces immediately on regeneration.
+- **Every pub `aad_*` builder gets at least one canonical-bytes pin.** The 8 `aad_canonical_bytes` cases collectively name each builder by `input_builder_name`. Drift in any builder's byte assembly surfaces immediately on regeneration.
 - **Primitive AEAD byte output at empty-AAD and content-AAD scopes.** The 2 `encrypt` cases cover (a) bare-primitive bytes with no AAD, (b) realistic AAD shape (58-byte `aad_note_content_encrypt` output) — same primitive, different AAD context.
 - **Round-trip property.** `decrypt-ok-medium` proves the decoder recovers the canonical plaintext from the medium encrypt case's sealed bytes.
 - **Non-distinguishing AEAD failure surface — two distinct tamper vectors.** `decrypt-tag-tamper` flips one byte of the 32-byte CTX commitment tag; `decrypt-aad-tamper` passes a swapped AAD (the `aad_prefs_blob` bytes instead of the `aad_note_content_encrypt` bytes the encoder used). Both surface `Err(ProtocolError::AeadFailure)` — ports MUST collapse cross-vault, wrong-AAD, tampered-ciphertext, and tampered-tag to the same non-distinguishing variant.

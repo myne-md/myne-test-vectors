@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/backup-container.json",
+  "title": "backup-container — case shape (v0.1)",
+  "description": "Pins one byte-level case for the MYB1 .myne-backup whole-vault backup container (MYND-254; codec landed MYND-217): the deterministic write side (write_container), the credential-free 5-stage verifier (read_and_verify_container, stages 1–4 — the embedded vault.meta structural parse is the restore engine's stage 5 and is NOT covered here), and the §9.11.3 closed-allowlist path classifier. The container is an UNKEYED integrity layer: per-member SHA-256 over path_len_be16 || path || member_bytes detects accidental corruption, never tampering (tamper defense = the members' own AEAD). Member content is opaque at this layer. Four case kinds: 'encode' (member set → container bytes; input order deliberately unsorted — the writer sorts by raw path bytes), 'verify_ok' (container bytes → verified record triples), 'verify_fail' (one per vectorable BackupContainerError variant), 'classify_path' (§9.11.3 grammar, accept + reject directions). The Rust reference implementation lives at src-tauri/src/backup_container.rs (main myne repository, package myne-desktop — the first vector family whose reference implementation is OUTSIDE the protocol crate; the codec is std/fs-bound by design); spec contract is docs/spec/protocol.md §9.11.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^backup-container/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'backup-container/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encode", "verify_ok", "verify_fail", "classify_path"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encode — pin the deterministic member-set → container-bytes mapping",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_members",
+        "expected_container_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encode" },
+        "input_members": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Member set as (path, bytes) pairs, in DELIBERATELY arbitrary order — the writer MUST sort records by raw path bytes (§9.11.2), so the same member set always encodes to identical container bytes regardless of input order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "bytes_hex"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Vault-relative member path (must satisfy the §9.11.2 path rules and the §9.11.3 closed allowlist)."
+              },
+              "bytes_hex": {
+                "type": "string",
+                "pattern": "^([0-9a-f]{2})*$",
+                "description": "Member body bytes (hex), opaque ciphertext stand-ins — the container never parses member content."
+              }
+            }
+          }
+        },
+        "expected_container_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full container bytes (22-byte header + member table + concatenated member data in table order), hex-encoded lowercase. Producers compare byte-equal — §9.11.2 canonical encoding."
+        }
+      }
+    },
+    {
+      "title": "verify_ok — pin the verifier's parsed record triples",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_container_hex",
+        "expected_member_records"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "verify_ok" },
+        "input_container_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "expected_member_records": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Verified member records in table (= canonical lexicographic) order. The sha256_hex values are independently checkable: SHA-256(path_len_be16 || path || member_bytes), §9.11.2.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "len", "sha256_hex"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "len": { "type": "integer", "minimum": 0 },
+              "sha256_hex": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "verify_fail — pin a credential-free structural/integrity reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_container_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "verify_fail" },
+        "input_container_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A malformed/damaged container (hex), empty allowed. The verifier rejects credential-free, BEFORE any disk placement (§9.11.6)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "reserved_byte_nonzero",
+            "member_count_overflow",
+            "member_table_overflow",
+            "path_invalid",
+            "path_not_allowlisted",
+            "duplicate_path",
+            "path_order_violation",
+            "member_len_overflow",
+            "lengths_inconsistent",
+            "hash_mismatch"
+          ],
+          "description": "The specific reject the verifier MUST surface (Rust reference: BackupContainerError, minus the runtime-only Cancelled/Io variants). The §9.11.6 stage order is load-bearing: header checks, then ceilings, THEN the file-length equation, then table parse, then per-member hashes — the two ceiling cases (member_count_overflow / member_table_overflow) are 22-byte header-only files that a wrong-order port would mislabel lengths_inconsistent."
+        }
+      }
+    },
+    {
+      "title": "classify_path — pin the §9.11.3 closed-allowlist grammar",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_member_path",
+        "expected_family"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "classify_path" },
+        "input_member_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A candidate member path (plain string, not hex). The classifier composes the §9.11.2 path rules with the §9.11.3 closed allowlist."
+        },
+        "expected_family": {
+          "type": "string",
+          "enum": [
+            "vault-meta",
+            "vault-prefs",
+            "note",
+            "snapshot",
+            "attachments-catalog",
+            "attachment-blob",
+            "rejected"
+          ],
+          "description": "The §9.11.3 family the path classifies into, or 'rejected' when the path is outside the closed allowlist (writers MUST NOT include it; readers MUST reject it). The grammar is strict: lowercase-hyphenated 36-char disk UUIDs, exactly-64-lowercase-hex attachment ids, '__' snapshot pair separator, exact '.myn' suffix."
+        }
+      }
+    }
+  ]
+}

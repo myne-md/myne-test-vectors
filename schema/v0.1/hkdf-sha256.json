@@ -29,8 +29,8 @@
     },
     "input_role": {
       "type": "string",
-      "enum": ["itemsKey-wrap", "prefs-key", "search-index-key", "attachments-catalog-key", "attachments-id-hmac"],
-      "description": "Registered role string (spec §3.4). MUST appear in protocol::SubkeyRole::role_str. Future v0.1.x revisions extend this enum + the Rust SubkeyRole enum in lockstep — additive only, immutable for existing variants. 'search-index-key' is the KEK for the vault.search blob (MYND-29, §9.6) — note it differs from the AAD role string 'search-index-blob' used by aad_search_index_blob. 'attachments-catalog-key' is the KEK for the vault.attachments catalog blob (MYND-164, §9.10); 'attachments-id-hmac' keys the HMAC-SHA-256 deriving deterministic attachment-ids (§9.9) — NOT a blob KEK; the two are the §9.10.1 domain-separation pair."
+      "enum": ["itemsKey-wrap", "prefs-key", "search-index-key", "attachments-catalog-key", "attachments-id-hmac", "session-state-key"],
+      "description": "Registered role string (spec §3.4). MUST appear in protocol::SubkeyRole::role_str. Future v0.1.x revisions extend this enum + the Rust SubkeyRole enum in lockstep — additive only, immutable for existing variants. 'search-index-key' is the KEK for the vault.search blob (MYND-29, §9.6) — note it differs from the AAD role string 'search-index-blob' used by aad_search_index_blob. 'attachments-catalog-key' is the KEK for the vault.attachments catalog blob (MYND-164, §9.10); 'attachments-id-hmac' keys the HMAC-SHA-256 deriving deterministic attachment-ids (§9.9) — NOT a blob KEK; the two are the §9.10.1 domain-separation pair. 'session-state-key' is the KEK for the vault.workspace blob (MYND-254, §9.7) — it likewise differs from the AAD role string 'workspace-blob' used by aad_workspace_blob."
     },
     "informational_info_utf8_hex": {
       "type": "string",

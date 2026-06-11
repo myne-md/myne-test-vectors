@@ -31,6 +31,7 @@
         "aad_note_item_key_wrap",
         "aad_prefs_blob",
         "aad_search_index_blob",
+        "aad_workspace_blob",
         "aad_note_content_encrypt"
       ],
       "description": "Which pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below."
@@ -60,7 +61,7 @@
     "input_account_number_hash_hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{32}$",
-      "description": "Present for aad_prefs_blob / aad_search_index_blob."
+      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob."
     },
     "expected_aad_hex": {
       "type": "string",
