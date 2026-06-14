@@ -1,0 +1,377 @@
+{
+  "schema": "property-coercion",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3.6.4",
+  "description": "Pins the Saved Views property value-typing / coercion ruleset (markdown-dialect.md §3.6.4, MYND-271). Each case is a one-key YAML 1.2 mapping `prop: <value>`; a conformant client parses it under the YAML 1.2 CORE schema (10.2.1 — true/True/TRUE bools, base-10/hex/octal ints, NO native timestamp), takes the value of `prop`, and coerces it to exactly one Myne property type — string / number / date / list / checkbox. The date type is a Myne RFC-3339 recognizer applied to resolved string scalars (so quoting does NOT demote a date, unlike checkbox/number which a quote forces to string). Number/date normalized forms: numbers = canonical decimal of the parsed value (1.0 -> '1', 007 -> '7', 0x1A -> '26'); dates = the source string verbatim (trimmed); strings = the resolved value verbatim (no NFC). Deterministic cross-client behavior in the password-policy / note-template class (not a codec). property-index is the single type authority; sibling features consume this typing. Generated from the reference coercion (js-yaml CORE_SCHEMA + the Myne date recognizer + canonical-decimal normalization) in src/notes/propertyTyping.ts; the property-index Vitest runner asserts the live TS coercion against these vectors.",
+  "cases": [
+    {
+      "vector_id": "property-coercion/v0.1/string-plain",
+      "description": "Plain string scalar.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2068656c6c6f20776f726c64",
+      "informational_yaml": "prop: hello world",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "68656c6c6f20776f726c64",
+      "informational_normalized": "hello world"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-quoted-double",
+      "description": "Double-quoted string — quotes stripped by YAML resolution.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a202268656c6c6f22",
+      "informational_yaml": "prop: \"hello\"",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "68656c6c6f",
+      "informational_normalized": "hello"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-quoted-single",
+      "description": "Single-quoted string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a202768656c6c6f27",
+      "informational_yaml": "prop: 'hello'",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "68656c6c6f",
+      "informational_normalized": "hello"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-empty-null",
+      "description": "Empty/null value (key with no value) → empty string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a",
+      "informational_yaml": "prop:",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "",
+      "informational_normalized": ""
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-integer",
+      "description": "YAML 1.2 core integer.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a203432",
+      "informational_yaml": "prop: 42",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "3432",
+      "informational_normalized": "42"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-negative",
+      "description": "Negative integer.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a202d33",
+      "informational_yaml": "prop: -3",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "2d33",
+      "informational_normalized": "-3"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-float",
+      "description": "Core float.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20342e35",
+      "informational_yaml": "prop: 4.5",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "342e35",
+      "informational_normalized": "4.5"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-float-trailing-zero",
+      "description": "Float with trailing zero — a NUMBER (not string); normalized to canonical decimal '1', compares == 1.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20312e30",
+      "informational_yaml": "prop: 1.0",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "31",
+      "informational_normalized": "1"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-exponent",
+      "description": "Exponential float → 1000.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20316533",
+      "informational_yaml": "prop: 1e3",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "31303030",
+      "informational_normalized": "1000"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-year-bare",
+      "description": "Bare 4-digit integer is a NUMBER, not a date (a date needs the full YYYY-MM-DD).",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2032303236",
+      "informational_yaml": "prop: 2026",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "32303236",
+      "informational_normalized": "2026"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-leading-zero",
+      "description": "Leading-zero token IS a YAML 1.2 core base-10 int (= 7). A user who wants the literal string '007' must quote it.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20303037",
+      "informational_yaml": "prop: 007",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "37",
+      "informational_normalized": "7"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/number-hex",
+      "description": "YAML 1.2 core hexadecimal int 0x1A = 26.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2030783141",
+      "informational_yaml": "prop: 0x1A",
+      "expected_type": "number",
+      "expected_normalized_utf8_hex": "3236",
+      "informational_normalized": "26"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-numeric-quoted",
+      "description": "Quoted numeric → string (quoting demotes out of number).",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2022312e3022",
+      "informational_yaml": "prop: \"1.0\"",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "312e30",
+      "informational_normalized": "1.0"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-phone-like",
+      "description": "Dash-containing token, not a number, not a full date → string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a203535352d31323334",
+      "informational_yaml": "prop: 555-1234",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "3535352d31323334",
+      "informational_normalized": "555-1234"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/checkbox-true",
+      "description": "Lowercase true → checkbox.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2074727565",
+      "informational_yaml": "prop: true",
+      "expected_type": "checkbox",
+      "expected_normalized_utf8_hex": "74727565",
+      "informational_normalized": "true"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/checkbox-false",
+      "description": "Lowercase false → checkbox.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2066616c7365",
+      "informational_yaml": "prop: false",
+      "expected_type": "checkbox",
+      "expected_normalized_utf8_hex": "66616c7365",
+      "informational_normalized": "false"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/checkbox-true-capitalized",
+      "description": "'True' — a YAML 1.2 core boolean (core accepts true/True/TRUE) → checkbox. Distinct from JSON schema (lowercase-only); Myne uses the core schema.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2054727565",
+      "informational_yaml": "prop: True",
+      "expected_type": "checkbox",
+      "expected_normalized_utf8_hex": "74727565",
+      "informational_normalized": "true"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-yes",
+      "description": "'yes' is NOT a YAML 1.2 core bool (the 1.1 'Norway problem' does not occur in core) → string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20796573",
+      "informational_yaml": "prop: yes",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "796573",
+      "informational_normalized": "yes"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-on",
+      "description": "'on' is NOT a YAML 1.2 core bool → string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a206f6e",
+      "informational_yaml": "prop: on",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "6f6e",
+      "informational_normalized": "on"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-bool-quoted",
+      "description": "Quoted 'true' → string (quoting demotes out of checkbox).",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20227472756522",
+      "informational_yaml": "prop: \"true\"",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "74727565",
+      "informational_normalized": "true"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/date-only",
+      "description": "RFC 3339 full-date → date.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20323032362d30362d3134",
+      "informational_yaml": "prop: 2026-06-14",
+      "expected_type": "date",
+      "expected_normalized_utf8_hex": "323032362d30362d3134",
+      "informational_normalized": "2026-06-14"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/date-time-utc",
+      "description": "RFC 3339 date-time with Z → date.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20323032362d30362d31345431303a33303a30305a",
+      "informational_yaml": "prop: 2026-06-14T10:30:00Z",
+      "expected_type": "date",
+      "expected_normalized_utf8_hex": "323032362d30362d31345431303a33303a30305a",
+      "informational_normalized": "2026-06-14T10:30:00Z"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/date-time-offset",
+      "description": "RFC 3339 date-time with offset → date.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20323032362d30362d31345431303a33303a30302b30333a3030",
+      "informational_yaml": "prop: 2026-06-14T10:30:00+03:00",
+      "expected_type": "date",
+      "expected_normalized_utf8_hex": "323032362d30362d31345431303a33303a30302b30333a3030",
+      "informational_normalized": "2026-06-14T10:30:00+03:00"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/date-quoted-not-demoted",
+      "description": "Quoted full-date STAYS a date — quoting does not demote dates (YAML has no native timestamp in core; the recognizer runs on the resolved string regardless of quote).",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2022323032362d30362d313422",
+      "informational_yaml": "prop: \"2026-06-14\"",
+      "expected_type": "date",
+      "expected_normalized_utf8_hex": "323032362d30362d3134",
+      "informational_normalized": "2026-06-14"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-partial-date",
+      "description": "YYYY-MM is not a complete RFC 3339 full-date → string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20323032362d3036",
+      "informational_yaml": "prop: 2026-06",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "323032362d3036",
+      "informational_normalized": "2026-06"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-date-with-text",
+      "description": "Date prefix plus trailing text fails the whole-string anchor → string.",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a20323032362d30362d313420646561646c696e65",
+      "informational_yaml": "prop: 2026-06-14 deadline",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "323032362d30362d313420646561646c696e65",
+      "informational_normalized": "2026-06-14 deadline"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/string-unicode-nfd",
+      "description": "NFD-composed string preserved byte-for-byte (no NFC normalization applied to property values).",
+      "case_kind": "scalar",
+      "input_yaml_utf8_hex": "70726f703a2063616665cc81",
+      "informational_yaml": "prop: café",
+      "expected_type": "string",
+      "expected_normalized_utf8_hex": "63616665cc81",
+      "informational_normalized": "café"
+    },
+    {
+      "vector_id": "property-coercion/v0.1/list-flow-strings",
+      "description": "Flow sequence of plain strings.",
+      "case_kind": "list",
+      "input_yaml_utf8_hex": "70726f703a205b612c20622c20635d",
+      "informational_yaml": "prop: [a, b, c]",
+      "expected_type": "list",
+      "expected_elements": [
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "61",
+          "informational_element_normalized": "a"
+        },
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "62",
+          "informational_element_normalized": "b"
+        },
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "63",
+          "informational_element_normalized": "c"
+        }
+      ]
+    },
+    {
+      "vector_id": "property-coercion/v0.1/list-block-strings",
+      "description": "Block sequence of plain strings.",
+      "case_kind": "list",
+      "input_yaml_utf8_hex": "70726f703a0a20202d20780a20202d2079",
+      "informational_yaml": "prop:\n  - x\n  - y",
+      "expected_type": "list",
+      "expected_elements": [
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "78",
+          "informational_element_normalized": "x"
+        },
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "79",
+          "informational_element_normalized": "y"
+        }
+      ]
+    },
+    {
+      "vector_id": "property-coercion/v0.1/list-mixed-types",
+      "description": "Heterogeneous sequence — each element independently coerced.",
+      "case_kind": "list",
+      "input_yaml_utf8_hex": "70726f703a205b312c20747275652c2068656c6c6f2c20323032362d30362d31345d",
+      "informational_yaml": "prop: [1, true, hello, 2026-06-14]",
+      "expected_type": "list",
+      "expected_elements": [
+        {
+          "element_type": "number",
+          "element_normalized_utf8_hex": "31",
+          "informational_element_normalized": "1"
+        },
+        {
+          "element_type": "checkbox",
+          "element_normalized_utf8_hex": "74727565",
+          "informational_element_normalized": "true"
+        },
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "68656c6c6f",
+          "informational_element_normalized": "hello"
+        },
+        {
+          "element_type": "date",
+          "element_normalized_utf8_hex": "323032362d30362d3134",
+          "informational_element_normalized": "2026-06-14"
+        }
+      ]
+    },
+    {
+      "vector_id": "property-coercion/v0.1/list-empty",
+      "description": "Empty sequence → list with zero elements.",
+      "case_kind": "list",
+      "input_yaml_utf8_hex": "70726f703a205b5d",
+      "informational_yaml": "prop: []",
+      "expected_type": "list",
+      "expected_elements": []
+    },
+    {
+      "vector_id": "property-coercion/v0.1/list-single",
+      "description": "Single-element sequence.",
+      "case_kind": "list",
+      "input_yaml_utf8_hex": "70726f703a205b736f6c6f5d",
+      "informational_yaml": "prop: [solo]",
+      "expected_type": "list",
+      "expected_elements": [
+        {
+          "element_type": "string",
+          "element_normalized_utf8_hex": "736f6c6f",
+          "informational_element_normalized": "solo"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/property-coercion.json",
+  "title": "property-coercion — case shape (v0.1)",
+  "description": "Pins the Saved Views property value-typing / coercion ruleset (markdown-dialect.md §3.6.4, MYND-271). Each case is a one-key YAML 1.2 mapping `prop: <value>`; a conformant client parses it under the YAML 1.2 CORE schema, takes the value of `prop`, and coerces it to exactly one Myne property type — string / number / date / list / checkbox. Deterministic cross-client behavior in the password-policy / note-template class (not a codec, not cryptographic). property-index is the single type authority; sibling features consume this typing and never redefine it. Normalized number/date forms are the source token VERBATIM (Myne never reformats numbers/dates; numeric comparison parses to IEEE-754 binary64). Quoting demotes a value out of checkbox/number (forces a YAML string node) but does NOT demote a date. The coercion is extraction-and-typing only — no evaluatable expression / formula. Hand-curated against §3.6.4 (no Rust generator — the coercion lives TS-side in the property-index sub-feature and is asserted against these vectors by its Vitest runner). The Rust reference impl does not exist; this category is a TS-runner category, like a port would run it.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind", "input_yaml_utf8_hex", "informational_yaml"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^property-coercion/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'property-coercion/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": { "type": "string", "enum": ["scalar", "list"] },
+    "input_yaml_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "A one-key YAML 1.2 mapping `prop: <value>` as exact UTF-8 bytes (hex). The coercion target is the value of key `prop`. Hex-pinned so quoting, whitespace, and NFD combining sequences transport unambiguously."
+    },
+    "informational_yaml": {
+      "type": "string",
+      "description": "Human-readable mirror of input_yaml_utf8_hex. Informational — the runner cross-checks it byte-equal against the hex; the hex is the contract."
+    }
+  },
+  "oneOf": [
+    {
+      "title": "scalar — pin the Myne type + normalized form of a scalar value",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_yaml_utf8_hex",
+        "informational_yaml",
+        "expected_type",
+        "expected_normalized_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "scalar" },
+        "input_yaml_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "informational_yaml": { "type": "string" },
+        "expected_type": {
+          "type": "string",
+          "enum": ["string", "number", "date", "checkbox"],
+          "description": "The Myne property type the scalar coerces to (§3.6.4 Step 3). A scalar never types as `list`."
+        },
+        "expected_normalized_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical normalized form as exact UTF-8 bytes (hex, empty allowed). string → YAML-resolved value verbatim (no NFC); number/date → source token verbatim (trimmed); checkbox → 'true' / 'false'."
+        },
+        "informational_normalized": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_normalized_utf8_hex (informational; hex is the contract)."
+        }
+      }
+    },
+    {
+      "title": "list — pin that the value is a list and the per-element coercions",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_yaml_utf8_hex",
+        "informational_yaml",
+        "expected_type",
+        "expected_elements"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "list" },
+        "input_yaml_utf8_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "informational_yaml": { "type": "string" },
+        "expected_type": {
+          "const": "list",
+          "description": "A YAML sequence (flow or block) always types as `list`."
+        },
+        "expected_elements": {
+          "type": "array",
+          "description": "Each sequence element independently coerced by §3.6.4 Step 3 (a list may be heterogeneous). Empty array = the empty sequence []. No list-of-lists in v0.1 (a nested sequence element coerces to string).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["element_type", "element_normalized_utf8_hex"],
+            "properties": {
+              "element_type": {
+                "type": "string",
+                "enum": ["string", "number", "date", "checkbox"]
+              },
+              "element_normalized_utf8_hex": {
+                "type": "string",
+                "pattern": "^([0-9a-f]{2})*$"
+              },
+              "informational_element_normalized": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

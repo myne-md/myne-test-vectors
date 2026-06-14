@@ -136,9 +136,10 @@
             "aad_note_content_encrypt",
             "aad_prefs_blob",
             "aad_search_index_blob",
-            "aad_workspace_blob"
+            "aad_workspace_blob",
+            "aad_vault_indices_blob"
           ],
-          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6) and aad_workspace_blob (MYND-254, §9.7) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob' and 'workspace-blob' respectively."
+          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6), aad_workspace_blob (MYND-254, §9.7) and aad_vault_indices_blob (MYND-271, §9.8) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob', 'workspace-blob' and 'vault-indices-blob' respectively."
         },
         "input_kdf_params": {
           "type": "object",
@@ -165,7 +166,7 @@
         "input_account_number_hash_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{32}$",
-          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob."
+          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob | aad_vault_indices_blob."
         },
         "expected_aad_bytes_hex": {
           "type": "string",
