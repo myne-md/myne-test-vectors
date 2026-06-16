@@ -163,6 +163,16 @@
                 "type": "string"
               }
             },
+            "keymap": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": "MYND-304 user keybinding overrides. BTreeMap<String, Vec<String>> — command id → set of canonical chord strings (CodeMirror-compatible Mod-Shift-g form, logical key, unresolved cross-platform Mod). Overrides only (defaults live in code); an empty array [] is the explicit-unbind state, distinct from an absent command. Omitted-when-empty (whole field); inner keys emitted in lexicographic order, each chord array set-canonical (NFC + sorted + exact-deduped). Canonical key 'k' — after item_order, before label."
+            },
             "editor_layout": {
               "type": "object",
               "additionalProperties": false,
