@@ -231,6 +231,10 @@
               "type": "integer",
               "minimum": 0,
               "description": "Unix epoch seconds of the vault's last backup export (MYND-58, vault-backup-restore epic). Absent ≡ never backed up; bare-decimal u64 (floats FORBIDDEN per spec §9.5.2); sorts label < last_backup_at < screen_capture_protection."
+            },
+            "editor_line_numbers": {
+              "type": "boolean",
+              "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones. / last_backup_at (epoch seconds, absent ≡ never backed up, MYND-58)"

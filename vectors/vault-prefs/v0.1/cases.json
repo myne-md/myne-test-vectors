@@ -400,6 +400,30 @@
         "screen_capture_protection": true,
         "theme": "amoled"
       }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-editor-line-numbers",
+      "description": "editor-line-numbers (MYND-314) editor_line_numbers field: screen_capture_protection=true plus an explicit editor_line_numbers=true. Pins the canonical key slot of 'editor_line_numbers' (after editor_layout, before screen_capture_protection — editor_la < editor_line_n < s) and its bare-bool JSON encoding. editor_line_numbers is Option<bool> where absence is the canonical encoding of the prose-first default-OFF, so this Some(true) case is the only shape that emits the key; an unset vault stays byte-identical to encrypt-default (omit-when-None). Same fixed vault-A inputs as the family; nonce 0xF4.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b22656469746f725f6c696e655f6e756d62657273223a747275652c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f40000005dd544fe9dbb8f0a9788ad5c730ed91802c0abf93250ee72c34d60f563cba6767684d8144763091ebf2ef8f4d5896b57df74b79e4b50b7d7f7ff013ffd5a210b8043a61cf0b3227d8cde5bca4edf1e1a9f27a8a47243d1170273c0909e35"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-editor-line-numbers",
+      "description": "Round-trip with encrypt-editor-line-numbers: the blob decodes back to PrefsView{ screen_capture_protection: true, editor_line_numbers: true } under the same root_key + account_number_hash. Verifies the decoder parses the editor_line_numbers bool at its canonical slot (between editor_layout and screen_capture_protection).",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f40000005dd544fe9dbb8f0a9788ad5c730ed91802c0abf93250ee72c34d60f563cba6767684d8144763091ebf2ef8f4d5896b57df74b79e4b50b7d7f7ff013ffd5a210b8043a61cf0b3227d8cde5bca4edf1e1a9f27a8a47243d1170273c0909e35",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b22656469746f725f6c696e655f6e756d62657273223a747275652c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "editor_line_numbers": true,
+        "screen_capture_protection": true
+      }
     }
   ]
 }

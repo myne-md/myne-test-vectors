@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/markdown-comment.json",
+  "title": "markdown-comment — case shape (v0.1)",
+  "description": "Pins the Myne dialect `%%…%%` editor-only comment (markdown-dialect.md §3.1 block / §3.2 inline / §3.7.5 exclusion zones / §6 strip, MYND-315). Each case carries a markdown source (hex) and pins which `%%` runs are recognized as a comment and the canonical comment-strip output (each recognized comment node's byte range removed; all other bytes verbatim). Terminated-only — an unterminated `%%` is INERT (no node, no strip), a deliberate divergence from Obsidian's EOF-swallow. Structurally excluded from code fence / inline code / wikilink / math-leaf zones. The strip is the single output every lossy projection (HTML / PDF / stripped-TXT / document statistics) shares; the byte-verbatim `.md` export does NOT strip (SYNC-2). Deterministic cross-client behavior in the property-coercion / note-template class (not a codec, not cryptographic). Hand-curated against §3.1/§3.2/§3.7.5/§6 (no Rust generator — the recognizer + strip live TS-side and are asserted against these vectors by the dialect Vitest runner). The Rust reference impl does not exist; this is a TS-runner category.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_markdown_utf8_hex",
+    "informational_markdown",
+    "expected_has_comment",
+    "expected_stripped_utf8_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^markdown-comment/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'markdown-comment/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["recognize", "inert", "exclusion"],
+      "description": "recognize = source has a terminated `%%…%%` comment that strips; inert = an unterminated `%%` / single `%` (no comment, no strip); exclusion = `%%` inside a §3.7.5 zone (no comment, no strip)."
+    },
+    "input_markdown_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The markdown source as exact UTF-8 bytes (hex). Hex-pinned so whitespace, newlines, and delimiter placement transport unambiguously."
+    },
+    "informational_markdown": {
+      "type": "string",
+      "description": "Human-readable mirror of input_markdown_utf8_hex. Informational — the runner cross-checks it byte-equal against the hex; the hex is the contract."
+    },
+    "expected_has_comment": {
+      "type": "boolean",
+      "description": "Whether the source contains at least one recognized `%%…%%` comment node. true only for case_kind 'recognize'; false for 'inert' / 'exclusion'."
+    },
+    "expected_stripped_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The canonical comment-strip output as exact UTF-8 bytes (hex): the source with every recognized comment node's byte range removed, all other bytes verbatim. For 'inert' / 'exclusion' cases this equals input_markdown_utf8_hex (no strip)."
+    },
+    "informational_stripped": {
+      "type": "string",
+      "description": "Human-readable mirror of expected_stripped_utf8_hex (informational; hex is the contract)."
+    }
+  }
+}
