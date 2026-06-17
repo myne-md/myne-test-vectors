@@ -33,6 +33,8 @@
         "aad_search_index_blob",
         "aad_workspace_blob",
         "aad_vault_indices_blob",
+        "aad_personal_dictionary_blob",
+        "aad_quick_unlock_blob",
         "aad_note_content_encrypt"
       ],
       "description": "Which pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below."
@@ -62,7 +64,13 @@
     "input_account_number_hash_hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{32}$",
-      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob."
+      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob / aad_personal_dictionary_blob / aad_quick_unlock_blob."
+    },
+    "input_provider_kind": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "description": "Present ONLY for aad_quick_unlock_blob — the wrap-key provider byte (0x01 biometric / 0x02 PIN) appended after account_number_hash and bound into the AAD (§9.14.3)."
     },
     "expected_aad_hex": {
       "type": "string",
@@ -91,6 +99,7 @@
               "items_key_id",
               "note_uuid",
               "account_number_hash",
+              "provider_kind",
               "content_type_length_be16",
               "content_type"
             ],

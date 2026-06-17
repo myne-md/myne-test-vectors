@@ -16,7 +16,7 @@
     "schema": {
       "type": "string",
       "description": "Registered category identifier. Selects the sub-schema applied to each cases[] element via the oneOf dispatch below. Adding a new category requires landing its sub-schema file under schema/v0.1/ and extending both this enum and the oneOf branches in lockstep.",
-      "enum": ["phrase_normalize", "vault-prefs", "vault_meta_rewrite", "hkdf-sha256", "vault-meta", "account-number", "myn-blob", "ctx-aead", "argon2id", "vault-search", "password-policy", "bip39-recovery", "aad-construction", "damm32-table", "attachment-blob", "attachments-catalog", "note-template", "vault-workspace", "backup-container", "property-coercion", "vault-indices", "markdown-comment"]
+      "enum": ["phrase_normalize", "vault-prefs", "vault_meta_rewrite", "hkdf-sha256", "vault-meta", "account-number", "myn-blob", "ctx-aead", "argon2id", "vault-search", "password-policy", "bip39-recovery", "aad-construction", "damm32-table", "attachment-blob", "attachments-catalog", "note-template", "vault-workspace", "backup-container", "property-coercion", "vault-indices", "markdown-comment", "vault-dictionary", "vault-quickunlock"]
     },
     "protocol_version": {
       "type": "string",
@@ -276,6 +276,28 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/markdown-comment.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": { "const": "vault-dictionary" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-dictionary.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": { "const": "vault-quickunlock" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-quickunlock.json"
           }
         }
       }
