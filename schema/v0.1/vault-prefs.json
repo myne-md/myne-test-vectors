@@ -245,6 +245,22 @@
             "editor_line_numbers": {
               "type": "boolean",
               "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
+            },
+            "active_workspace": {
+              "type": "string",
+              "description": "MYND-308 active workspace slot id. Option<String>; absent ≡ host-applied default workspace policy. Free string stored verbatim (NFC-normalized on encode). Canonical key 'active_workspace' — sorts FIRST, before auto_lock_seconds (ac < au)."
+            },
+            "editor_default_view_mode": {
+              "type": "string",
+              "description": "MYND-299 editor default view-mode preset (live|reading|source). Option<String> stored as a free enum string; absent ≡ host-applied default. Canonical key slot: after editor_content_width, before editor_focus_dim_inactive (editor_c < editor_d < editor_f)."
+            },
+            "editor_focus_dim_inactive": {
+              "type": "boolean",
+              "description": "MYND-348 editor focus-mode dim-inactive toggle. Option<bool>; absent ≡ host-applied default focus policy. Only an explicit true/false emits the key. Canonical key slot: after editor_default_view_mode, before editor_focus_typewriter (editor_focus_d < editor_focus_t)."
+            },
+            "editor_focus_typewriter": {
+              "type": "boolean",
+              "description": "MYND-348 editor focus-mode typewriter-scrolling toggle. Option<bool>; absent ≡ host-applied default focus policy. Only an explicit true/false emits the key. Canonical key slot: after editor_focus_dim_inactive, before editor_font_family (editor_focus < editor_font: c < n)."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones. / last_backup_at (epoch seconds, absent ≡ never backed up, MYND-58)"
