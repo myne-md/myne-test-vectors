@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/ctx-aead.json",
   "title": "ctx-aead — case shape (v0.1)",
-  "description": "Pins protocol::aead_seal_ctx + protocol::aead_open_ctx byte mapping (XChaCha20-Poly1305 with CTX commitment outer per Chan & Rogaway 2022) AND every pub aad_* builder's canonical byte output. Four case kinds: 'encrypt' (encoder byte output for raw key+nonce+plaintext+aad inputs), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4), 'aad_canonical_bytes' (per-builder AAD pin — verifies each of the 7 pub aad_* builder functions produces the canonical bytes, exercised independently of the AEAD primitive). Spec contract: docs/spec/protocol.md §5.1 (AEAD construction) + §5.2 (AAD assembly) + §6.4 (non-distinguishing failure).",
+  "description": "Pins protocol::aead_seal_ctx + protocol::aead_open_ctx byte mapping (XChaCha20-Poly1305 with CTX commitment outer per Chan & Rogaway 2022) AND every pub aad_* builder's canonical byte output. Four case kinds: 'encrypt' (encoder byte output for raw key+nonce+plaintext+aad inputs), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4), 'aad_canonical_bytes' (per-builder AAD pin — verifies each of the 11 pub aad_* builder functions produces the canonical bytes, exercised independently of the AEAD primitive). Spec contract: docs/spec/protocol.md §5.1 (AEAD construction) + §5.2 (AAD assembly) + §6.4 (non-distinguishing failure).",
   "type": "object",
   "required": ["vector_id", "description", "case_kind"],
   "unevaluatedProperties": false,
@@ -137,9 +137,11 @@
             "aad_prefs_blob",
             "aad_search_index_blob",
             "aad_workspace_blob",
-            "aad_vault_indices_blob"
+            "aad_vault_indices_blob",
+            "aad_personal_dictionary_blob",
+            "aad_quick_unlock_blob"
           ],
-          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6), aad_workspace_blob (MYND-254, §9.7) and aad_vault_indices_blob (MYND-271, §9.8) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob', 'workspace-blob' and 'vault-indices-blob' respectively."
+          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6), aad_workspace_blob (MYND-254, §9.7), aad_vault_indices_blob (MYND-271, §9.8) and aad_personal_dictionary_blob (MYND-266, §9.13) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob', 'workspace-blob', 'vault-indices-blob' and 'personal-dictionary-blob' respectively. aad_quick_unlock_blob (MYND-329, §9.14.3) additionally takes input_provider_kind, appended as a trailing byte after account_number_hash."
         },
         "input_kdf_params": {
           "type": "object",
@@ -166,7 +168,13 @@
         "input_account_number_hash_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{32}$",
-          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob | aad_vault_indices_blob."
+          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob | aad_vault_indices_blob | aad_personal_dictionary_blob | aad_quick_unlock_blob."
+        },
+        "input_provider_kind": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "Required ONLY for builder_name = aad_quick_unlock_blob — the wrap-key provider byte (0x01 biometric / 0x02 PIN) bound into the AAD as a trailing byte (§9.14.3)."
         },
         "expected_aad_bytes_hex": {
           "type": "string",

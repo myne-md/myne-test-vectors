@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-quickunlock.json",
+  "title": "vault-quickunlock — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::encode_quick_unlock_blob_raw + protocol::decode_quick_unlock_blob — the MYQ1 vault.quickunlock device-local credential codec (MYND-329; §9.14). The blob wraps a THIRD copy of root_key (32 bytes) under a provider-supplied wrap_key. The codec is PROVIDER-AGNOSTIC: it never runs Argon2id, so wrap_key is supplied DIRECTLY as a fixed input (the PIN→wrap_key Argon2id derivation is pinned separately in the argon2id family, input_path 'quickunlock-pin'). provider_kind (0x01 biometric / 0x02 PIN) and account_number_hash both bind via aad_quick_unlock_blob (AAD role 'quick-unlock-blob'); there is NO HKDF SubkeyRole (a root_key-derived KEK would be circular since the blob protects root_key). ciphertext_len is the fixed constant 64 (root_key 32 + CTX tag 32), so there is no size cap / ciphertext_len_overflow case — an off-value is CiphertextLenInvalid. Four case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip to the unwrapped root_key), 'decrypt_aead_fail' (non-distinguishing AEAD failure per §6.4, incl. the provider_kind-flip which is AAD-bound), 'parse_fail' (distinguishable pre-decryption structural reject, one per QuickUnlockBlobError decode variant). Reference impl: protocol/src/quick_unlock_blob.rs (main myne repository); spec: docs/spec/protocol.md §9.14 + §5.2.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-quickunlock/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-quickunlock/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_wrap_key_hex",
+        "input_account_number_hash_hex",
+        "input_provider_kind",
+        "input_pin_salt_hex",
+        "input_root_key_hex",
+        "input_nonce_hex",
+        "expected_vault_quickunlock_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte symmetric wrap_key (hex), supplied DIRECTLY. The codec is provider-agnostic — it never derives this key. For the PIN provider it is the Argon2id output (the derivation is pinned in the argon2id family); for the biometric provider it is the Keychain secret."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex). Bound (together with provider_kind) into the 47-byte AAD via aad_quick_unlock_blob (role string 'quick-unlock-blob')."
+        },
+        "input_provider_kind": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "Wrap-key provider: 0x01 = macOS-biometric (Keychain), 0x02 = PIN (Argon2id). Written into the public header at offset 5 AND bound into the AAD so a biometric-minted blob cannot be reinterpreted as a PIN blob."
+        },
+        "input_pin_salt_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte pin_salt (hex) written into the public header at offset 6. The Argon2id salt for the PIN provider; all-zero when provider_kind != PIN. NOT bound into the AAD (it is public so a PIN caller can read it back before decode)."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex) — the secret being wrapped (the third device-local copy). This is the AEAD plaintext, NOT a key-derivation input."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+        },
+        "expected_vault_quickunlock_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{228}$",
+          "description": "Full encoder output, hex-encoded lowercase. Always exactly 114 bytes (228 hex chars): 50-byte header + 32-byte root_key ciphertext + 32-byte CTX tag. Decoders compare byte-equal."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "input_account_number_hash_hex",
+        "expected_root_key_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{228}$"
+        },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The recovered 32-byte root_key (hex) — the unwrapped third copy."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "input_account_number_hash_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{228}$"
+        },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: QuickUnlockBlobError::CannotDecrypt). Implementations MUST NOT distinguish cross-vault (wrong account_number_hash) vs tampered ciphertext/tag vs wrong wrap_key vs provider_kind-flip (provider_kind is AAD-bound) beyond the single 'cannot decrypt' outcome (spec §6.4). Structurally distinguishable rejects (bad magic, unregistered provider_kind, wrong ciphertext_len, etc.) are pinned separately under case_kind 'parse_fail'."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable pre-decryption structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE attempting any decryption — magic / protocol_version / provider_kind / ciphertext_len checks all run before the AEAD stage (spec §9.14.1 magic-byte-before-decrypt discipline)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "provider_kind_unsupported",
+            "ciphertext_len_invalid",
+            "header_too_short",
+            "ciphertext_truncated"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: QuickUnlockBlobError::{MagicMismatch, ProtocolVersionMismatch, ProviderKindUnsupported, CiphertextLenInvalid, HeaderTooShort, CiphertextTruncated}). NOTE there is no 'ciphertext_len_overflow' here (unlike vault-search/indices): the quick-unlock ciphertext_len is the fixed constant 64, so any off-value is the exact 'ciphertext_len_invalid' reject. A provider_kind that is a REGISTERED value (0x01/0x02) but mismatches the AAD-bound value is a decrypt_aead_fail, not a parse_fail."
+        }
+      }
+    }
+  ]
+}
