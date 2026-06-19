@@ -41,7 +41,9 @@ Language-agnostic JSON test vectors for the Myne cryptographic protocol. Any ind
 
 ### Planned
 
-**None.** Every previously-planned category (`bip39-recovery`, `aad-construction`) has landed alongside `password-policy`. Future major-version (`v005`) vectors land under `vectors/<cat>/v005/` when that epoch opens.
+- `vault-head` — **schema registered (Phase 2), vectors pending MYND-418.** The `schema/v0.1/vault-head.json` sub-schema for the vault-head fork-consistency primitive (MYND-416; main repo `docs/spec/sync-protocol.md` §3-§5, `docs/spec/protocol.md` §9.15 + §3.4) is landed and wired into the root `oneOf` + `schema` enum, but `vectors/vault-head/v0.1/cases.json` is **not yet authored** — the golden vectors require the Rust reference implementation (MYND-417) and land with MYND-418. Two case kinds: `encode` (pins `head_mac_input` / `head_mac` / `head_id` — the canonical HMAC encoding incl. version-vector inner order, lexicographic merge-parent sort, and `head_id = SHA-256(head_mac_input || head_mac)`) and `verify` (pins the on-pull VV-dominance decision: extension / rollback / incomparable-merge / bootstrap-TOFU). It is the first **sync-wire** category (not an at-rest on-disk blob — the head has no magic; its only on-disk sibling is the device-local `MYH1` baseline).
+
+Every Phase-1 category has landed. Future major-version (`v005`) vectors land under `vectors/<cat>/v005/` when that epoch opens.
 
 ## JSON schema convention
 
