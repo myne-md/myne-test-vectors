@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/manifest.json",
+  "title": "manifest — case shape (v0.1)",
+  "description": "Pins the byte-level contract for the canonical vault-head manifest object (MYND-414 / SYNC-13; spec docs/spec/sync-protocol.md §4.2). The manifest is the uuid->content_nonce map of content blobs only (notes by note-UUID, attachments by attachment-id; 16-byte ids, 24-byte content_nonce), encoded encode-then-hash with a manifest-specific hash domain prefix (§3.5) so it can never be reinterpreted as a head record. The vault head commits manifest_hash = SHA-256(manifest_canonical) (§3.2). Two case kinds: 'encode' pins the canonical manifest bytes + manifest_hash (covering the ascending-by-id sort and the empty/single/multi/tombstone shapes); 'parse_fail' pins the distinguishable structural decode rejects. Reference: protocol::manifest (encode_manifest / compute_manifest_hash / decode_manifest); cross-impl bit-identical output is the acceptance bar.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "manifest_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_id_hex", "input_content_nonce_hex"],
+      "properties": {
+        "input_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte content-blob id (hex): a note UUID or an attachment-id. The flat content keyspace (sync-protocol.md §4.2)."
+        },
+        "input_content_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte content_nonce (hex) — the blob's current per-revision rollback discriminator (protocol.md §9.2). A `deleted`-marked tombstone version carries its own fresh content_nonce."
+        }
+      }
+    }
+  },
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^manifest/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'manifest/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encode", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encode — pin the canonical manifest bytes and manifest_hash",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_entries",
+        "expected_manifest_bytes_hex",
+        "expected_manifest_hash_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encode" },
+        "input_entries": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "$ref": "#/$defs/manifest_entry" },
+          "description": "The manifest's (id, content_nonce) entries. MAY be supplied UNSORTED to pin that the encoder sorts entries ascending by id (byte-order); the expected output reflects the canonical order. No id may repeat."
+        },
+        "expected_manifest_bytes_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The full canonical manifest_canonical bytes (hex): 'myne.v0.1|vault-manifest|' || protocol_version(0x01) || manifest_format_version(0x01) || entry_count(4 BE) || per entry sorted-ascending-by-id: id(16) || content_nonce(24)."
+        },
+        "expected_manifest_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte manifest_hash = SHA-256(manifest_canonical), hex — the value the vault head commits in head_mac_input (sync-protocol.md §3.2 / §4.2)."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable structural decode reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_manifest_bytes_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_manifest_bytes_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Tampered/malformed manifest bytes (hex) a conformant decoder MUST reject before trusting any field."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "duplicate_id",
+            "too_short",
+            "trailing_bytes",
+            "domain_prefix_mismatch",
+            "protocol_version_mismatch",
+            "format_unsupported",
+            "not_canonical"
+          ],
+          "description": "The structural reject a conformant decoder returns (maps to protocol::manifest::ManifestError)."
+        }
+      }
+    }
+  ]
+}

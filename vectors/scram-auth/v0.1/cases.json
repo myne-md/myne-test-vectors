@@ -1,0 +1,56 @@
+{
+  "schema": "scram-auth",
+  "protocol_version": "v0.1",
+  "spec_section": "server-protocol.md auth (MYND-420) · RFC 7677/5802/9266",
+  "description": "SCRAM-SHA-256-PLUS verifier + client proof + server signature (tls-exporter channel binding).",
+  "cases": [
+    {
+      "vector_id": "scram-auth/v0.1/basic",
+      "case_kind": "scram_plus",
+      "input_secret_hex": "abababababababababababababababababababababababababababababababab",
+      "input_salt_hex": "11111111111111111111111111111111",
+      "input_iterations": 1,
+      "input_username": "MY-DEMO",
+      "input_client_nonce": "cn",
+      "input_combined_nonce": "cnsn",
+      "input_cbind_data_hex": "cbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcb",
+      "expected_stored_key_hex": "b579ad52ebf3c13987ed6699b2f3d9a60995e57bcdb87eca24bcefeb67352e7f",
+      "expected_server_key_hex": "8052f31f0853e68d60ab52718616e572a4727b3be8777bd09e72440d6263411f",
+      "expected_client_proof_hex": "7dd5347e12eb3c4eefe00f05d1f0407228cf7cb882de90ba03a16fd78515a121",
+      "expected_server_signature_hex": "d157e220758fc24a9202018f9dd357cba0f8e7cbb6fc9835e0e011161b28ba69",
+      "description": "scram-auth/v0.1/basic"
+    },
+    {
+      "vector_id": "scram-auth/v0.1/zero-secret",
+      "case_kind": "scram_plus",
+      "input_secret_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input_salt_hex": "22222222222222222222222222222222",
+      "input_iterations": 1,
+      "input_username": "MY-DEMO",
+      "input_client_nonce": "cn",
+      "input_combined_nonce": "cnsn",
+      "input_cbind_data_hex": "cbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcb",
+      "expected_stored_key_hex": "ecd0daae4946d841a6af5d7aa6a75b03dd0725ecffe6d7f1eb62b64a62f9b7f3",
+      "expected_server_key_hex": "e9fd5558b1984f21c3996f9e881e1b68aff43a39f861d45005b0d0ec1c9ac99f",
+      "expected_client_proof_hex": "3e7f9340f28870fc37837a3b3264ed83e8d6a3a26ffc30c00fc2383d299ded59",
+      "expected_server_signature_hex": "fe2affefd5958af0b6a3ba6198fd6f43f461f87aa0f6b12919b1760804d9df98",
+      "description": "scram-auth/v0.1/zero-secret"
+    },
+    {
+      "vector_id": "scram-auth/v0.1/alt-cbind",
+      "case_kind": "scram_plus",
+      "input_secret_hex": "abababababababababababababababababababababababababababababababab",
+      "input_salt_hex": "11111111111111111111111111111111",
+      "input_iterations": 1,
+      "input_username": "MY-DEMO",
+      "input_client_nonce": "cn",
+      "input_combined_nonce": "cnsn",
+      "input_cbind_data_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "expected_stored_key_hex": "b579ad52ebf3c13987ed6699b2f3d9a60995e57bcdb87eca24bcefeb67352e7f",
+      "expected_server_key_hex": "8052f31f0853e68d60ab52718616e572a4727b3be8777bd09e72440d6263411f",
+      "expected_client_proof_hex": "73ba9001d23163b2477651895faa00c38dcea0920fba4668dc7142c8d889f980",
+      "expected_server_signature_hex": "4361694a3a12590e99512989653a506073cbf7010290913035ecc78068806462",
+      "description": "scram-auth/v0.1/alt-cbind"
+    }
+  ]
+}

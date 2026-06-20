@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/head-fingerprint.json",
+  "title": "head-fingerprint — case shape (v0.1)",
+  "description": "Pins the deterministic head_id -> SAS bootstrap/fork-audit fingerprint (SYNC-17; spec docs/spec/sync-protocol.md §6.3). A short, eye-comparable code both devices display at the enrollment approval gate (MYND-425) and the general fork-audit UI reuses (MYND-427). Encoding: digest = SHA-256('myne.v0.1 vault-head-fingerprint' || head_id); the first 40 bits are emitted as 8 Crockford-base32 chars (account-number.md §4 alphabet, excluding I/L/O/U), grouped XXXX-XXXX. Cross-implementation byte-identical output is the acceptance bar (PRIMITIVE-LEVEL review). Reference: protocol::head_fingerprint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vector_id", "description", "input_head_id_hex", "expected_fingerprint"],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^head-fingerprint/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier 'head-fingerprint/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "input_head_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte head_id (hex), the SHA-256(record) the fingerprint is derived from."
+    },
+    "expected_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$",
+      "description": "The 8-char Crockford-base32 SAS, grouped XXXX-XXXX (I/L/O/U excluded by the alphabet)."
+    }
+  }
+}

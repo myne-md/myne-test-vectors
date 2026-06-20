@@ -16,7 +16,36 @@
     "schema": {
       "type": "string",
       "description": "Registered category identifier. Selects the sub-schema applied to each cases[] element via the oneOf dispatch below. Adding a new category requires landing its sub-schema file under schema/v0.1/ and extending both this enum and the oneOf branches in lockstep.",
-      "enum": ["phrase_normalize", "vault-prefs", "vault_meta_rewrite", "hkdf-sha256", "vault-meta", "account-number", "myn-blob", "ctx-aead", "argon2id", "vault-search", "password-policy", "bip39-recovery", "aad-construction", "damm32-table", "attachment-blob", "attachments-catalog", "note-template", "vault-workspace", "backup-container", "property-coercion", "vault-indices", "markdown-comment", "vault-dictionary", "vault-quickunlock", "vault-head"]
+      "enum": [
+        "phrase_normalize",
+        "vault-prefs",
+        "vault_meta_rewrite",
+        "hkdf-sha256",
+        "vault-meta",
+        "account-number",
+        "myn-blob",
+        "ctx-aead",
+        "argon2id",
+        "vault-search",
+        "password-policy",
+        "bip39-recovery",
+        "aad-construction",
+        "damm32-table",
+        "attachment-blob",
+        "attachments-catalog",
+        "note-template",
+        "vault-workspace",
+        "backup-container",
+        "property-coercion",
+        "vault-indices",
+        "markdown-comment",
+        "vault-dictionary",
+        "vault-quickunlock",
+        "vault-head",
+        "scram-auth",
+        "manifest",
+        "head-fingerprint"
+      ]
     },
     "protocol_version": {
       "type": "string",
@@ -40,7 +69,9 @@
   "oneOf": [
     {
       "properties": {
-        "schema": { "const": "phrase_normalize" },
+        "schema": {
+          "const": "phrase_normalize"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -51,7 +82,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-prefs" },
+        "schema": {
+          "const": "vault-prefs"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -62,7 +95,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault_meta_rewrite" },
+        "schema": {
+          "const": "vault_meta_rewrite"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -73,7 +108,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "hkdf-sha256" },
+        "schema": {
+          "const": "hkdf-sha256"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -84,7 +121,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-meta" },
+        "schema": {
+          "const": "vault-meta"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -95,7 +134,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "account-number" },
+        "schema": {
+          "const": "account-number"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -106,7 +147,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "myn-blob" },
+        "schema": {
+          "const": "myn-blob"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -117,7 +160,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "ctx-aead" },
+        "schema": {
+          "const": "ctx-aead"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -128,7 +173,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "argon2id" },
+        "schema": {
+          "const": "argon2id"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -139,7 +186,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-search" },
+        "schema": {
+          "const": "vault-search"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -150,7 +199,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "password-policy" },
+        "schema": {
+          "const": "password-policy"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -161,7 +212,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "bip39-recovery" },
+        "schema": {
+          "const": "bip39-recovery"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -172,7 +225,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "aad-construction" },
+        "schema": {
+          "const": "aad-construction"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -183,7 +238,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "damm32-table" },
+        "schema": {
+          "const": "damm32-table"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -194,7 +251,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "attachment-blob" },
+        "schema": {
+          "const": "attachment-blob"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -205,7 +264,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "attachments-catalog" },
+        "schema": {
+          "const": "attachments-catalog"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -216,7 +277,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "note-template" },
+        "schema": {
+          "const": "note-template"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -227,7 +290,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-workspace" },
+        "schema": {
+          "const": "vault-workspace"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -238,7 +303,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "backup-container" },
+        "schema": {
+          "const": "backup-container"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -249,7 +316,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "property-coercion" },
+        "schema": {
+          "const": "property-coercion"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -260,7 +329,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-indices" },
+        "schema": {
+          "const": "vault-indices"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -271,7 +342,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "markdown-comment" },
+        "schema": {
+          "const": "markdown-comment"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -282,7 +355,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-dictionary" },
+        "schema": {
+          "const": "vault-dictionary"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -293,7 +368,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-quickunlock" },
+        "schema": {
+          "const": "vault-quickunlock"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -304,11 +381,52 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-head" },
+        "schema": {
+          "const": "vault-head"
+        },
         "cases": {
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-head.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "scram-auth"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/scram-auth.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "manifest"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/manifest.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "head-fingerprint"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/head-fingerprint.json"
           }
         }
       }

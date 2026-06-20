@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/scram-auth.json",
+  "title": "scram-auth — case shape (v0.1)",
+  "description": "Pins the byte-level contract for the Phase 2 sync-server authentication mechanism SCRAM-SHA-256-PLUS (MYND-420; RFC 7677/5802 + RFC 9266 tls-exporter channel binding; spec docs/spec/server-protocol.md auth section). The authenticated secret is the high-entropy HKDF(root_key,'server-auth') value, so iteration count is minimal. Each case pins: the server-stored verifier (StoredKey = SHA-256(ClientKey); ServerKey = HMAC(SaltedPassword,'Server Key'); SaltedPassword = PBKDF2-HMAC-SHA-256(secret, salt, i)), the client proof (ClientKey XOR HMAC(StoredKey, AuthMessage)), and the server signature (HMAC(ServerKey, AuthMessage)) — where the AuthMessage incorporates the channel-binding input (gs2-header || cbind_data). Changing cbind_data with the same secret/salt yields the same verifier but a different proof, proving channel binding is load-bearing. NOTE: these golden vectors are generated from the Go server reference implementation (myne-server/internal/auth/scram); the Rust client must reproduce them byte-exact — that cross-impl parity is gated by the MYND-420 R3 primitive-level review.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_secret_hex",
+    "input_salt_hex",
+    "input_iterations",
+    "input_username",
+    "input_client_nonce",
+    "input_combined_nonce",
+    "input_cbind_data_hex",
+    "expected_stored_key_hex",
+    "expected_server_key_hex",
+    "expected_client_proof_hex",
+    "expected_server_signature_hex"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "case_kind": { "type": "string", "const": "scram_plus" },
+    "input_secret_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte high-entropy server-auth secret = HKDF(root_key,'server-auth')."
+    },
+    "input_salt_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]+$",
+      "description": "Server-random SCRAM salt (hex)."
+    },
+    "input_iterations": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "PBKDF2 iteration count (1 for a 256-bit secret)."
+    },
+    "input_username": { "type": "string", "minLength": 1 },
+    "input_client_nonce": { "type": "string", "minLength": 1 },
+    "input_combined_nonce": {
+      "type": "string",
+      "minLength": 1,
+      "description": "client_nonce || server_nonce."
+    },
+    "input_cbind_data_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]+$",
+      "description": "tls-exporter channel-binding material (hex)."
+    },
+    "expected_stored_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "expected_server_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "expected_client_proof_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "expected_server_signature_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}
