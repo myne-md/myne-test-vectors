@@ -242,6 +242,35 @@
               "minimum": 0,
               "description": "Unix epoch seconds of the vault's last backup export (MYND-58, vault-backup-restore epic). Absent ≡ never backed up; bare-decimal u64 (floats FORBIDDEN per spec §9.5.2); sorts label < last_backup_at < screen_capture_protection."
             },
+            "paired_extensions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "extension_id",
+                  "token_value",
+                  "revoked"
+                ],
+                "properties": {
+                  "extension_id": {
+                    "type": "string"
+                  },
+                  "token_value": {
+                    "type": "string"
+                  },
+                  "revoked": {
+                    "type": "boolean"
+                  },
+                  "paired_at": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "MYND-442 Unix epoch seconds of the in-app pairing-accept time. Additive optional field (§9.5.2) — omitted from the canonical record when absent so pre-feature records stay byte-identical; bare-decimal u64. Per-record canonical key order extension_id < paired_at < revoked < token_value."
+                  }
+                }
+              },
+              "description": "MYND-443 browser-clipper paired-extension records (the persisted pairing-token registry). Array of {extension_id, token_value, revoked, paired_at?} sorted by (extension_id, token_value) so the encoding is byte-stable. Omitted-when-empty (the field is absent entirely when no extension is paired). Canonical key 'p' — after last_backup_at, before saved_views/screen_capture_protection."
+            },
             "editor_line_numbers": {
               "type": "boolean",
               "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
