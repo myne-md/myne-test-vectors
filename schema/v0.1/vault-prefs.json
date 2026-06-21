@@ -201,11 +201,7 @@
             },
             "theme": {
               "type": "string",
-              "enum": [
-                "light",
-                "dark"
-              ],
-              "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); only an explicit light/dark choice emits the key (lexicographically LAST, after screen_capture_protection)."
+              "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); light/dark are the recognized choices. NOT an enum: per protocol.md §9.5.2 the codec ROUND-TRIPS an UNRECOGNIZED string value (a hypothetical future 'sepia'/'amoled') verbatim — the client treats an unknown value as system at apply-time, never a parse failure — so the byte-level vector pins any string (see the decrypt-themed-amoled forward-compat case)."
             },
             "daily_date_format": {
               "type": "string",
@@ -270,6 +266,20 @@
                 }
               },
               "description": "MYND-443 browser-clipper paired-extension records (the persisted pairing-token registry). Array of {extension_id, token_value, revoked, paired_at?} sorted by (extension_id, token_value) so the encoding is byte-stable. Omitted-when-empty (the field is absent entirely when no extension is paired). Canonical key 'p' — after last_backup_at, before saved_views/screen_capture_protection."
+            },
+            "saved_views": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "MYND-273 Saved Views — array of saved-view definition objects {id, name, view_type, filters (recursive AST), sort, optional card_size/columns/group_by/image/image_aspect_ratio}. The view object's internal shape (incl. the recursive filters AST) is contracted by protocol.md §9.5.2 + the Saved Views feature, not re-modeled here — the codec round-trips it as opaque canonical JSON. Sorted by view id; omitted-when-empty. Canonical key 's' — after paired_extensions, before screen_capture_protection."
+            },
+            "view_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "MYND-273 Saved Views display order — view ids in render order (sequence semantics: NFC, order preserved verbatim, never sorted/deduped). Omitted-when-empty. Canonical key 'v' — sorts last (after theme)."
             },
             "editor_line_numbers": {
               "type": "boolean",

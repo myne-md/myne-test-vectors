@@ -33,9 +33,9 @@ A port runs each case:
 
 Compare bytes, not rendered strings. (The round-trip + idempotency invariants are pinned by the main repo's per-construct tests; this category pins the exact emitted bytes.)
 
-## Cases (23)
+## Cases (35)
 
-5 `floor` + 3 `math` + 9 `wedge` + 4 `normalize` + 2 `degrade`. The load-bearing pins:
+5 `floor` + 15 `math` + 9 `wedge` + 4 `normalize` + 2 `degrade`. (The `math` subset grew from 3 to 15 when capture-extraction task 12 landed the exhaustive `$`-tokenizer pins — block/inline boundaries, the degrade-to-inert currency guards, and round-trip-stable LaTeX emission.) The table below lists the load-bearing pins (an illustrative subset, not every case):
 
 | `vector_id` | pins |
 |---|---|
