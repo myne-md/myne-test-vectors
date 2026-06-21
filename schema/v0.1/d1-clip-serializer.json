@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/d1-clip-serializer.json",
+  "title": "d1-clip-serializer — case shape (v0.1)",
+  "description": "Pins the Myne dialect clip serializer (`serializeClipMarkdown`, src/dialect/clip.ts) — the @lezer/markdown-tree → canonical-D1 emitter that re-authors best-effort markdown handed off by the browser extension (capture-extraction sub-feature, browser-extension epic; markdown-dialect.md §5 canonical emit forms / §6 round-trip, SYNC-7 + SYNC-11). Each case carries a Defuddle-produced markdown source (hex) and pins the byte-exact canonical-D1 output (hex). A clip is AUTHORED content (not a C1-preserved import), so the serializer renormalizes bytes (canonical delimiters, collapsed whitespace, Setext→ATX, reference-link→inline, indented-code→fenced) as long as the emit re-parses to a structurally-identical tree and a second pass is a fixed point. Hand-curated by running the LIVE TS serializer over each fixture (no Rust generator — the serializer lives TS-side); the dialect Vitest runner asserts the live serializer byte-exact against these vectors. The Rust reference impl does not exist; this is a TS-runner category like markdown-comment / property-coercion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_markdown_utf8_hex",
+    "informational_markdown",
+    "expected_canonical_d1_utf8_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^d1-clip-serializer/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'd1-clip-serializer/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["floor", "wedge", "normalize", "degrade", "math"],
+      "description": "floor = the fidelity floor (faithful table / code / inline-code emission); math = inline `$…$` / block `$$…$$` emission against D1's `$`-tokenizer (incl. the degrade-to-inert-text path; task 12 extends this subset); wedge = the article wedge (headings / lists / links / emphasis / callouts / tasks / footnotes / highlights); normalize = recognized-on-parse → canonical emit (Setext→ATX, reference-link→inline, alt-emphasis-delims, indented-code→fenced); degrade = a no-emit-form construct dropped, never broken markdown."
+    },
+    "input_markdown_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The best-effort markdown source as exact UTF-8 bytes (hex). Hex-pinned so whitespace, newlines, and delimiter placement transport unambiguously."
+    },
+    "informational_markdown": {
+      "type": "string",
+      "description": "Human-readable mirror of input_markdown_utf8_hex. Informational — the runner cross-checks it byte-equal against the hex; the hex is the contract."
+    },
+    "expected_canonical_d1_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The canonical-D1 serializer output as exact UTF-8 bytes (hex): what serializeClipMarkdown(input) emits. Byte-exact; the runner asserts the live serializer produces these bytes and (per the round-trip invariant the per-construct tests pin separately) that they re-parse to a structurally-identical tree."
+    },
+    "informational_canonical_d1": {
+      "type": "string",
+      "description": "Human-readable mirror of expected_canonical_d1_utf8_hex (informational; hex is the contract)."
+    }
+  }
+}
