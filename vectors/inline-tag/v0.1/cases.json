@@ -1,0 +1,52 @@
+{
+  "schema": "inline-tag",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 (#inline-tags)",
+  "description": "Pins the Myne dialect inline-tag parser (src/dialect/lezer/inline-tag.ts) — which byte ranges are recognized as InlineTag. UTF-8 byte offsets. recognize cases carry the spans; inert cases (ATX heading, hash-with-space) carry an empty list. TS-runner category.",
+  "cases": [
+    {
+      "vector_id": "inline-tag/v0.1/basic",
+      "description": "A simple #tag.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "61202370726f6a6563742068657265",
+      "informational_markdown": "a #project here",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 10
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/nested",
+      "description": "A nested #parent/child tag.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "7365652023617265612f73756220746f646179",
+      "informational_markdown": "see #area/sub today",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 4,
+          "to": 13
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/inert-atx-heading",
+      "description": "An ATX heading hash is not an inline tag.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "232048656164696e67",
+      "informational_markdown": "# Heading",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "inline-tag/v0.1/inert-hash-space",
+      "description": "A hash followed by a space is not an inline tag.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "6120232062",
+      "informational_markdown": "a # b",
+      "expected_dialect_spans": []
+    }
+  ]
+}

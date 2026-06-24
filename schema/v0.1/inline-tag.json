@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/inline-tag.json",
+  "title": "inline-tag — case shape (v0.1)",
+  "description": "Pins one parse-recognition case for the Myne dialect inline-tag construct (src/dialect/lezer/inline-tag.ts, main myne repository). A case hex-decodes a markdown source and pins expected_dialect_spans: the byte ranges (UTF-8 offsets, pre-order traversal) the parser recognizes as inline-tag nodes (InlineTag). A 'recognize' case carries one or more spans; an 'inert' case carries an empty span list (a near-miss the parser must NOT recognize). Not an on-disk codec and not cryptographic — deterministic cross-client parse behavior: every independent client must recognize the same byte ranges. TS-runner category (no Rust generator); the live parser is asserted by tests/dialect/dialectParse.test.ts.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_markdown_utf8_hex",
+    "informational_markdown",
+    "expected_dialect_spans"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^inline-tag/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'inline-tag/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "recognize",
+        "inert"
+      ],
+      "description": "recognize: the construct is present (spans non-empty). inert: a near-miss that must not be recognized (spans empty)."
+    },
+    "input_markdown_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The markdown source as exact UTF-8 bytes (hex). The byte sequence is the contract, immune to JSON-tooling normalization."
+    },
+    "informational_markdown": {
+      "type": "string",
+      "description": "Human-readable mirror of input_markdown_utf8_hex; the runner cross-checks it byte-equal against the hex."
+    },
+    "expected_dialect_spans": {
+      "type": "array",
+      "description": "The recognized spans in document (pre-order) traversal order. Empty for inert cases.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node",
+          "from",
+          "to"
+        ],
+        "properties": {
+          "node": {
+            "type": "string",
+            "enum": [
+              "InlineTag"
+            ],
+            "description": "The recognized inline-tag node name."
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start UTF-8 byte offset (inclusive)."
+          },
+          "to": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "End UTF-8 byte offset (exclusive)."
+          }
+        }
+      }
+    }
+  }
+}

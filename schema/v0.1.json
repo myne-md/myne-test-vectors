@@ -16,7 +16,44 @@
     "schema": {
       "type": "string",
       "description": "Registered category identifier. Selects the sub-schema applied to each cases[] element via the oneOf dispatch below. Adding a new category requires landing its sub-schema file under schema/v0.1/ and extending both this enum and the oneOf branches in lockstep.",
-      "enum": ["phrase_normalize", "vault-prefs", "vault_meta_rewrite", "hkdf-sha256", "vault-meta", "account-number", "myn-blob", "ctx-aead", "argon2id", "vault-search", "password-policy", "bip39-recovery", "aad-construction", "damm32-table", "attachment-blob", "attachments-catalog", "note-template", "vault-workspace", "backup-container", "property-coercion", "vault-indices", "markdown-comment", "vault-dictionary", "vault-quickunlock", "attachment-text", "d1-clip-serializer"]
+      "enum": [
+        "phrase_normalize",
+        "vault-prefs",
+        "vault_meta_rewrite",
+        "hkdf-sha256",
+        "vault-meta",
+        "account-number",
+        "myn-blob",
+        "ctx-aead",
+        "argon2id",
+        "vault-search",
+        "password-policy",
+        "bip39-recovery",
+        "aad-construction",
+        "damm32-table",
+        "attachment-blob",
+        "attachments-catalog",
+        "note-template",
+        "vault-workspace",
+        "backup-container",
+        "property-coercion",
+        "vault-indices",
+        "markdown-comment",
+        "vault-dictionary",
+        "vault-quickunlock",
+        "attachment-text",
+        "d1-clip-serializer",
+        "saved-view",
+        "paired-extension",
+        "footnote",
+        "highlight",
+        "wikilink",
+        "definition-list",
+        "inline-tag",
+        "math",
+        "frontmatter-surgery",
+        "rename-journal"
+      ]
     },
     "protocol_version": {
       "type": "string",
@@ -40,7 +77,9 @@
   "oneOf": [
     {
       "properties": {
-        "schema": { "const": "phrase_normalize" },
+        "schema": {
+          "const": "phrase_normalize"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -51,7 +90,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-prefs" },
+        "schema": {
+          "const": "vault-prefs"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -62,7 +103,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault_meta_rewrite" },
+        "schema": {
+          "const": "vault_meta_rewrite"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -73,7 +116,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "hkdf-sha256" },
+        "schema": {
+          "const": "hkdf-sha256"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -84,7 +129,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-meta" },
+        "schema": {
+          "const": "vault-meta"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -95,7 +142,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "account-number" },
+        "schema": {
+          "const": "account-number"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -106,7 +155,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "myn-blob" },
+        "schema": {
+          "const": "myn-blob"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -117,7 +168,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "ctx-aead" },
+        "schema": {
+          "const": "ctx-aead"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -128,7 +181,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "argon2id" },
+        "schema": {
+          "const": "argon2id"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -139,7 +194,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-search" },
+        "schema": {
+          "const": "vault-search"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -150,7 +207,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "password-policy" },
+        "schema": {
+          "const": "password-policy"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -161,7 +220,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "bip39-recovery" },
+        "schema": {
+          "const": "bip39-recovery"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -172,7 +233,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "aad-construction" },
+        "schema": {
+          "const": "aad-construction"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -183,7 +246,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "damm32-table" },
+        "schema": {
+          "const": "damm32-table"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -194,7 +259,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "attachment-blob" },
+        "schema": {
+          "const": "attachment-blob"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -205,7 +272,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "attachments-catalog" },
+        "schema": {
+          "const": "attachments-catalog"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -216,7 +285,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "note-template" },
+        "schema": {
+          "const": "note-template"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -227,7 +298,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-workspace" },
+        "schema": {
+          "const": "vault-workspace"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -238,7 +311,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "backup-container" },
+        "schema": {
+          "const": "backup-container"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -249,7 +324,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "property-coercion" },
+        "schema": {
+          "const": "property-coercion"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -260,7 +337,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-indices" },
+        "schema": {
+          "const": "vault-indices"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -271,7 +350,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "markdown-comment" },
+        "schema": {
+          "const": "markdown-comment"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -282,7 +363,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-dictionary" },
+        "schema": {
+          "const": "vault-dictionary"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -293,7 +376,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "vault-quickunlock" },
+        "schema": {
+          "const": "vault-quickunlock"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -304,7 +389,9 @@
     },
     {
       "properties": {
-        "schema": { "const": "attachment-text" },
+        "schema": {
+          "const": "attachment-text"
+        },
         "cases": {
           "type": "array",
           "items": {
@@ -315,11 +402,143 @@
     },
     {
       "properties": {
-        "schema": { "const": "d1-clip-serializer" },
+        "schema": {
+          "const": "d1-clip-serializer"
+        },
         "cases": {
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/d1-clip-serializer.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "saved-view"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/saved-view.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "paired-extension"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/paired-extension.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "footnote"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/footnote.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "highlight"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/highlight.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "wikilink"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/wikilink.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "definition-list"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/definition-list.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "inline-tag"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/inline-tag.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "math"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/math.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "frontmatter-surgery"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/frontmatter-surgery.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "rename-journal"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/rename-journal.json"
           }
         }
       }

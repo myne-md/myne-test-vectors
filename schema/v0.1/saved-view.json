@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/saved-view.json",
+  "title": "saved-view — case shape (v0.1)",
+  "description": "Pins one behavioral case for protocol::saved_view::parse_saved_views_array — the canonical-JSON decoder for the saved_views array embedded in vault.prefs (MYND-271, Saved Views; protocol.md §9.5.2). The decoder accepts a JSON array of SavedView objects (id, name, view_type, filters AST, plus optional sort/group_by/columns/card_size/image/image_aspect_ratio), tolerating insignificant whitespace and unknown future keys (forward-compat) while enforcing a closed allow-list (view_type ∈ {table,cards,list} — no map; the FilterNode kinds and PropertyOp operators are closed sets; no JSON floats). It returns the decoded views plus the number of bytes consumed — the cursor-advance contract the embedding prefs codec relies on. Not an on-disk codec and not cryptographic by itself (the bytes are decoded only after the vault.prefs AEAD verified) — it is deterministic cross-client behavior: every independent client decodes the same bytes to the same view-set and consumed length. Two case kinds: 'parse_ok' (decoded set pinned as its canonical re-encoding via canonical_encode_saved_views — NFC folding + lexicographic key order + id-sort — plus the consumed byte count) and 'parse_fail' (the closed error surface). Rust reference: protocol/src/saved_view.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^saved-view/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'saved-view/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse_ok", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "parse_ok — pin the decoded view-set (as its canonical re-encoding) and the consumed byte count",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_consumed_len",
+        "expected_canonical_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex). A canonical JSON array, optionally followed by trailing bytes the embedding codec continues past (the trailing-data case pins that consumed < input length)."
+        },
+        "expected_consumed_len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The exact number of input bytes the decoder MUST report as consumed (the array length, never including trailing bytes). Embedding codecs advance their cursor by this count."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical re-encoding (canonical_encode_saved_views) of the decoded view-set as exact UTF-8 bytes (hex). Captures NFC folding, lexicographic key order, id-sort, and unknown-field drop — the normalization a conformant decoder MUST converge to."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin the closed error surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The malformed/invalid input bytes as exact UTF-8 (hex)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": ["malformed", "missing_field", "wrong_type", "unrepresentable"],
+          "description": "The SavedViewParseError variant the decoder MUST return: malformed (not well-formed canonical JSON / forbidden float / over-deep nesting), missing_field (a required field absent), wrong_type (a field present with the wrong JSON type), unrepresentable (a value outside the closed allow-list — map view type, unknown filter kind, unknown operator)."
+        }
+      }
+    }
+  ]
+}

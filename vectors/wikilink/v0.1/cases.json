@@ -1,0 +1,162 @@
+{
+  "schema": "wikilink",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 ([[wikilinks]])",
+  "description": "Pins the Myne dialect wikilink parser (src/dialect/lezer/wikilink.ts) — which byte ranges are recognized as Wikilink / WikilinkMark / WikilinkTarget / WikilinkAlias / WikilinkHeading / WikilinkBlockId. UTF-8 byte offsets. recognize cases carry the spans; inert cases carry an empty list. TS-runner category.",
+  "cases": [
+    {
+      "vector_id": "wikilink/v0.1/target-only",
+      "description": "A plain [[Page]] wikilink.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5b5b506167655d5d",
+      "informational_markdown": "[[Page]]",
+      "expected_dialect_spans": [
+        {
+          "node": "Wikilink",
+          "from": 0,
+          "to": 8
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 0,
+          "to": 2
+        },
+        {
+          "node": "WikilinkTarget",
+          "from": 2,
+          "to": 6
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 6,
+          "to": 8
+        }
+      ]
+    },
+    {
+      "vector_id": "wikilink/v0.1/with-alias",
+      "description": "A wikilink with a |Alias.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5b5b506167657c446973706c61795d5d",
+      "informational_markdown": "[[Page|Display]]",
+      "expected_dialect_spans": [
+        {
+          "node": "Wikilink",
+          "from": 0,
+          "to": 16
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 0,
+          "to": 2
+        },
+        {
+          "node": "WikilinkTarget",
+          "from": 2,
+          "to": 6
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 6,
+          "to": 7
+        },
+        {
+          "node": "WikilinkAlias",
+          "from": 7,
+          "to": 14
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 14,
+          "to": 16
+        }
+      ]
+    },
+    {
+      "vector_id": "wikilink/v0.1/with-heading",
+      "description": "A wikilink targeting a #Heading.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5b5b506167652353656374696f6e5d5d",
+      "informational_markdown": "[[Page#Section]]",
+      "expected_dialect_spans": [
+        {
+          "node": "Wikilink",
+          "from": 0,
+          "to": 16
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 0,
+          "to": 2
+        },
+        {
+          "node": "WikilinkTarget",
+          "from": 2,
+          "to": 6
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 6,
+          "to": 7
+        },
+        {
+          "node": "WikilinkHeading",
+          "from": 7,
+          "to": 14
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 14,
+          "to": 16
+        }
+      ]
+    },
+    {
+      "vector_id": "wikilink/v0.1/with-block-id",
+      "description": "A wikilink targeting a ^block id (caret delimiter, distinct from the # heading form).",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5b5b506167655e6231325d5d",
+      "informational_markdown": "[[Page^b12]]",
+      "expected_dialect_spans": [
+        {
+          "node": "Wikilink",
+          "from": 0,
+          "to": 12
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 0,
+          "to": 2
+        },
+        {
+          "node": "WikilinkTarget",
+          "from": 2,
+          "to": 6
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 6,
+          "to": 7
+        },
+        {
+          "node": "WikilinkBlockId",
+          "from": 7,
+          "to": 10
+        },
+        {
+          "node": "WikilinkMark",
+          "from": 10,
+          "to": 12
+        }
+      ]
+    },
+    {
+      "vector_id": "wikilink/v0.1/inert-markdown-link",
+      "description": "A normal [text](url) markdown link is not a wikilink.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "5b746578745d28687474703a2f2f7829",
+      "informational_markdown": "[text](http://x)",
+      "expected_dialect_spans": []
+    }
+  ]
+}

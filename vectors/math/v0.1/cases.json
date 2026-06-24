@@ -1,0 +1,72 @@
+{
+  "schema": "math",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 ($inline math$)",
+  "description": "Pins the Myne dialect inline-math parser (src/dialect/lezer/math.ts) — which byte ranges are recognized as InlineMath / MathMark. UTF-8 byte offsets. recognize cases carry the spans; inert cases (currency, block $$…$$) carry an empty list. TS-runner category.",
+  "cases": [
+    {
+      "vector_id": "math/v0.1/inline-basic",
+      "description": "A simple $inline math$ span.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "24453d6d635e3224",
+      "informational_markdown": "$E=mc^2$",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineMath",
+          "from": 0,
+          "to": 8
+        },
+        {
+          "node": "MathMark",
+          "from": 0,
+          "to": 1
+        },
+        {
+          "node": "MathMark",
+          "from": 7,
+          "to": 8
+        }
+      ]
+    },
+    {
+      "vector_id": "math/v0.1/inline-midsentence",
+      "description": "Inline math embedded in a sentence.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "7468652076616c75652024785f302420686f6c6473",
+      "informational_markdown": "the value $x_0$ holds",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineMath",
+          "from": 10,
+          "to": 15
+        },
+        {
+          "node": "MathMark",
+          "from": 10,
+          "to": 11
+        },
+        {
+          "node": "MathMark",
+          "from": 14,
+          "to": 15
+        }
+      ]
+    },
+    {
+      "vector_id": "math/v0.1/inert-currency",
+      "description": "Currency amounts are not inline math.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "697420636f737420243520616e6420243130",
+      "informational_markdown": "it cost $5 and $10",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "math/v0.1/inert-block-math",
+      "description": "Block $$…$$ math is not an InlineMath node.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "2424783d792424",
+      "informational_markdown": "$$x=y$$",
+      "expected_dialect_spans": []
+    }
+  ]
+}

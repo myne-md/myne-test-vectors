@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/rename-journal.json",
+  "title": "rename-journal — case shape (v0.1)",
+  "description": "Pins note_txn::recover_pending_rename (src-tauri/src/note_txn.rs, main myne repository) — the §9.12 rename-journal crash-recovery state machine — as an fs-state conformance fixture. NOT a byte-output codec: the .rename-journal marker is content-free and POSIX readdir is unordered, so each case pins a directory SNAPSHOT (a name-sorted set of {name, content_hex}) before and after recovery. The marker's presence is the only durability signal — present → roll forward (every *.myn.tmp renamed to *.myn, marker cleared); absent → roll back (every *.myn.tmp deleted); committed *.myn untouched. A port materializes input_dir_files in a fresh directory, runs its recovery, and asserts the resulting set equals expected_dir_files. case_kind labels the scenario (roll_forward / roll_back / noop). Recovery is idempotent (re-running is a fixed point). std/fs-bound category (like backup-container); runner is tests-side in note_txn.rs.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_dir_files",
+    "expected_dir_files"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^rename-journal/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier 'rename-journal/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "roll_forward",
+        "roll_back",
+        "noop"
+      ],
+      "description": "roll_forward: marker present, staged .tmp committed. roll_back: no marker, staged .tmp discarded. noop: clean dir, unchanged."
+    },
+    "input_dir_files": {
+      "type": "array",
+      "description": "The directory snapshot before recovery (name-sorted set).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "content_hex"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The file name within the notes directory. '.rename-journal' is the (empty) marker; '*.myn.tmp' are staged blobs; '*.myn' are committed blobs."
+          },
+          "content_hex": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{2})*$",
+            "description": "The file's exact bytes (hex). Empty for the marker."
+          }
+        }
+      }
+    },
+    "expected_dir_files": {
+      "type": "array",
+      "description": "The directory snapshot after recovery (name-sorted set).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "content_hex"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The file name within the notes directory. '.rename-journal' is the (empty) marker; '*.myn.tmp' are staged blobs; '*.myn' are committed blobs."
+          },
+          "content_hex": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{2})*$",
+            "description": "The file's exact bytes (hex). Empty for the marker."
+          }
+        }
+      }
+    }
+  }
+}
