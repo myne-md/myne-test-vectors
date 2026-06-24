@@ -285,6 +285,10 @@
               "type": "boolean",
               "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
             },
+            "archive_disabled": {
+              "type": "boolean",
+              "description": "archive-disable optional toggle disabling the note-archive feature's UI entry points. Option<bool>; absent ≡ host-applied default-OFF (archiving enabled). Only an explicit true/false emits the key. Canonical key slot: after active_workspace, before auto_lock_seconds (ac < ar < au)."
+            },
             "active_workspace": {
               "type": "string",
               "description": "MYND-308 active workspace slot id. Option<String>; absent ≡ host-applied default workspace policy. Free string stored verbatim (NFC-normalized on encode). Canonical key 'active_workspace' — sorts FIRST, before auto_lock_seconds (ac < au)."
