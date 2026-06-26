@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/attachment-text.json",
+  "title": "attachment-text — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::encode_attachment_text_blob_raw + protocol::decode_attachment_text_blob — the MYE1 per-attachment extracted-text codec (MYND-328; §9.15). Each attachment whose text has been extracted gets a per-attachment cache blob at attachments-text/<attachment-id-hex>, sealed under attachment_text_key = DeriveSubkey(root_key, SubkeyRole::AttachmentTextKey). The inner plaintext is OPAQUE bytes (the desktop layer's postcard ExtractedText struct) — the structural twin of vault-search / vault-dictionary. The AAD (aad_attachment_text_blob, role 'attachment-text-blob') binds account_number_hash AND the attachment_id (so one KEK is safe across all attachment-text blobs) AND the extractor_version byte. The HKDF role 'attachment-text-key' is DISTINCT from the AAD role 'attachment-text-blob'. Four case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4 — incl. wrong attachment_id), 'parse_fail' (distinguishable pre-decryption structural reject, one per AttachmentTextBlobError decode variant). The Rust reference implementation lives at protocol/src/attachment_text_blob.rs (main myne repository); spec contract is docs/spec/protocol.md §9.15 + §3.4 + §5.2.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^attachment-text/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'attachment-text/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_attachment_id_hex",
+        "input_plaintext_hex",
+        "input_nonce_hex",
+        "expected_attachment_text_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). The runner derives attachment_text_key from this via the canonical derive_subkey helper (SubkeyRole::AttachmentTextKey, role string 'attachment-text-key') before calling the encoder."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex). Bound into the 82-byte AAD via aad_attachment_text_blob (role string 'attachment-text-blob' — DISTINCT from the HKDF role 'attachment-text-key')."
+        },
+        "input_attachment_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte attachment_id (hex), the content-addressed id of the source MYA1 attachment. Bound into the AAD so a blob sealed for attachment A cannot AEAD-verify served as attachment B — the per-blob binding that makes one KEK safe across all attachment-text blobs."
+        },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Opaque inner-plaintext bytes (hex), variable length including zero. The codec treats these as client-opaque (the desktop layer's postcard ExtractedText struct); there is no canonical-JSON discipline here."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+        },
+        "informational_attachment_text_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte HKDF output (hex), pre-computed from root_key via derive_subkey(SubkeyRole::AttachmentTextKey). Informational — verified implicitly via the expected_attachment_text_blob_hex assertion; carried so reviewers don't have to re-derive to inspect intermediate state."
+        },
+        "expected_attachment_text_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full encoder output (34-byte header + ciphertext + 32-byte CTX tag), hex-encoded lowercase. Decoders compare byte-equal. The v0.1 extractor_version byte (0x01) sits at header offset 5."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_attachment_id_hex",
+        "expected_plaintext_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_attachment_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Recovered opaque inner-plaintext bytes (hex), empty allowed. The decoder returns these for the desktop layer to deserialize."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_attachment_id_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_attachment_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: AttachmentTextBlobError::CannotDecrypt). Implementations MUST NOT distinguish cross-vault (wrong account_number_hash) vs wrong attachment_id vs tampered ciphertext/tag vs wrong key beyond the single 'cannot decrypt' outcome (spec §6.4). Structurally distinguishable rejects (bad magic, unsupported extractor_version, etc.) are pinned separately under case_kind 'parse_fail'."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable pre-decryption structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE attempting any decryption — magic / protocol_version / extractor_version / length checks all run before the AEAD stage (spec §9.15.1 magic-byte-before-decrypt discipline)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "extractor_version_unsupported",
+            "header_too_short",
+            "ciphertext_truncated",
+            "ciphertext_len_overflow"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: AttachmentTextBlobError::{MagicMismatch, ProtocolVersionMismatch, ExtractorVersionUnsupported, HeaderTooShort, CiphertextTruncated, CiphertextLenOverflow}). Unlike the AEAD failure surface (case_kind decrypt_aead_fail), these are pre-decryption and intentionally distinguishable: a port must reject e.g. a future extractor_version cleanly so the caller re-extracts from the MYA1 source (§9.15.4)."
+        }
+      }
+    }
+  ]
+}

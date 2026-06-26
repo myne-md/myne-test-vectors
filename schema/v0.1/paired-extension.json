@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/paired-extension.json",
+  "title": "paired-extension — case shape (v0.1)",
+  "description": "Pins one behavioral case for protocol::paired_extension::parse_paired_extensions_array — the canonical-JSON decoder for the paired_extensions array embedded in vault.prefs (browser-clipper persisted pairing-token registry; protocol.md §9.5.2). The decoder accepts a JSON array of PairedExtension records (extension_id, token_value, revoked, plus the additive optional paired_at u64), tolerating insignificant whitespace and unknown future keys (forward-compat) while banning JSON floats. It returns the decoded records plus the number of bytes consumed (the cursor-advance contract the embedding prefs codec relies on). The bearer token_value is serde-skipped on the IPC boundary but written explicitly by the on-disk canonical codec, so it round-trips through this decoder. Not an on-disk codec and not cryptographic by itself (the bytes are decoded only after the vault.prefs AEAD verified) — deterministic cross-client behavior. Two case kinds: 'parse_ok' (decoded set pinned as its canonical re-encoding via canonical_encode_paired_extensions — NFC folding + lexicographic key order + (extension_id, token_value)-sort; paired_at emitted only when present — plus the consumed byte count) and 'parse_fail' (the closed error surface). Rust reference: protocol/src/paired_extension.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^paired-extension/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'paired-extension/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse_ok", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "parse_ok — pin the decoded record-set (as its canonical re-encoding) and the consumed byte count",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_consumed_len",
+        "expected_canonical_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex). A canonical JSON array, optionally followed by trailing bytes the embedding codec continues past."
+        },
+        "expected_consumed_len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The exact number of input bytes the decoder MUST report as consumed (the array length, never including trailing bytes)."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical re-encoding (canonical_encode_paired_extensions) of the decoded record-set as exact UTF-8 bytes (hex). Captures NFC folding, lexicographic key order (extension_id < paired_at < revoked < token_value), (extension_id, token_value)-sort, the omitted-when-None byte-identity of paired_at, and unknown-field drop."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin the closed error surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The malformed/invalid input bytes as exact UTF-8 (hex)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": ["malformed", "missing_field", "wrong_type"],
+          "description": "The PairedExtensionParseError variant the decoder MUST return: malformed (not well-formed canonical JSON / forbidden float / over-deep nesting), missing_field (a required field — extension_id / token_value / revoked — absent), wrong_type (a field present with the wrong JSON type)."
+        }
+      }
+    }
+  ]
+}

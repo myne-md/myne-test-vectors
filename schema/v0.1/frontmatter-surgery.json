@@ -1,0 +1,407 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/frontmatter-surgery.json",
+  "title": "frontmatter-surgery — case shape (v0.1)",
+  "description": "Pins one frontmatter field-patcher case for src/dialect/surgery.ts (main myne repository) — a pure Uint8Array → Uint8Array transform that inserts/replaces/removes one frontmatter field while keeping the rest of the note byte-stable. Eight case_kinds, one per patcher. Each output is a fixed point (idempotent) and the patch is pure. Not a codec and not cryptographic — deterministic cross-client note-mutation behavior. TS-runner category (no Rust generator); the live patchers are asserted by tests/dialect/frontmatterSurgery.test.ts.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^frontmatter-surgery/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier 'frontmatter-surgery/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "updated",
+        "title",
+        "folder",
+        "trashed",
+        "archived",
+        "template",
+        "folder-index",
+        "generic"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "updated — patchUpdatedField(bytes, iso)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex",
+        "input_iso"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_iso": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The ISO-8601 timestamp written to the updated field (host-supplied; the patcher does no clock read)."
+        },
+        "case_kind": {
+          "const": "updated"
+        }
+      }
+    },
+    {
+      "title": "title — patchTitleField(bytes, value)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex",
+        "input_value_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex)."
+        },
+        "case_kind": {
+          "const": "title"
+        }
+      }
+    },
+    {
+      "title": "folder — patchFolderField(bytes, value|null)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex). A nullable patcher: an absent input_value_utf8_hex encodes null (remove the field); present encodes the set-value."
+        },
+        "case_kind": {
+          "const": "folder"
+        }
+      }
+    },
+    {
+      "title": "trashed — patchTrashedField(bytes, value|null)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex). A nullable patcher: an absent input_value_utf8_hex encodes null (remove the field); present encodes the set-value."
+        },
+        "case_kind": {
+          "const": "trashed"
+        }
+      }
+    },
+    {
+      "title": "archived — patchArchivedField(bytes, value|null)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex). A nullable patcher: an absent input_value_utf8_hex encodes null (remove the field); present encodes the set-value."
+        },
+        "case_kind": {
+          "const": "archived"
+        }
+      }
+    },
+    {
+      "title": "template — patchTemplateField(bytes, value|null)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex). A nullable patcher: an absent input_value_utf8_hex encodes null (remove the field); present encodes the set-value."
+        },
+        "case_kind": {
+          "const": "template"
+        }
+      }
+    },
+    {
+      "title": "folder-index — patchFolderIndexField(bytes, on)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex",
+        "input_flag"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_flag": {
+          "type": "boolean",
+          "description": "Whether the folder-index flag is turned on (true) or off (false)."
+        },
+        "case_kind": {
+          "const": "folder-index"
+        }
+      }
+    },
+    {
+      "title": "generic — patchFrontmatterField(bytes, key, value|null)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_plaintext_utf8_hex",
+        "expected_output_utf8_hex",
+        "input_key"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The note plaintext as exact UTF-8 bytes (hex)."
+        },
+        "informational_plaintext": {
+          "type": "string",
+          "description": "Human-readable mirror of input_plaintext_utf8_hex (runner cross-checks byte-equal)."
+        },
+        "expected_output_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The exact bytes the patcher MUST produce (hex). A fixed point (idempotent)."
+        },
+        "informational_output": {
+          "type": "string",
+          "description": "Human-readable mirror of expected_output_utf8_hex."
+        },
+        "input_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The frontmatter key to patch."
+        },
+        "input_value_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The set-value as exact UTF-8 bytes (hex). A nullable patcher: an absent input_value_utf8_hex encodes null (remove the field); present encodes the set-value."
+        },
+        "case_kind": {
+          "const": "generic"
+        }
+      }
+    }
+  ]
+}

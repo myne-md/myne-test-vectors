@@ -35,7 +35,8 @@
         "aad_vault_indices_blob",
         "aad_personal_dictionary_blob",
         "aad_quick_unlock_blob",
-        "aad_note_content_encrypt"
+        "aad_note_content_encrypt",
+        "aad_attachment_text_blob"
       ],
       "description": "Which pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below."
     },
@@ -72,6 +73,17 @@
       "maximum": 255,
       "description": "Present ONLY for aad_quick_unlock_blob — the wrap-key provider byte (0x01 biometric / 0x02 PIN) appended after account_number_hash and bound into the AAD (§9.14.3)."
     },
+    "input_attachment_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Present ONLY for aad_attachment_text_blob — the 32-byte content-addressed attachment_id appended after account_number_hash and bound into the AAD (§9.15.3)."
+    },
+    "input_extractor_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "description": "Present ONLY for aad_attachment_text_blob — the extractor_version byte (0x01 in v0.1) appended last and bound into the AAD (§9.15.3), so a tampered header byte cannot be silently accepted."
+    },
     "expected_aad_hex": {
       "type": "string",
       "pattern": "^([0-9a-f]{2})+$",
@@ -101,7 +113,9 @@
               "account_number_hash",
               "provider_kind",
               "content_type_length_be16",
-              "content_type"
+              "content_type",
+              "attachment_id",
+              "extractor_version"
             ],
             "description": "Structural role of this segment."
           },

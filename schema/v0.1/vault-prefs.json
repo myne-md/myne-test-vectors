@@ -201,11 +201,7 @@
             },
             "theme": {
               "type": "string",
-              "enum": [
-                "light",
-                "dark"
-              ],
-              "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); only an explicit light/dark choice emits the key (lexicographically LAST, after screen_capture_protection)."
+              "description": "MYND-110 user theme preference. Option<ThemeChoice> — absence of the key is the canonical encoding of system (follow the OS); light/dark are the recognized choices. NOT an enum: per protocol.md §9.5.2 the codec ROUND-TRIPS an UNRECOGNIZED string value (a hypothetical future 'sepia'/'amoled') verbatim — the client treats an unknown value as system at apply-time, never a parse failure — so the byte-level vector pins any string (see the decrypt-themed-amoled forward-compat case)."
             },
             "daily_date_format": {
               "type": "string",
@@ -242,9 +238,56 @@
               "minimum": 0,
               "description": "Unix epoch seconds of the vault's last backup export (MYND-58, vault-backup-restore epic). Absent ≡ never backed up; bare-decimal u64 (floats FORBIDDEN per spec §9.5.2); sorts label < last_backup_at < screen_capture_protection."
             },
+            "paired_extensions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "extension_id",
+                  "token_value",
+                  "revoked"
+                ],
+                "properties": {
+                  "extension_id": {
+                    "type": "string"
+                  },
+                  "token_value": {
+                    "type": "string"
+                  },
+                  "revoked": {
+                    "type": "boolean"
+                  },
+                  "paired_at": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "MYND-442 Unix epoch seconds of the in-app pairing-accept time. Additive optional field (§9.5.2) — omitted from the canonical record when absent so pre-feature records stay byte-identical; bare-decimal u64. Per-record canonical key order extension_id < paired_at < revoked < token_value."
+                  }
+                }
+              },
+              "description": "MYND-443 browser-clipper paired-extension records (the persisted pairing-token registry). Array of {extension_id, token_value, revoked, paired_at?} sorted by (extension_id, token_value) so the encoding is byte-stable. Omitted-when-empty (the field is absent entirely when no extension is paired). Canonical key 'p' — after last_backup_at, before saved_views/screen_capture_protection."
+            },
+            "saved_views": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "MYND-273 Saved Views — array of saved-view definition objects {id, name, view_type, filters (recursive AST), sort, optional card_size/columns/group_by/image/image_aspect_ratio}. The view object's internal shape (incl. the recursive filters AST) is contracted by protocol.md §9.5.2 + the Saved Views feature, not re-modeled here — the codec round-trips it as opaque canonical JSON. Sorted by view id; omitted-when-empty. Canonical key 's' — after paired_extensions, before screen_capture_protection."
+            },
+            "view_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "MYND-273 Saved Views display order — view ids in render order (sequence semantics: NFC, order preserved verbatim, never sorted/deduped). Omitted-when-empty. Canonical key 'v' — sorts last (after theme)."
+            },
             "editor_line_numbers": {
               "type": "boolean",
               "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
+            },
+            "archive_disabled": {
+              "type": "boolean",
+              "description": "archive-disable optional toggle disabling the note-archive feature's UI entry points. Option<bool>; absent ≡ host-applied default-OFF (archiving enabled). Only an explicit true/false emits the key. Canonical key slot: after active_workspace, before auto_lock_seconds (ac < ar < au)."
             },
             "active_workspace": {
               "type": "string",

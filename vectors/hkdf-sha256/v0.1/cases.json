@@ -165,6 +165,21 @@
       "input_role": "personal-dictionary-key",
       "informational_info_utf8_hex": "6d796e652e76302e3120706572736f6e616c2d64696374696f6e6172792d6b6579",
       "expected_subkey_hex": "4488ba36f73672a4d4409e9513f67786602f81e37b2874aad9e49070acbff1fa"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/zero-root-attachment-text-key",
+      "description": "All-zero root_key with the AttachmentTextKey role (MYND-328, §9.15). KEK for the per-attachment MYE1 extracted-text cache blobs; role string 'attachment-text-key' (19 ASCII bytes). Pairs with the other zero-root vectors under the same trivial root — catches a role-confusion bug that would collapse the attachment-text lineage onto another role's info string.",
+      "input_root_key_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input_role": "attachment-text-key",
+      "expected_subkey_hex": "561071a67f031f548fdf3752fb3e178cf369075f31b7c6a42a7666c62a77b29e"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/prn-alpha-attachment-text-key",
+      "description": "Pseudorandom alpha root with the AttachmentTextKey role. The informational_info_utf8_hex field carries the canonical 29-byte HKDF info bytes ('myne.v0.1 attachment-text-key') so independent implementers can verify the ninth registered role's info assembly without re-parsing the spec. NOTE: the HKDF role string 'attachment-text-key' is DISTINCT from the AAD role string 'attachment-text-blob' (aad_attachment_text_blob, ctx-aead / aad-construction vectors) — they are different load-bearing constants. One KEK serves all attachment-text blobs; per-blob separation is via the attachment_id AAD binding, not a distinct subkey.",
+      "input_root_key_hex": "9cca1f28fd8b11da8c5176417bef96cec450d524491a43518cad3d8b3a0ca8e5",
+      "input_role": "attachment-text-key",
+      "informational_info_utf8_hex": "6d796e652e76302e31206174746163686d656e742d746578742d6b6579",
+      "expected_subkey_hex": "1b3c6db6af33d0d4c38e81abf38f1b8bf25f399d22d2b5ac4322fd7628516e7e"
     }
   ]
 }

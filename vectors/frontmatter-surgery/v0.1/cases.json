@@ -1,0 +1,175 @@
+{
+  "schema": "frontmatter-surgery",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md (frontmatter field surgery)",
+  "description": "Pins protocol-adjacent frontmatter field patchers in src/dialect/surgery.ts — pure Uint8Array → Uint8Array transforms that insert/replace/remove a single frontmatter field while leaving the rest of the note (and YAML formatting) byte-stable. Eight case_kinds, one per patcher: updated (patchUpdatedField, ISO arg), title (patchTitleField), folder/trashed/archived/template (nullable patchers — value null removes the field; an absent input_value_utf8_hex encodes null), folder-index (patchFolderIndexField, boolean flag), generic (patchFrontmatterField, key+nullable value). Each output is a fixed point (idempotent) and the patch is pure (input untouched). TS-runner category (no Rust generator); the live patchers are asserted by tests/dialect/frontmatterSurgery.test.ts.",
+  "cases": [
+    {
+      "vector_id": "frontmatter-surgery/v0.1/add-to-bare-note",
+      "description": "Stamping updated on a note with no frontmatter inserts a new frontmatter block.",
+      "case_kind": "updated",
+      "input_plaintext_utf8_hex": "4a7573742061206e6f746520626f64792e0a",
+      "informational_plaintext": "Just a note body.\n",
+      "input_iso": "2026-06-24T12:30:00Z",
+      "expected_output_utf8_hex": "2d2d2d0a757064617465643a20323032362d30362d32345431323a33303a30305a0a2d2d2d0a0a4a7573742061206e6f746520626f64792e0a",
+      "informational_output": "---\nupdated: 2026-06-24T12:30:00Z\n---\n\nJust a note body.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/replace-existing",
+      "description": "Stamping updated replaces the existing updated value in place.",
+      "case_kind": "updated",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_iso": "2026-06-24T12:30:00Z",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032362d30362d32345431323a33303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2026-06-24T12:30:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/add-title",
+      "description": "Setting the title on a note with no frontmatter inserts it.",
+      "case_kind": "title",
+      "input_plaintext_utf8_hex": "4a7573742061206e6f746520626f64792e0a",
+      "informational_plaintext": "Just a note body.\n",
+      "input_value_utf8_hex": "4d656574696e67206e6f746573",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204d656574696e67206e6f7465730a2d2d2d0a0a4a7573742061206e6f746520626f64792e0a",
+      "informational_output": "---\ntitle: Meeting notes\n---\n\nJust a note body.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/replace-title",
+      "description": "Setting the title replaces the existing one.",
+      "case_kind": "title",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "4e6577205469746c65",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204e6577205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: New Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/title-needs-quoting",
+      "description": "A title containing a colon+space is YAML-quoted.",
+      "case_kind": "title",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "51333a20706c616e6e696e67",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a202251333a20706c616e6e696e67220a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: \"Q3: planning\"\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/set-folder",
+      "description": "Setting the folder replaces the existing folder value.",
+      "case_kind": "folder",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "50726f6a656374732f",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a2050726f6a656374732f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Projects/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/remove-folder",
+      "description": "Passing null removes the folder field.",
+      "case_kind": "folder",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/set-trashed",
+      "description": "Setting trashed inserts a trashed timestamp field.",
+      "case_kind": "trashed",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "323032362d30362d32345430303a30303a30305a",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a747261736865643a20323032362d30362d32345430303a30303a30305a0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\ntrashed: 2026-06-24T00:00:00Z\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/remove-trashed",
+      "description": "Passing null on a note without trashed is a no-op (field stays absent).",
+      "case_kind": "trashed",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/set-archived",
+      "description": "Setting archived inserts an archived timestamp field.",
+      "case_kind": "archived",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "323032362d30362d32345430303a30303a30305a",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a61726368697665643a20323032362d30362d32345430303a30303a30305a0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\narchived: 2026-06-24T00:00:00Z\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/remove-archived",
+      "description": "Passing null on a note without archived is a no-op.",
+      "case_kind": "archived",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/set-template",
+      "description": "Marking a note as a template inserts the template flag.",
+      "case_kind": "template",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_value_utf8_hex": "74727565",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a74656d706c6174653a20747275650a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\ntemplate: true\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/remove-template",
+      "description": "Passing null on a note without the template flag is a no-op.",
+      "case_kind": "template",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/folder-index-on",
+      "description": "Turning the folder-index flag on inserts it.",
+      "case_kind": "folder-index",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_flag": true,
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a666f6c6465725f696e6465783a20747275650a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\nfolder_index: true\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/folder-index-off",
+      "description": "Turning the folder-index flag off on a note without it is a no-op.",
+      "case_kind": "folder-index",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_flag": false,
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/generic-set",
+      "description": "Setting an arbitrary frontmatter key inserts it.",
+      "case_kind": "generic",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_key": "status",
+      "input_value_utf8_hex": "6472616674",
+      "expected_output_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a7374617475733a2064726166740a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\nstatus: draft\n---\n\nBody text.\n"
+    },
+    {
+      "vector_id": "frontmatter-surgery/v0.1/generic-remove",
+      "description": "Setting an arbitrary key to null removes it.",
+      "case_kind": "generic",
+      "input_plaintext_utf8_hex": "2d2d2d0a7469746c653a204f6c64205469746c650a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_plaintext": "---\ntitle: Old Title\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n",
+      "input_key": "title",
+      "expected_output_utf8_hex": "2d2d2d0a757064617465643a20323032302d30312d30315430303a30303a30305a0a666f6c6465723a204f6c642f0a2d2d2d0a0a426f647920746578742e0a",
+      "informational_output": "---\nupdated: 2020-01-01T00:00:00Z\nfolder: Old/\n---\n\nBody text.\n"
+    }
+  ]
+}

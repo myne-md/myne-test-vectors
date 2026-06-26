@@ -1,0 +1,84 @@
+{
+  "schema": "definition-list",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 (definition lists)",
+  "description": "Pins the Myne dialect definition-list parser (src/dialect/lezer/definition-list.ts) — which byte ranges are recognized as DefinitionList / DefinitionTerm / DefinitionDesc / DefinitionMarker. UTF-8 byte offsets. recognize cases carry the spans; inert cases carry an empty list. TS-runner category.",
+  "cases": [
+    {
+      "vector_id": "definition-list/v0.1/single",
+      "description": "A term with one definition.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5465726d0a3a20446566696e6974696f6e",
+      "informational_markdown": "Term\n: Definition",
+      "expected_dialect_spans": [
+        {
+          "node": "DefinitionList",
+          "from": 0,
+          "to": 17
+        },
+        {
+          "node": "DefinitionTerm",
+          "from": 0,
+          "to": 4
+        },
+        {
+          "node": "DefinitionMarker",
+          "from": 5,
+          "to": 6
+        },
+        {
+          "node": "DefinitionDesc",
+          "from": 7,
+          "to": 17
+        }
+      ]
+    },
+    {
+      "vector_id": "definition-list/v0.1/two-definitions",
+      "description": "A term with two definitions.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5465726d0a3a204f6e650a3a2054776f",
+      "informational_markdown": "Term\n: One\n: Two",
+      "expected_dialect_spans": [
+        {
+          "node": "DefinitionList",
+          "from": 0,
+          "to": 16
+        },
+        {
+          "node": "DefinitionTerm",
+          "from": 0,
+          "to": 4
+        },
+        {
+          "node": "DefinitionMarker",
+          "from": 5,
+          "to": 6
+        },
+        {
+          "node": "DefinitionDesc",
+          "from": 7,
+          "to": 10
+        },
+        {
+          "node": "DefinitionMarker",
+          "from": 11,
+          "to": 12
+        },
+        {
+          "node": "DefinitionDesc",
+          "from": 13,
+          "to": 16
+        }
+      ]
+    },
+    {
+      "vector_id": "definition-list/v0.1/inert-plain-paragraph",
+      "description": "A paragraph with no colon-led line is not a definition list.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "4a75737420616e206f7264696e617279207061726167726170682e",
+      "informational_markdown": "Just an ordinary paragraph.",
+      "expected_dialect_spans": []
+    }
+  ]
+}

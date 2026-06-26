@@ -1,0 +1,151 @@
+{
+  "schema": "footnote",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 (footnotes)",
+  "description": "Pins the Myne dialect footnote parser (src/dialect/lezer/footnote.ts) — which byte ranges are recognized as FootnoteDefinition / FootnoteReference / FootnoteLabel / FootnoteMark. Offsets are UTF-8 byte offsets. recognize cases carry the recognized spans (pre-order); inert cases carry an empty span list (a near-miss the parser must NOT recognize). TS-runner category (no Rust generator).",
+  "cases": [
+    {
+      "vector_id": "footnote/v0.1/reference-and-definition",
+      "description": "An inline footnote reference plus its matching block definition.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "5365655b5e315d2e0a0a5b5e315d3a20546865206369746564206e6f74652e",
+      "informational_markdown": "See[^1].\n\n[^1]: The cited note.",
+      "expected_dialect_spans": [
+        {
+          "node": "FootnoteReference",
+          "from": 3,
+          "to": 7
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 3,
+          "to": 5
+        },
+        {
+          "node": "FootnoteLabel",
+          "from": 5,
+          "to": 6
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 6,
+          "to": 7
+        },
+        {
+          "node": "FootnoteDefinition",
+          "from": 10,
+          "to": 31
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 10,
+          "to": 12
+        },
+        {
+          "node": "FootnoteLabel",
+          "from": 12,
+          "to": 13
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 13,
+          "to": 15
+        }
+      ]
+    },
+    {
+      "vector_id": "footnote/v0.1/reference-only",
+      "description": "A bare footnote reference with no definition in the document.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "4120636c61696d5b5e7372635d207374616e64732e",
+      "informational_markdown": "A claim[^src] stands.",
+      "expected_dialect_spans": [
+        {
+          "node": "FootnoteReference",
+          "from": 7,
+          "to": 13
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 7,
+          "to": 9
+        },
+        {
+          "node": "FootnoteLabel",
+          "from": 9,
+          "to": 12
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 12,
+          "to": 13
+        }
+      ]
+    },
+    {
+      "vector_id": "footnote/v0.1/two-references",
+      "description": "Two footnote references in one paragraph.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "615b5e315d207468656e20625b5e325d",
+      "informational_markdown": "a[^1] then b[^2]",
+      "expected_dialect_spans": [
+        {
+          "node": "FootnoteReference",
+          "from": 1,
+          "to": 5
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 1,
+          "to": 3
+        },
+        {
+          "node": "FootnoteLabel",
+          "from": 3,
+          "to": 4
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 4,
+          "to": 5
+        },
+        {
+          "node": "FootnoteReference",
+          "from": 12,
+          "to": 16
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 12,
+          "to": 14
+        },
+        {
+          "node": "FootnoteLabel",
+          "from": 14,
+          "to": 15
+        },
+        {
+          "node": "FootnoteMark",
+          "from": 15,
+          "to": 16
+        }
+      ]
+    },
+    {
+      "vector_id": "footnote/v0.1/inert-plain-brackets",
+      "description": "Ordinary square brackets with no caret are not a footnote.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "616e205b6578616d706c655d20696e20627261636b657473",
+      "informational_markdown": "an [example] in brackets",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "footnote/v0.1/inert-caret-space",
+      "description": "A space after the caret breaks footnote recognition.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "78205b5e20795d207a",
+      "informational_markdown": "x [^ y] z",
+      "expected_dialect_spans": []
+    }
+  ]
+}

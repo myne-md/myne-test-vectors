@@ -1,0 +1,72 @@
+{
+  "schema": "highlight",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3 (==highlight==)",
+  "description": "Pins the Myne dialect highlight parser (src/dialect/lezer/highlight.ts) — which byte ranges are recognized as Highlight / HighlightMark. UTF-8 byte offsets. recognize cases carry the spans; inert cases carry an empty list. TS-runner category.",
+  "cases": [
+    {
+      "vector_id": "highlight/v0.1/basic",
+      "description": "A simple ==highlight== span.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "3d3d696d706f7274616e743d3d",
+      "informational_markdown": "==important==",
+      "expected_dialect_spans": [
+        {
+          "node": "Highlight",
+          "from": 0,
+          "to": 13
+        },
+        {
+          "node": "HighlightMark",
+          "from": 0,
+          "to": 2
+        },
+        {
+          "node": "HighlightMark",
+          "from": 11,
+          "to": 13
+        }
+      ]
+    },
+    {
+      "vector_id": "highlight/v0.1/midsentence",
+      "description": "A highlight embedded in a sentence.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "61203d3d6d61726b65643d3d20776f7264",
+      "informational_markdown": "a ==marked== word",
+      "expected_dialect_spans": [
+        {
+          "node": "Highlight",
+          "from": 2,
+          "to": 12
+        },
+        {
+          "node": "HighlightMark",
+          "from": 2,
+          "to": 4
+        },
+        {
+          "node": "HighlightMark",
+          "from": 10,
+          "to": 12
+        }
+      ]
+    },
+    {
+      "vector_id": "highlight/v0.1/inert-single-equals",
+      "description": "A lone equals sign is not a highlight.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "61203d2062",
+      "informational_markdown": "a = b",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "highlight/v0.1/inert-unterminated",
+      "description": "An unterminated ==open span is not recognized.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "3d3d6f70656e20616e64206e6576657220636c6f736564",
+      "informational_markdown": "==open and never closed",
+      "expected_dialect_spans": []
+    }
+  ]
+}
