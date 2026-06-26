@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-head.json",
+  "title": "vault-head — case shape (v0.1)",
+  "description": "Pins the byte-level contract for the Phase 2 vault-head fork-consistency primitive (MYND-416; spec docs/spec/sync-protocol.md §3-§5, with the MYH1 device-local baseline at docs/spec/protocol.md §9.15 and the head_mac_key context 'vault-head-mac' at §3.4). The head is sync-wire-only (no on-disk magic): an HMAC-SHA-256 over a canonically-encoded record under head_mac_key = DeriveSubkey(root_key, 'vault-head-mac'). Two case kinds: 'encode' pins the canonical head_mac_input, head_mac, and head_id (covering G1 version-vector inner encoding, G2 lexicographic merge-parent ordering, G3 head_id = SHA-256(head_mac_input || head_mac), and SHA-256 domain separation); 'verify' pins the on-pull VV-dominance decision (rollback-rejection / extension / fork-incomparability, §5.3). NOTE: this file is the SCHEMA only — the cases.json golden vectors are authored by MYND-418 (they require the Rust reference implementation, MYND-417). The Rust reference will live in the main repo (protocol crate, MYND-417); cross-impl bit-identical output is the acceptance bar.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "vv_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_device_id_hex", "counter"],
+      "properties": {
+        "input_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte VV-actor device_id (hex). Client-generated random, distinct from the secret per-device token (sync-protocol.md §4.1)."
+        },
+        "counter": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "u64 authored-head count for this device. Encoded big-endian (8 bytes) in vv_canonical."
+        }
+      }
+    }
+  },
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-head/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-head/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encode", "verify"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encode — pin the canonical head_mac_input, head_mac, and head_id",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_head_format_version",
+        "input_manifest_hash_hex",
+        "input_seq",
+        "input_parent_count",
+        "input_prev_head_hash_hex",
+        "input_version_vector",
+        "input_author_device_id_hex",
+        "expected_head_mac_input_hex",
+        "expected_head_mac_hex",
+        "expected_head_id_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encode" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). The runner derives head_mac_key via DeriveSubkey(root_key, 'vault-head-mac') (protocol.md §3.2 / §3.4) before computing the MAC."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex), bound into head_mac_input (sync-protocol.md §3.2)."
+        },
+        "input_head_format_version": {
+          "type": "integer",
+          "const": 1,
+          "description": "head_format_version byte; v0.1 = 0x01 (sync-protocol.md §3.6)."
+        },
+        "input_manifest_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte SHA-256 of the canonical vault-head manifest (uuid -> content_nonce of content blobs only). The manifest object's own encoding is MYND-414's; here the head only anchors this hash."
+        },
+        "input_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "u64 auxiliary Lamport seq (max(parent_seq)+1). Encoded big-endian (8 bytes). Auxiliary only — VV is the authority (sync-protocol.md §4.1, §5.1 Pin)."
+        },
+        "input_parent_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "0 = genesis, 1 = linear, 2 = merge. MUST equal the length of input_prev_head_hash_hex."
+        },
+        "input_prev_head_hash_hex": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 2,
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "description": "0..2 parent head_ids (each a 32-byte SHA-256, hex). MAY be supplied UNSORTED to pin that the encoder byte-sorts them ascending lexicographically (G2); the expected_head_mac_input_hex reflects the sorted order."
+        },
+        "input_version_vector": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/vv_entry" },
+          "description": "The head's version vector. MAY be supplied UNSORTED to pin that the encoder sorts entries ascending by device_id (G1); the expected output reflects the canonical order (entry_count u32-BE, then per entry device_id||counter-u64-BE). No device_id may repeat."
+        },
+        "input_author_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte author_device_id (hex). MUST satisfy VV[author] == max(parents)[author]+1 (==1 at genesis) — the §4.1 consistency check; a vector violating it belongs under case_kind 'verify' as a reject, not here."
+        },
+        "expected_head_mac_input_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The full canonical head_mac_input bytes (hex): 'myne.v0.1|' || protocol_version || head_format_version || account_number_hash || manifest_hash || seq(8 BE) || parent_count || prev_head_hash[] (sorted, 32*count) || vv_len(4 BE) || vv_canonical. Pins G1/G2 and the encode-then-MAC layout (sync-protocol.md §3.2-§3.3)."
+        },
+        "expected_head_mac_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte HMAC-SHA-256(head_mac_key, head_mac_input), hex (full tag, no truncation)."
+        },
+        "expected_head_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte head_id = SHA-256(head_mac_input || head_mac), hex (G3 — binds the MAC, not just the content)."
+        },
+        "informational_head_mac_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte DeriveSubkey(root_key, 'vault-head-mac') output (hex). Informational — verified implicitly by expected_head_mac_hex; carried so reviewers need not re-derive."
+        }
+      }
+    },
+    {
+      "title": "verify — pin the on-pull VV-dominance decision (sync-protocol.md §5.3)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_baseline_version_vector",
+        "input_candidate_version_vector",
+        "expected_decision"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "verify" },
+        "input_baseline_version_vector": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "$ref": "#/$defs/vv_entry" },
+          "description": "The device's persisted last-seen baseline VV (absent components = 0). Empty = a bootstrapping device (TOFU, §6) — for which the expected_decision is 'bootstrap_tofu'."
+        },
+        "input_candidate_version_vector": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/vv_entry" },
+          "description": "The candidate head's VV (already MAC-verified; this case pins only the dominance comparison, not the MAC step)."
+        },
+        "expected_decision": {
+          "type": "string",
+          "enum": ["extension", "rollback", "incomparable_merge", "bootstrap_tofu"],
+          "description": "The §5.3 outcome: 'extension' (candidate >= baseline componentwise, >=1 strictly greater -> accept); 'rollback' (any candidate component < baseline -> reject); 'incomparable_merge' (some greater, some less -> author a two-way merge head); 'bootstrap_tofu' (empty baseline -> trust-on-first-use adoption, §6, not a dominance result)."
+        }
+      }
+    }
+  ]
+}
