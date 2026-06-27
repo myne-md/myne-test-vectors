@@ -304,6 +304,24 @@
             "editor_focus_typewriter": {
               "type": "boolean",
               "description": "MYND-348 editor focus-mode typewriter-scrolling toggle. Option<bool>; absent ≡ host-applied default focus policy. Only an explicit true/false emits the key. Canonical key slot: after editor_focus_dim_inactive, before editor_font_family (editor_focus < editor_font: c < n)."
+            },
+            "right_panel_active_tab": {
+              "type": "string",
+              "description": "Right-panel tabs active-tab pointer. Option<String>; absent means host default (first visible tab). Free string stored verbatim (NFC on encode). Canonical key after paired_extensions, before the hidden-tabs set."
+            },
+            "right_panel_hidden_tabs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Right-panel tabs hidden set. Vec<String>; set-canonical (NFC+sorted+deduped on encode), omitted-when-empty. Canonical key after the active-tab pointer, before the tab-order sequence."
+            },
+            "right_panel_tab_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Right-panel tabs display order. Vec<String>; sequence (verbatim), omitted-when-empty. Canonical key after the hidden-tabs set, before saved_views."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones. / last_backup_at (epoch seconds, absent ≡ never backed up, MYND-58)"
