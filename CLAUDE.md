@@ -1,6 +1,6 @@
 # myne-test-vectors — JSON test vectors for Myne v0.1 protocol
 
-> Companion repository to [`myne`](https://github.com/myne-md/myne). Public, **CC0** (public domain) — vectors must remain maximally reusable for independent implementations in any language.
+> Companion repository to [`myne`](https://github.com/myne-md/myne). Public, **CC-BY-4.0** (Creative Commons Attribution 4.0) — vectors must remain maximally reusable for independent implementations in any language, with attribution to Myne.
 
 ## Purpose
 

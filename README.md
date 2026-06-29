@@ -51,7 +51,7 @@ myne-test-vectors/
 │       ├── schema.md          ← domain-semantic description of the category
 │       └── v0.1/cases.json    ← the vectors themselves
 ├── lefthook.yml               ← commit-time JSON + text-hygiene hooks
-└── LICENSE                    ← CC0 1.0
+└── LICENSE                    ← CC-BY-4.0
 ```
 
 Adding a new category requires landing its sub-schema under `schema/v0.1/` and extending both the `schema` enum and the `oneOf` branches in the root schema in lockstep, then adding the `vectors/<category>/` files and a runner in the main repo.
@@ -103,4 +103,4 @@ Independent ports verify compatibility by running these vectors through their ow
 
 ## License
 
-[CC0 1.0](LICENSE) — public domain. These vectors are reference material for independent implementations and should be maximally reusable. (The wider Myne project keeps its `docs/` under a permissive content license and moves application code to AGPL-3.0 as it lands; this repo carries data only, so it stays CC0.)
+[CC-BY-4.0](LICENSE) — Creative Commons Attribution 4.0. These vectors are reference material for independent implementations and should be maximally reusable as long as Myne is credited. (The wider Myne project keeps its `docs/` specs under the same CC-BY-4.0 content license; application code is AGPL-3.0. This repo carries data only.)
