@@ -141,6 +141,17 @@
             "screen_capture_protection": {
               "type": "boolean"
             },
+            "ai_enabled": {
+              "type": "boolean",
+              "description": "Local-AI master toggle (SYNC-12, local-ai epic MYND-406). Option<bool>; absent ≡ host-applied default-OFF (opt-in, privacy-default). Only an explicit true/false emits the key. Canonical key 'ai_e' sorts ahead of screen_capture_protection."
+            },
+            "ai_excluded_folders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Local-AI per-folder exclusion set (SYNC-14, local-ai epic MYND-406). Folder-path strings the AI runtime must never read/embed. Set-canonical: sorted+deduped; omitted-when-empty. Canonical key 'ai_ex' sorts after ai_enabled, ahead of screen_capture_protection."
+            },
             "deliberate_folders": {
               "type": "array",
               "items": {
