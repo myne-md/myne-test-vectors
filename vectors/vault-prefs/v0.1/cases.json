@@ -591,6 +591,35 @@
           "Private/"
         ]
       }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-archived-folders",
+      "description": "folder-archive archived_folders field: screen_capture_protection=true plus archive_disabled=true, archived_folders (given UNSORTED with a duplicate → canonical sorted+deduped [\"Alpha/\",\"Zeta/\"]), and auto_lock_seconds=300. Pins the canonical key slot of 'archived_folders' (between archive_disabled and auto_lock_seconds — ar_ < arch < au) and its set-canonical (NFC-sorted, exact-deduped, omitted-when-empty) string-array encoding, same codec as deliberate_folders / ai_excluded_folders. An unset vault stays byte-identical to encrypt-default (omit-when-empty). Same fixed vault-A inputs as the family; nonce 0xAF.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b22617263686976655f64697361626c6564223a747275652c2261726368697665645f666f6c64657273223a5b22416c7068612f222c225a6574612f225d2c226175746f5f6c6f636b5f7365636f6e6473223a3330302c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "afafafafafafafafafafafafafafafafafafafafafafafaf",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100afafafafafafafafafafafafafafafafafafafafafafafaf0000009883208f0c9bfa45cfa0c8e46a17715f4e0ef4618b924b7db4c86f37a6011e1d6749637ddb38cd2b2033fd510857f0161910888c80a6155768111bb3b6f2496f122c913b5623896c2d22f4a955b02ab59c6af66a24c3c9c550627c9ce00f0d1986ead3114598758e36a96b2a1ccbc00c9409a9f683683099bc2f5e88065f5447966a85f613193c1478118df7007a35500ed5b1954fa7f48e49"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-archived-folders",
+      "description": "Round-trip with encrypt-archived-folders: the blob decodes back to PrefsView{ archive_disabled: true, archived_folders: [\"Alpha/\",\"Zeta/\"], auto_lock_seconds: 300, screen_capture_protection: true } under the same root_key + account_number_hash. Verifies the decoder parses the archived_folders string array at its canonical slot (between archive_disabled and auto_lock_seconds).",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100afafafafafafafafafafafafafafafafafafafafafafafaf0000009883208f0c9bfa45cfa0c8e46a17715f4e0ef4618b924b7db4c86f37a6011e1d6749637ddb38cd2b2033fd510857f0161910888c80a6155768111bb3b6f2496f122c913b5623896c2d22f4a955b02ab59c6af66a24c3c9c550627c9ce00f0d1986ead3114598758e36a96b2a1ccbc00c9409a9f683683099bc2f5e88065f5447966a85f613193c1478118df7007a35500ed5b1954fa7f48e49",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b22617263686976655f64697361626c6564223a747275652c2261726368697665645f666f6c64657273223a5b22416c7068612f222c225a6574612f225d2c226175746f5f6c6f636b5f7365636f6e6473223a3330302c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "archive_disabled": true,
+        "archived_folders": [
+          "Alpha/",
+          "Zeta/"
+        ],
+        "auto_lock_seconds": 300,
+        "screen_capture_protection": true
+      }
     }
   ]
 }

@@ -158,6 +158,13 @@
                 "type": "string"
               }
             },
+            "archived_folders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Folder-archive set (folder-archive). Canonical trailing-slash folder-path strings archived as a UNIT; set-canonical (sorted+deduped), omitted-when-empty. Canonical key 'archived_folders' sorts between 'archive_disabled' and 'auto_lock_seconds'."
+            },
             "auto_lock_seconds": {
               "type": "integer",
               "minimum": 0
