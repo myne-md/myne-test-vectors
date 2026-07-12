@@ -158,6 +158,13 @@
                 "type": "string"
               }
             },
+            "device_names": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "MYND-459 / SYNC-41 device friendly-names. BTreeMap<String, String> — device_id-hex -> display name. Omitted-when-empty; members emitted in lexicographic key order. Canonical key 'd' — after deliberate_folders, before editor_*."
+            },
             "archived_folders": {
               "type": "array",
               "items": {
