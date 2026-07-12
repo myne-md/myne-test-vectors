@@ -42,6 +42,7 @@
         "markdown-comment",
         "vault-dictionary",
         "vault-quickunlock",
+        "pending-capture",
         "attachment-text",
         "d1-clip-serializer",
         "saved-view",
@@ -89,6 +90,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/phrase_normalize.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "pending-capture"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/pending-capture.json"
           }
         }
       }

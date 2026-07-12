@@ -14,7 +14,7 @@ This is a companion repo of the [Myne multi-repo project](https://github.com/myn
 
 What exists today:
 
-- **36 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and a JSON-Schema-validated `v0.1/cases.json`.
+- **37 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and a JSON-Schema-validated `v0.1/cases.json`.
 - A **canonical machine-readable contract**: the root schema `schema/v0.1.json` dispatches per-category sub-schemas under `schema/v0.1/` (one file per category) via `oneOf` keyed on the `schema` field.
 - **Git hooks** (`lefthook.yml`) that guard JSON well-formedness and text hygiene on commit.
 
@@ -45,7 +45,7 @@ myne-test-vectors/
 ├── schema/
 │   ├── v0.1.json              ← root schema (top-level shape + oneOf dispatch on `schema`)
 │   └── v0.1/
-│       └── <category>.json    ← one per-category case schema (36 files)
+│       └── <category>.json    ← one per-category case schema (37 files)
 ├── vectors/
 │   └── <category>/
 │       ├── schema.md          ← domain-semantic description of the category

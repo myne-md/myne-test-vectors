@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/pending-capture.json",
+  "title": "pending-capture — case shape (v0.1)",
+  "description": "Pins the byte mapping of protocol::encode_capture_blob_raw + protocol::decode_capture_blob — the MYK1 pending-capture device-local queue codec (Apple Watch voice quick-capture; §9.18). A watch-dictated note is relayed to the phone and held in a device-local encrypted queue until the vault unlocks. The blob seals arbitrary-length dictated UTF-8 under a device-local wrap_key. The codec is PROVIDER-AGNOSTIC and VAULT-AGNOSTIC: it never runs Argon2id, and binds NEITHER account_number_hash NOR items_key_id (the queue is created while the vault is locked and drains into whichever vault unlocks first). It binds the per-entry capture_id (also the queue filename) via aad_capture_blob (AAD role 'pending-capture-blob'); there is NO HKDF SubkeyRole (a root_key-derived KEK would be wrong — the queue must survive while root_key is unavailable). ciphertext_len is variable (plaintext_len + 32), capped at MAX_CAPTURE_PLAINTEXT_LEN (16 KiB); an oversize ciphertext_len is a CiphertextLenOverflow reject before allocation (contrast vault-quickunlock's fixed 64 → CiphertextLenInvalid). Four case kinds: 'encrypt' (encoder byte output), 'decrypt_ok' (round-trip to the dictated plaintext), 'decrypt_aead_fail' (non-distinguishing AEAD failure per §6.4, incl. the cross-capture_id header flip which is AAD-bound), 'parse_fail' (distinguishable pre-decryption structural reject, one per CaptureBlobError decode variant). Reference impl: protocol/src/capture_blob.rs (main myne repository); spec: docs/spec/protocol.md §9.18 + §5.2.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^pending-capture/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'pending-capture/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_wrap_key_hex",
+        "input_capture_id_hex",
+        "input_plaintext_utf8_hex",
+        "input_nonce_hex",
+        "expected_pending_capture_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte device-local wrap_key (hex), supplied DIRECTLY. The codec is provider-agnostic — it never derives this key; it is a random 32-byte value held in the OS keychain (service md.myne.captures)."
+        },
+        "input_capture_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte capture_id (hex) — a random UUIDv7 that is ALSO the queue filename. Written into the public header at offset 5 AND bound into the 49-byte AAD via aad_capture_blob (role string 'pending-capture-blob'), so a tampered header capture_id fails AEAD. This is the swap/duplicate protection for the queue directory."
+        },
+        "input_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The dictated note text as UTF-8 bytes (hex), empty allowed. Arbitrary length up to MAX_CAPTURE_PLAINTEXT_LEN (16 KiB); this is the AEAD plaintext."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+        },
+        "expected_pending_capture_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Full encoder output, hex-encoded lowercase. Variable length = 49-byte header + plaintext_len + 32-byte CTX tag. Decoders compare byte-equal."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "expected_plaintext_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_plaintext_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The recovered dictated note text as UTF-8 bytes (hex). Note the decoder reads capture_id from the blob's own header (it is not a separate decode input)."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: CaptureBlobError::CannotDecrypt). Implementations MUST NOT distinguish tampered ciphertext/tag vs wrong wrap_key vs cross-capture_id (a flipped header capture_id, which is AAD-bound) beyond the single 'cannot decrypt' outcome (spec §6.4). Structurally distinguishable rejects (bad magic, oversize ciphertext_len, etc.) are pinned separately under case_kind 'parse_fail'."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable pre-decryption structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE attempting any decryption — magic / protocol_version / ciphertext_len checks all run before the AEAD stage (spec §9.18.1 magic-byte-before-decrypt discipline)."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "ciphertext_len_overflow",
+            "header_too_short",
+            "ciphertext_truncated"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: CaptureBlobError::{MagicMismatch, ProtocolVersionMismatch, CiphertextLenOverflow, HeaderTooShort, CiphertextTruncated}). NOTE this is 'ciphertext_len_overflow' (unlike vault-quickunlock's 'ciphertext_len_invalid'): the pending-capture ciphertext_len is VARIABLE with a 16 KiB cap, so an oversize length is an overflow reject before allocation. A flipped-but-structurally-valid header capture_id is a decrypt_aead_fail, not a parse_fail."
+        }
+      }
+    }
+  ]
+}
