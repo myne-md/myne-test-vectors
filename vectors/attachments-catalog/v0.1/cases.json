@@ -139,6 +139,26 @@
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "expected_error": "plaintext_parse_failed",
       "informational_tamper_description": "validly-sealed non-JSON inner plaintext (nonce 0xaa×24)"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/encrypt-tombstone-and-updated-at",
+      "description": "MYND-468 (§9.10.2 + sync-protocol.md §11.4): a two-entry catalog whose first entry is an attachment catalog tombstone (deleted_at set; filename/content_type emptied, size zeroed — the delete-time metadata scrub) and whose second is a live renamed entry carrying updated_at (the filename-LWW discriminator). Pins the canonical per-entry key order content_type < created_at < deleted_at < filename < size < updated_at, with the two optional fields emitted only when present.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22222c22637265617465645f6174223a313730303030303030302c2264656c657465645f6174223a313730303030303930302c2266696c656e616d65223a22222c2273697a65223a307d2c2262623232223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303530302c2266696c656e616d65223a2272656e616d65642e706466222c2273697a65223a39383736352c22757064617465645f6174223a313730303030303830307d7d",
+      "input_catalog_nonce_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "informational_catalog_key_hex": "7166331f75468f64efbd7989b270412089ded4667519066ce8c34bdf730aff0b",
+      "expected_catalog_blob_hex": "4d5943310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000001035fa398ab3c3e877a35a37d42482d5fbd003e04d05fe819f0b8961de7431876fb3a6fbfeb80871fb09772a5fc74ff15be92d050cadb4d599f56df7f7793395f3fb185f1bc96c61e3cd3e2d0809989e1f83f90593a4bedeb90b2c168cccf333979e81e4b3c8d3745ef064266aff2d131d54650bddb67c0e78fda6e18523df9e87779e0bc375c8be670313c5585b70bc04e039102fa851aab36519eddff73e4915d80350c7458a76d321186f778cd28c23a9da77dd0bcb607199d83108a685741d71ea4cccc4097f8b0729b8c17a8b34b9cf5e6892b131aeee18044cc7cccd7c2c528e2603c530e357368aa1852a1185842a571b2852a786193ee89cbc78e0f344df5bc69"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-ok-tombstone-and-updated-at",
+      "description": "Decode the tombstone-carrying MYC1 blob back to its canonical plaintext: deleted_at and updated_at round-trip as first-class (no longer unknown) fields. A pre-sync reader would instead tolerate-and-drop them (§9.10.2 honesty note) — this case is the post-MYND-468 reader contract.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5943310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000001035fa398ab3c3e877a35a37d42482d5fbd003e04d05fe819f0b8961de7431876fb3a6fbfeb80871fb09772a5fc74ff15be92d050cadb4d599f56df7f7793395f3fb185f1bc96c61e3cd3e2d0809989e1f83f90593a4bedeb90b2c168cccf333979e81e4b3c8d3745ef064266aff2d131d54650bddb67c0e78fda6e18523df9e87779e0bc375c8be670313c5585b70bc04e039102fa851aab36519eddff73e4915d80350c7458a76d321186f778cd28c23a9da77dd0bcb607199d83108a685741d71ea4cccc4097f8b0729b8c17a8b34b9cf5e6892b131aeee18044cc7cccd7c2c528e2603c530e357368aa1852a1185842a571b2852a786193ee89cbc78e0f344df5bc69",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22222c22637265617465645f6174223a313730303030303030302c2264656c657465645f6174223a313730303030303930302c2266696c656e616d65223a22222c2273697a65223a307d2c2262623232223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303530302c2266696c656e616d65223a2272656e616d65642e706466222c2273697a65223a39383736352c22757064617465645f6174223a313730303030303830307d7d"
     }
   ]
 }
