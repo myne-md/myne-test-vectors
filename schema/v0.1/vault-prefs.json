@@ -240,6 +240,14 @@
               "type": "string",
               "description": "MYND-191 daily-notes template pointer (UUIDv7). Option<String>; absent ≡ blank daily note."
             },
+            "field_clocks": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "MYND-478 per-field LWW clocks for the Phase 2 prefs sync (sync-protocol.md §10.2). BTreeMap<String, u64> — a SHARED preference's field name (or a namespaced device_names/<key> per-entry name) → the epoch-MILLISECONDS a setter last changed it. Absent clock counts as 0 to the merge; equal clocks tie-break byte-lexicographically toward the greater value. Omitted-when-empty (every pre-MYND-478 blob); members emitted in lexicographic key order; values bare non-negative integers (floats forbidden). Canonical key 'fi' — after favorites (fa), before folder_icons (fo)."
+            },
             "folder_icons": {
               "type": "object",
               "additionalProperties": {
