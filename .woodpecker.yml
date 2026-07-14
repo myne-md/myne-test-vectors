@@ -1,0 +1,56 @@
+# Woodpecker CI — myne-test-vectors
+# Self-hosted Woodpecker (via a Forgejo pull-mirror of GitHub).
+#
+# Validates every landed cases.json against its canonical sub-schema with ajv,
+# so a schema/vector drift is caught in CI instead of the formerly-manual
+# `ajv-cli validate` step documented in the README.
+
+when:
+  - event: [push, pull_request, manual]
+
+steps:
+  validate-vectors:
+    image: node:22-alpine
+    commands:
+      - npm install -g ajv-cli@5
+      # Validate each category on its own (one -d per run): a combined all-`-d`
+      # run has historically tripped a false-negative through a schema oneOf
+      # artefact, so per-category keeps the gate honest. The sub-schemas are
+      # passed as a single quoted glob to -r (ajv expands it internally) because
+      # the root schema dispatches to them by $id, and 40+ separate -r flags trip
+      # a "too many arguments" limit in ajv-cli.
+      - |
+        set -eu
+        for d in vectors/*/v0.1/cases.json; do
+          echo "validating $d"
+          ajv validate -s schema/v0.1.json -r "schema/v0.1/*.json" -d "$d" --spec=draft2020
+        done
+
+  # Failure notification via Pushover. The token + group come ONLY from CI
+  # secrets, never committed (public repo). A missing secret makes the step skip
+  # silently; failure:ignore keeps it from ever failing the pipeline.
+  notify-failure:
+    image: alpine:3.21
+    depends_on:
+      - name: validate-vectors
+        optional: true
+    environment:
+      PUSHOVER_TOKEN:
+        from_secret: pushover_token
+      PUSHOVER_GROUP:
+        from_secret: pushover_group
+    commands:
+      - apk add --no-cache curl
+      - |
+        if [ -z "$PUSHOVER_TOKEN" ]; then echo "pushover secret absent; skipping"; exit 0; fi
+        curl -fsS -m 15 \
+          --data-urlencode "token=$PUSHOVER_TOKEN" \
+          --data-urlencode "user=$PUSHOVER_GROUP" \
+          --data-urlencode "title=❌ $CI_REPO_NAME failed · $CI_COMMIT_BRANCH" \
+          --data-urlencode "message=$CI_COMMIT_AUTHOR · $CI_COMMIT_MESSAGE" \
+          --data-urlencode "url=$CI_PIPELINE_URL" \
+          https://api.pushover.net/1/messages.json
+    when:
+      - event: [push, manual]
+        status: failure
+    failure: ignore
