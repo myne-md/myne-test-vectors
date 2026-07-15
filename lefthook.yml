@@ -53,3 +53,37 @@ pre-commit:
           fi
         done
         exit $fail
+
+# JSON-Schema conformance gate — automates the previously-MANUAL ajv step
+# documented in README.md ("Every cases.json must validate clean").
+# Validated PER CATEGORY (single -d each), never all -d in one ajv run: a
+# combined run mis-reports vault-prefs as invalid (a oneOf artefact). All 42
+# sub-schemas stay loaded as -r refs. `npx -y ajv-cli@5` downloads on each run
+# (slow/network) — acceptable at pre-push for the conformance source of truth.
+pre-push:
+  parallel: false
+  commands:
+    ajv-schema:
+      run: |
+        fail=0
+        refs=""
+        for f in schema/v0.1/*.json; do refs="$refs -r $f"; done
+        for d in vectors/*/v0.1/cases.json; do
+          if ! npx -y ajv-cli@5 validate -s schema/v0.1.json $refs -d "$d" --spec=draft2020 >/dev/null 2>&1; then
+            echo "INVALID against schema: $d"
+            fail=1
+          fi
+        done
+        [ "$fail" -eq 0 ] && echo "all $(ls vectors/*/v0.1/cases.json | wc -l | tr -d ' ') cases.json valid"
+        exit $fail
+
+# Reject accidental AI co-author / attribution trailers in commit messages
+# (project policy). Lefthook passes the commit-message file path as {1}.
+commit-msg:
+  commands:
+    no-ai-coauthor:
+      run: |
+        if grep -qiE 'Co-Authored-By:.*(Claude|Anthropic)|Generated with .*Claude|🤖 Generated' "{1}"; then
+          echo "commit message carries an AI co-author/attribution trailer — remove it (project policy)."
+          exit 1
+        fi
