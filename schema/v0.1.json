@@ -35,6 +35,7 @@
         "attachments-catalog",
         "note-template",
         "vault-workspace",
+        "graph-layout",
         "backup-container",
         "property-coercion",
         "vault-indices",
@@ -325,6 +326,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-workspace.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "graph-layout"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/graph-layout.json"
           }
         }
       }

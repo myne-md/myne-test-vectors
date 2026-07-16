@@ -137,6 +137,7 @@
             "aad_prefs_blob",
             "aad_search_index_blob",
             "aad_workspace_blob",
+            "aad_graph_layout_blob",
             "aad_vault_indices_blob",
             "aad_ai_embeddings_blob",
             "aad_personal_dictionary_blob",
