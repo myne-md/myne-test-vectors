@@ -3,7 +3,7 @@
 Pins the byte mapping of `protocol::encode_share_import_blob_raw` + `protocol::decode_share_import_blob` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)). The codec emits and consumes `pending-shares/<share-id>` — the v0.1 **device-local share-import staging** blob (`MYF1` magic; OS share-sheet file import). A file handed to Myne from the OS share sheet (iOS Share Extension / Android `ACTION_SEND`) is held in a device-local encrypted queue while the process lacks `root_key` (the iOS extension is a separate sandbox; on Android the vault may be locked), then drained into the vault's attachment library (§ 9.9 / § 9.10) via `attachment_import` on the next unlock.
 
 **Reference implementation:** `protocol/src/share_import_blob.rs::{encode_share_import_blob_raw, decode_share_import_blob, parse_share_import_header}`.
-**Spec:** `docs/spec/protocol.md` § 9.19 (`pending-shares/<id>` layout + variable-length ciphertext + AAD + device-key model) + § 5.2 / § 9.19.3 `AAD_share_import_blob` formula (the AAD role `"share-import-blob"`).
+**Spec:** `docs/spec/protocol.md` § 9.20 (`pending-shares/<id>` layout + variable-length ciphertext + AAD + device-key model) + § 5.2 / § 9.20.3 `AAD_share_import_blob` formula (the AAD role `"share-import-blob"`).
 
 ## `MYF1` magic allocation
 
