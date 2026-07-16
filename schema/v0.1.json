@@ -58,7 +58,8 @@
         "vault-head",
         "scram-auth",
         "manifest",
-        "head-fingerprint"
+        "head-fingerprint",
+        "share-import"
       ]
     },
     "protocol_version": {
@@ -623,6 +624,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/head-fingerprint.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "share-import"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/share-import.json"
           }
         }
       }
