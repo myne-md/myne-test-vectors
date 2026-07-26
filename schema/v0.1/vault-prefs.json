@@ -318,6 +318,10 @@
               "type": "boolean",
               "description": "editor-line-numbers (MYND-314) optional line-number gutter toggle. Option<bool>; absent ≡ host-applied default-OFF (prose-first). Only an explicit true/false emits the key. Canonical key slot: after editor_layout, before screen_capture_protection (editor_la < editor_line_n < s)."
             },
+            "editor_vim_mode": {
+              "type": "boolean",
+              "description": "vim-keyboard-mode (MYND-313) optional modal (vim) editing toggle. Option<bool>; absent ≡ host-applied default-OFF (modal editing is opt-in). Only an explicit true/false emits the key. Canonical key slot: after editor_toolbar_order, before favorites (editor_to < editor_v < f). Non-load-bearing: a tampered/replayed value can at worst turn modal editing on or off — no clamp. Phase 2 sync classification: device-local (like every other editor_* field), so the local value always survives the merge."
+            },
             "archive_disabled": {
               "type": "boolean",
               "description": "archive-disable optional toggle disabling the note-archive feature's UI entry points. Option<bool>; absent ≡ host-applied default-OFF (archiving enabled). Only an explicit true/false emits the key. Canonical key slot: after active_workspace, before auto_lock_seconds (ac < ar < au)."
