@@ -73,7 +73,16 @@ best-effort-parses.
   error named by `expected_error`.
 
 Any mismatch is a stop-the-world bug (per repo `README.md` "Cross-implementation
-discipline"). These vectors are the Rust ↔ Go bit-identity contract.
+discipline").
+
+**Whose contract this is.** The manifest is computed **client-side**: the head
+anchors only its hash, and the server never computes or verifies it — it holds no
+MAC key, by design. So these vectors bind **client ports** to each other (any
+independent Myne client must produce these bytes), not a client to the server.
+The only plausible Go consumer would be server-adjacent audit tooling, which does
+not exist today — a missing Go runner here is **not** a coverage gap. Contrast
+[`vault-head`](../vault-head/schema.md) and [`scram-auth`](../scram-auth/schema.md),
+which really are Rust ↔ Go: the server computes both.
 
 ## What this does NOT cover
 
