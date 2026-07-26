@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-head-state.json",
+  "title": "vault-head-state — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::encode_head_state + protocol::decode_head_state — the MYH1 vault.head-state device-local sync baseline (docs/spec/protocol.md §9.16). The envelope is magic 'MYH1' || protocol_version (0x01) || head_format_version (0x01) || the sealed wire record (head_mac_input || head_mac) that the sibling 'vault-head' category pins in isolation (sync-protocol.md §3-§5). UNIQUE among the §10.3 blob families: MYH1 is NOT AEAD-encrypted — the bytes are exactly the head the server already relays, and integrity is the head's own HMAC-SHA-256 under head_mac_key = DeriveSubkey(root_key, SubkeyRole::VaultHeadMac). So there is no decrypt_aead_fail shape here: the MAC surface is its own distinguishable 'mac_fail' case_kind, and the pre-MAC structural rejects stay under 'parse_fail'. Four case kinds: 'encode' (encoder byte output), 'decode_ok' (round-trip incl. MAC verification), 'mac_fail' (tampered head_mac), 'parse_fail' (distinguishable pre-MAC structural reject). The Rust reference implementation lives at protocol/src/vault_head.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "$defs": {
+    "vv_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_device_id_hex", "counter"],
+      "properties": {
+        "input_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte VV-actor device_id (hex). Client-generated random, distinct from the secret per-device token (sync-protocol.md §4.1)."
+        },
+        "counter": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "u64 authored-head count for this device. Encoded big-endian (8 bytes) inside the wrapped record."
+        }
+      }
+    }
+  },
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-head-state/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-head-state/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encode", "decode_ok", "mac_fail", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encode — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_head_format_version",
+        "input_manifest_hash_hex",
+        "input_seq",
+        "input_parent_count",
+        "input_prev_head_hash_hex",
+        "input_version_vector",
+        "expected_head_state_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encode" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). The runner derives head_mac_key from this via derive_subkey(SubkeyRole::VaultHeadMac, role string 'vault-head-mac') before sealing the head."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex). Bound inside the wrapped record (sync-protocol.md §3.2), NOT by an AAD — MYH1 has no AEAD stage."
+        },
+        "input_head_format_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "head_format_version byte written at offset 5 AND carried inside the record. v0.1 emits 1."
+        },
+        "input_manifest_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte flat SHA-256 of the canonical uuid -> content_nonce manifest (sync-protocol.md §4.2)."
+        },
+        "input_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Auxiliary Lamport scalar (max(parent_seq)+1). The version vector is the authority; seq is advisory."
+        },
+        "input_parent_count": {
+          "type": "integer",
+          "enum": [0, 1, 2],
+          "description": "0 = genesis, 1 = linear successor, 2 = merge. Any other value is rejected by the encoder."
+        },
+        "input_prev_head_hash_hex": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "maxItems": 2,
+          "description": "Parent head_ids, supplied in the caller's order. Merge cases deliberately supply them UNSORTED so the vector pins the G2 lexicographic sort the encoder applies."
+        },
+        "input_version_vector": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/vv_entry" },
+          "minItems": 1,
+          "description": "Per-device version vector, in the caller's order. Deliberately supplied unsorted so the vector pins the G1 device_id sort the encoder applies."
+        },
+        "informational_head_mac_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte HKDF output (hex), pre-computed from root_key via derive_subkey(SubkeyRole::VaultHeadMac). Informational — verified implicitly via expected_head_state_blob_hex."
+        },
+        "informational_head_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "head_id = SHA-256(record) of the WRAPPED record (i.e. of the blob minus its 6-byte MYH1 header). Informational — the baseline envelope does not store it; the sibling vault-head category pins it as an expected value."
+        },
+        "expected_head_state_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full encoder output (6-byte header + sealed record), hex-encoded lowercase. Decoders compare byte-equal. The header is a pure prefix: bytes [6..] are the wire record verbatim, so this value and the sibling vault-head 'encode' case for the same head must agree byte-for-byte after the prefix."
+        }
+      }
+    },
+    {
+      "title": "decode_ok — pin the decoder's successful round-trip (incl. MAC verification)",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "expected_head_format_version",
+        "expected_account_number_hash_hex",
+        "expected_manifest_hash_hex",
+        "expected_seq",
+        "expected_prev_head_hash_hex",
+        "expected_version_vector"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decode_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_head_format_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "expected_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_manifest_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expected_seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_prev_head_hash_hex": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "maxItems": 2,
+          "description": "Recovered parent head_ids in CANONICAL (byte-sorted) order — the decoder returns what the record holds, which the encoder already sorted."
+        },
+        "expected_version_vector": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/vv_entry" },
+          "minItems": 1,
+          "description": "Recovered version vector in CANONICAL (device_id-sorted) order."
+        },
+        "informational_head_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    {
+      "title": "mac_fail — pin the head-MAC verification surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "mac_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The REAL root_key, so a port that skips MAC verification returns Ok and fails this case loudly rather than passing on a coincidental error."
+        },
+        "expected_error": {
+          "const": "mac_mismatch",
+          "description": "Rust reference: VaultHeadError::MacMismatch. Unlike the AEAD families, this reject IS distinguishable — MYH1 carries no confidentiality claim (the record is bytes the server already relays), so there is nothing for a distinguishable error to leak. The comparison MUST be constant-time."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable pre-MAC structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE computing any MAC — length / magic / protocol_version / head_format_version checks all precede verification."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Carried for uniformity; irrelevant to the assertion because the reject precedes the MAC stage."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "state_magic_mismatch",
+            "protocol_version_mismatch",
+            "format_unsupported",
+            "record_too_short"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: VaultHeadError::{StateMagicMismatch, ProtocolVersionMismatch, FormatUnsupported, RecordTooShort}). Order matters: the length guard fires before the magic comparison, so a 5-byte input yields record_too_short rather than a panic on blob[0..4]."
+        }
+      }
+    }
+  ]
+}

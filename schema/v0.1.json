@@ -60,7 +60,9 @@
         "scram-auth",
         "manifest",
         "head-fingerprint",
-        "share-import"
+        "share-import",
+        "vault-themes",
+        "vault-head-state"
       ]
     },
     "protocol_version": {
@@ -651,6 +653,32 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/share-import.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-themes"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-themes.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-head-state"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-head-state.json"
           }
         }
       }

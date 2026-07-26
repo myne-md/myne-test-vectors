@@ -14,7 +14,7 @@ This is a companion repo of the [Myne multi-repo project](https://github.com/myn
 
 What exists today:
 
-- **37 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and a JSON-Schema-validated `v0.1/cases.json`.
+- **46 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and a JSON-Schema-validated `v0.1/cases.json`.
 - A **canonical machine-readable contract**: the root schema `schema/v0.1.json` dispatches per-category sub-schemas under `schema/v0.1/` (one file per category) via `oneOf` keyed on the `schema` field.
 - **Git hooks** (`lefthook.yml`) that guard JSON well-formedness and text hygiene on commit.
 
@@ -23,7 +23,7 @@ What is deferred:
 - **CI integration.** Schema validation runs as a developer-side step today; there is no pipeline in this repo yet.
 - **v005 vectors.** The next major epoch is reserved but unwritten — v0.1 and v005 are forward-incompatible by design.
 
-No vector categories remain planned for v0.1; every category that was scoped has landed.
+Every v0.1 blob family in the [`protocol.md` §10.3 magic-allocation table](https://github.com/myne-md/myne/blob/main/docs/spec/protocol.md) now has a category, every `SubkeyRole` variant has an `hkdf-sha256` case, and every vault-scoped `aad_*` builder has an `aad-construction` decomposition. Those three registries are enforced from the runner side — `SubkeyRole::ALL` and the builder lists are iterated, not restated — so a new role or family fails the suite instead of quietly shipping unvectored.
 
 ## How it works
 
@@ -31,7 +31,7 @@ Myne is end-to-end encrypted and local-first: a 20-character account number iden
 
 Each category pins one surface of the protocol. They fall into a few shapes:
 
-- **On-disk blob codecs** — encrypt, decrypt-success, non-distinguishing AEAD-failure, and distinguishable structural parse-reject cases for each magic-prefixed format (`MY01` notes, `MYV1` vault metadata, `MYP1` prefs, `MYS1` search, `MYW1` workspace, `MYI1` indices, `MYA1`/`MYC1` attachments, `MYD1` dictionary, `MYQ1` quick-unlock, `MYE1` attachment-text, `MYB1` backup container).
+- **On-disk blob codecs** — encrypt, decrypt-success, non-distinguishing AEAD-failure, and distinguishable structural parse-reject cases for each magic-prefixed format (`MY01` notes, `MYV1` vault metadata, `MYP1` prefs, `MYS1` search, `MYW1` workspace, `MYI1` indices, `MYA1`/`MYC1` attachments, `MYD1` dictionary, `MYQ1` quick-unlock, `MYE1` attachment-text, `MYB1` backup container, `MYR1` AI embeddings, `MYG1` graph layout, `MYK1` pending capture, `MYF1` share import, `MYT1` custom themes). `MYH1` (`vault.head-state`) is the one family in this group that is **not** AEAD-encrypted — integrity is the vault head's own MAC — so it pins a `mac_fail` case kind instead of an AEAD-failure one.
 - **Primitive derivations** — HKDF-SHA-256 subkey roles, Argon2id wrap-key derivations at canonical Phase 1 parameters, and the XChaCha20-Poly1305 + CTX-commitment AEAD with every AAD builder's canonical byte assembly.
 - **Identity** — Crockford-base32 account-number parsing plus the frozen Damm-32 quasigroup table that decides which account numbers are valid.
 - **Deterministic conformance** — non-crypto, cross-client behavior such as phrase normalization, the password-length floor, the BIP-39 recovery composition, the note-template token engine, frontmatter property coercion, the `%%…%%` editor-comment recognizer, the clip serializer's canonical emit, the dialect parse-recognition categories (`footnote` / `highlight` / `wikilink` / `definition-list` / `inline-tag` / `math`), the frontmatter field patchers (`frontmatter-surgery`), the saved-views + pairing-token array decoders (`saved-view` / `paired-extension`), and the rename-journal crash-recovery state machine (`rename-journal`).
@@ -45,7 +45,7 @@ myne-test-vectors/
 ├── schema/
 │   ├── v0.1.json              ← root schema (top-level shape + oneOf dispatch on `schema`)
 │   └── v0.1/
-│       └── <category>.json    ← one per-category case schema (37 files)
+│       └── <category>.json    ← one per-category case schema (46 files)
 ├── vectors/
 │   └── <category>/
 │       ├── schema.md          ← domain-semantic description of the category

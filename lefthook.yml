@@ -57,7 +57,7 @@ pre-commit:
 # JSON-Schema conformance gate — automates the previously-MANUAL ajv step
 # documented in README.md ("Every cases.json must validate clean").
 # Validated PER CATEGORY (single -d each), never all -d in one ajv run: a
-# combined run mis-reports vault-prefs as invalid (a oneOf artefact). All 42
+# combined run mis-reports vault-prefs as invalid (a oneOf artefact). All 46
 # sub-schemas stay loaded as -r refs. `npx -y ajv-cli@5` downloads on each run
 # (slow/network) — acceptable at pre-push for the conformance source of truth.
 pre-push:

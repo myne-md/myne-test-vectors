@@ -38,9 +38,10 @@
         "aad_personal_dictionary_blob",
         "aad_quick_unlock_blob",
         "aad_note_content_encrypt",
-        "aad_attachment_text_blob"
+        "aad_attachment_text_blob",
+        "aad_custom_themes_blob"
       ],
-      "description": "Which pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below."
+      "description": "Which vault-scoped pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below. The two device-local, vault-agnostic builders (aad_capture_blob / aad_share_import_blob) are deliberately absent: they bind a per-entry capture_id / share_id under a keychain wrap_key rather than account_number_hash under a root_key-derived KEK, so they sit outside this family's vault-scoped enumeration. Their canonical bytes are pinned by in-crate unit tests plus the pending-capture / share-import encrypt cases."
     },
     "input_kdf_params": {
       "type": "object",
