@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-recurrence.json",
+  "title": "task-recurrence — case shape (v0.1)",
+  "description": "Pins one case of the Myne recurrence vocabulary and its civil-date arithmetic (dialect/src/recurrence.ts and civilDate.ts in the main myne repository; markdown-dialect.md §3.8.7). A case gives a rule expression, a current date, and the anchor field(s), and pins the next occurrence every client must compute. Two properties make this cross-implementation rather than merely local: (1) all arithmetic is over civil year/month/day fields anchored to UTC, so a port that forms a LOCAL instant will disagree on the transition cases; (2) an expression outside the closed vocabulary must advance NOTHING — a port that quietly resolves it to a default rule fails the 'unrecognized' cases rather than shipping a client that repeats tasks the user never asked to repeat. Not an on-disk codec and not cryptographic. TS-runner category (no Rust generator).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "rule",
+    "expected_rule_recognized",
+    "today"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^task-recurrence/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'task-recurrence/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["advance", "unrecognized"],
+      "description": "advance: the rule is inside the closed vocabulary and the case pins the next occurrence. unrecognized: the rule is outside it, expected_rule_recognized is false, and NO expected date is carried — the load-bearing negative."
+    },
+    "rule": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The rule expression exactly as it appears in the file's `repeat` field. Rules are STORED in canonical English and displayed localized; a file must never carry a localized rule."
+    },
+    "expected_rule_recognized": {
+      "type": "boolean",
+      "description": "Whether the closed three-tier vocabulary reads this expression. False must NEVER be accompanied by a computed date."
+    },
+    "expected_canonical_rule": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The rule re-rendered in canonical form, including the ' when done' mode suffix. Present only when recognized. This is what pins NORMALIZATION: 'every friday, monday and friday' and 'every monday and friday' are one rule, because weekday sets are deduplicated and reordered Monday-first."
+    },
+    "expected_mode": {
+      "type": "string",
+      "enum": ["due", "completion"],
+      "description": "The anchoring mode, carried IN the expression rather than inferred. due (default): compute from the previous due date, so a calendar obligation does not drift when handled late. completion (' when done' suffix): compute from the completion date, so an interval-from-last-action task does drift."
+    },
+    "expected_family": {
+      "type": "string",
+      "enum": ["interval", "calendar"],
+      "description": "interval (plain intervals + weekday sets): counts from the previous date, clamps into short months, may drift. calendar (ordinal-in-month + day-of-month): anchored to the nominal position, clamps for that occurrence only, then returns — does not drift. The contrast is the design, not an accident: the user chooses the behaviour by choosing the rule."
+    },
+    "today": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "The current civil date. The advance rule adds whole intervals until the result is STRICTLY after this, which yields exactly one pending occurrence however stale the anchor is."
+    },
+    "due": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "The task's due date before advancing. When present it is the anchor."
+    },
+    "remind": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "The task's reminder date before advancing. It is the anchor when there is no due date, which is why `remind` is absolute rather than an offset from `due`."
+    },
+    "expected_due": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "The due date after advancing. Absent when the case carries no due date, and absent for every unrecognized case."
+    },
+    "expected_remind": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "The reminder date after advancing. The non-anchor field shifts by the SAME number of days the anchor moved — the gap is carried, not recomputed, so it cannot drift over repeated cycles."
+    }
+  }
+}

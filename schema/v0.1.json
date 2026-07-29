@@ -62,7 +62,10 @@
         "head-fingerprint",
         "share-import",
         "vault-themes",
-        "vault-head-state"
+        "vault-head-state",
+        "task-inline-format",
+        "task-recurrence",
+        "task-query-grammar"
       ]
     },
     "protocol_version": {
@@ -679,6 +682,45 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-head-state.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "task-inline-format"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-inline-format.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "task-recurrence"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-recurrence.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "task-query-grammar"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-query-grammar.json"
           }
         }
       }

@@ -1,0 +1,349 @@
+{
+  "schema": "task-query-grammar",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3.9 (task-query block roster)",
+  "description": "Pins the closed task-query grammar (src/notes/taskQuery.ts) — BOTH what it accepts and what it refuses. A parse-only vector set would still pass for a port that accepted one extra clause, so the drop cases carry the closedness claim: all three function-valued forms, a field name in a value position (the boundary rule — a field name may never appear where a value goes), arithmetic over a field, and out-of-roster words. The `refuse` cases pin the widen guard: an all-dropped query must NOT collapse to matching everything, while a genuinely empty query is legitimately unfiltered. TS-runner category (no Rust generator).",
+  "cases": [
+    {
+      "vector_id": "task-query-grammar/v0.1/done",
+      "description": "Completion state: done.",
+      "case_kind": "parse",
+      "query": "done",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/not-done",
+      "description": "Completion state: not done.",
+      "case_kind": "parse",
+      "query": "not done",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/due-before-absolute",
+      "description": "A due comparison against an absolute date.",
+      "case_kind": "parse",
+      "query": "due before 2026-08-01",
+      "expected_clause_kinds": [
+        "dueCompare"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/due-after-named",
+      "description": "A due comparison against a named day.",
+      "case_kind": "parse",
+      "query": "due after today",
+      "expected_clause_kinds": [
+        "dueCompare"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/due-on-relative",
+      "description": "A due comparison against a parameterized relative constant.",
+      "case_kind": "parse",
+      "query": "due on in 3 days",
+      "expected_clause_kinds": [
+        "dueCompare"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/due-relative-past",
+      "description": "The past-facing relative form.",
+      "case_kind": "parse",
+      "query": "due after 2 weeks ago",
+      "expected_clause_kinds": [
+        "dueCompare"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/no-due-date",
+      "description": "Absence of a due date.",
+      "case_kind": "parse",
+      "query": "no due date",
+      "expected_clause_kinds": [
+        "noDueDate"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/path-includes",
+      "description": "Folder-path containment.",
+      "case_kind": "parse",
+      "query": "path includes Projects/Myne",
+      "expected_clause_kinds": [
+        "pathIncludes"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/tag-includes",
+      "description": "Tag containment; the leading hash is not part of the value.",
+      "case_kind": "parse",
+      "query": "tag includes #work",
+      "expected_clause_kinds": [
+        "tagIncludes"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/priority-is",
+      "description": "Priority, one of the five levels.",
+      "case_kind": "parse",
+      "query": "priority is high",
+      "expected_clause_kinds": [
+        "priorityIs"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/sort-by-due",
+      "description": "Sort, ascending by default.",
+      "case_kind": "parse",
+      "query": "sort by due",
+      "expected_clause_kinds": [
+        "sortBy"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/sort-reverse",
+      "description": "Sort, descending.",
+      "case_kind": "parse",
+      "query": "sort by priority reverse",
+      "expected_clause_kinds": [
+        "sortBy"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/limit",
+      "description": "An explicit row limit.",
+      "case_kind": "parse",
+      "query": "limit 25",
+      "expected_clause_kinds": [
+        "limit"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/multi-clause",
+      "description": "Several clauses, AND'd.",
+      "case_kind": "parse",
+      "query": "not done\ndue before today\nsort by due\nlimit 5",
+      "expected_clause_kinds": [
+        "done",
+        "dueCompare",
+        "sortBy",
+        "limit"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/comments-and-blanks",
+      "description": "Blank lines and comments are not clauses and produce no warning.",
+      "case_kind": "parse",
+      "query": "\n# a note to self\n\ndone\n",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-unrecognized",
+      "description": "An out-of-roster clause drops with a warning and the rest still runs.",
+      "case_kind": "drop",
+      "query": "not done\ngroup by heading",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "group by heading",
+          "reason": "unrecognized"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-function-filter",
+      "description": "The filtering function form is refused.",
+      "case_kind": "drop",
+      "query": "not done\nfilter by function task.due.moment.month === 7",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "filter by function task.due.moment.month === 7",
+          "reason": "function-valued"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-function-sort",
+      "description": "The sorting function form is refused too — naming only one would break closedness.",
+      "case_kind": "drop",
+      "query": "not done\nsort by function task.description.length",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "sort by function task.description.length",
+          "reason": "function-valued"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-function-group",
+      "description": "The grouping function form is refused as well.",
+      "case_kind": "drop",
+      "query": "not done\ngroup by function task.path",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "group by function task.path",
+          "reason": "function-valued"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-field-in-value-position",
+      "description": "A FIELD NAME where a value goes: the boundary rule, refused.",
+      "case_kind": "drop",
+      "query": "not done\ndue before scheduled",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "due before scheduled",
+          "reason": "malformed-value"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-arithmetic",
+      "description": "An expression that reads a field and operates on it.",
+      "case_kind": "drop",
+      "query": "not done\ndue before due + 3d",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "due before due + 3d",
+          "reason": "expression"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-unknown-priority",
+      "description": "A priority word outside the five levels is not approximated.",
+      "case_kind": "drop",
+      "query": "not done\npriority is urgent",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "priority is urgent",
+          "reason": "malformed-value"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/drop-comparative-priority",
+      "description": "A comparative priority is not in the roster.",
+      "case_kind": "drop",
+      "query": "not done\npriority is above medium",
+      "expected_clause_kinds": [
+        "done"
+      ],
+      "expected_dropped": [
+        {
+          "text": "priority is above medium",
+          "reason": "unrecognized"
+        }
+      ],
+      "expected_refused": false
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/refuse-all-dropped",
+      "description": "Every clause dropped: the query REFUSES rather than matching everything.",
+      "case_kind": "refuse",
+      "query": "group by heading\nhide task count",
+      "expected_clause_kinds": [],
+      "expected_dropped": [
+        {
+          "text": "group by heading",
+          "reason": "unrecognized"
+        },
+        {
+          "text": "hide task count",
+          "reason": "unrecognized"
+        }
+      ],
+      "expected_refused": true
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/refuse-field-to-field",
+      "description": "Field-to-field comparison is not representable; nothing survives.",
+      "case_kind": "refuse",
+      "query": "due before scheduled\ndue after start",
+      "expected_clause_kinds": [],
+      "expected_dropped": [
+        {
+          "text": "due before scheduled",
+          "reason": "malformed-value"
+        },
+        {
+          "text": "due after start",
+          "reason": "malformed-value"
+        }
+      ],
+      "expected_refused": true
+    },
+    {
+      "vector_id": "task-query-grammar/v0.1/empty-is-unfiltered",
+      "description": "A genuinely empty query is unfiltered — NOT refused. The distinction the guard rests on.",
+      "case_kind": "parse",
+      "query": "",
+      "expected_clause_kinds": [],
+      "expected_dropped": [],
+      "expected_refused": false
+    }
+  ]
+}

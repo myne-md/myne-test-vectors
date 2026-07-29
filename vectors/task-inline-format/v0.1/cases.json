@@ -1,0 +1,1884 @@
+{
+  "schema": "task-inline-format",
+  "protocol_version": "v0.1",
+  "spec_section": "markdown-dialect.md §3.8 (inline task fields)",
+  "description": "Pins the Myne dialect task-field extension (dialect/src/lezer/task-field.ts + taskFields.ts + taskFieldWriter.ts) across all THREE read dialects and the ONE emitted form. Each case carries the recognized spans (UTF-8 byte offsets, pre-order), the typed record, and the line as Myne would write it. Emoji markers are surrogate pairs in UTF-16 and four bytes in UTF-8, so the byte-offset convention is load-bearing rather than cosmetic. `inert` cases are near-misses the recognizer must NOT claim. TS-runner category (no Rust generator).",
+  "cases": [
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-due",
+      "description": "A due date in Obsidian's Dataview-style inline-field form.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b205d20706179207468652072656e74205b6475653a3a20323032362d30382d30315d",
+      "informational_markdown": "- [ ] pay the rent [due:: 2026-08-01]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 19,
+          "to": 37
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 19,
+          "to": 20
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 20,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 23,
+          "to": 25
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 26,
+          "to": 36
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 36,
+          "to": 37
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20706179207468652072656e74205b6475653a3a20323032362d30382d30315d",
+      "informational_emitted": "- [ ] pay the rent [due:: 2026-08-01]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-repeat",
+      "description": "A recurrence rule in the Dataview form.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b205d2077617465722074686520706c616e7473205b7265706561743a3a206576657279203320646179735d",
+      "informational_markdown": "- [ ] water the plants [repeat:: every 3 days]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 46
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 23,
+          "to": 24
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 24,
+          "to": 30
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 30,
+          "to": 32
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 33,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 45,
+          "to": 46
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "repeat": "every 3 days"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2077617465722074686520706c616e7473205b7265706561743a3a206576657279203320646179735d",
+      "informational_emitted": "- [ ] water the plants [repeat:: every 3 days]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-completion-folds-to-done",
+      "description": "Obsidian's `completion` key folds onto Myne's `done` — the whole of the third dialect a reader must learn.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b785d2073686970207468652072656c65617365205b636f6d706c6574696f6e3a3a20323032362d30372d32375d",
+      "informational_markdown": "- [x] ship the release [completion:: 2026-07-27]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 48
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 23,
+          "to": 24
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 24,
+          "to": 34
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 34,
+          "to": 36
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 37,
+          "to": 47
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 47,
+          "to": 48
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "done": {
+          "date": "2026-07-27"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b785d2073686970207468652072656c65617365205b646f6e653a3a20323032362d30372d32375d",
+      "informational_emitted": "- [x] ship the release [done:: 2026-07-27]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-remind-with-time",
+      "description": "A reminder carrying a wall-clock time, with no offset and no zone id.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b205d2063616c6c206d6f74686572205b72656d696e643a3a20323032362d30372d32392030393a30305d",
+      "informational_markdown": "- [ ] call mother [remind:: 2026-07-29 09:00]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 18,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 18,
+          "to": 19
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 19,
+          "to": 25
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 25,
+          "to": 27
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 28,
+          "to": 44
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 44,
+          "to": 45
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "remind": {
+          "date": "2026-07-29",
+          "time": "09:00"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2063616c6c206d6f74686572205b72656d696e643a3a20323032362d30372d32392030393a30305d",
+      "informational_emitted": "- [ ] call mother [remind:: 2026-07-29 09:00]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-priority-word",
+      "description": "A priority in its word form.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b205d20757267656e74207468696e67205b7072696f726974793a3a20686967685d",
+      "informational_markdown": "- [ ] urgent thing [priority:: high]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 19,
+          "to": 36
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 19,
+          "to": 20
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 20,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 28,
+          "to": 30
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 31,
+          "to": 35
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 35,
+          "to": 36
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "priority": "high"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20757267656e74207468696e67205b7072696f726974793a3a20686967685d",
+      "informational_emitted": "- [ ] urgent thing [priority:: high]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/dataview-all-five",
+      "description": "All five typed fields on one line; emission reorders them into the stable order.",
+      "case_kind": "dataview",
+      "input_markdown_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e6365205b6475653a3a20323032362d30382d30315d205b7265706561743a3a206576657279207765656b5d205b72656d696e643a3a20323032362d30372d33312030383a30305d205b7072696f726974793a3a20686967686573745d",
+      "informational_markdown": "- [ ] everything at once [due:: 2026-08-01] [repeat:: every week] [remind:: 2026-07-31 08:00] [priority:: highest]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 25,
+          "to": 43
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 25,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 26,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 29,
+          "to": 31
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 32,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 42,
+          "to": 43
+        },
+        {
+          "node": "TaskField",
+          "from": 44,
+          "to": 65
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 44,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 45,
+          "to": 51
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 51,
+          "to": 53
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 54,
+          "to": 64
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 64,
+          "to": 65
+        },
+        {
+          "node": "TaskField",
+          "from": 66,
+          "to": 93
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 66,
+          "to": 67
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 67,
+          "to": 73
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 73,
+          "to": 75
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 76,
+          "to": 92
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 92,
+          "to": 93
+        },
+        {
+          "node": "TaskField",
+          "from": 94,
+          "to": 114
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 94,
+          "to": 95
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 95,
+          "to": 103
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 103,
+          "to": 105
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 106,
+          "to": 113
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 113,
+          "to": 114
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "highest",
+        "remind": {
+          "date": "2026-07-31",
+          "time": "08:00"
+        },
+        "repeat": "every week"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e6365205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a20686967686573745d205b72656d696e643a3a20323032362d30372d33312030383a30305d205b7265706561743a3a206576657279207765656b5d",
+      "informational_emitted": "- [ ] everything at once [due:: 2026-08-01] [priority:: highest] [remind:: 2026-07-31 08:00] [repeat:: every week]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-due",
+      "description": "A due date behind Obsidian's calendar marker. Four UTF-8 bytes, one surrogate pair in UTF-16 — the case a byte-offset port must agree on.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b205d20706179207468652072656e7420f09f938520323032362d30382d3031",
+      "informational_markdown": "- [ ] pay the rent 📅 2026-08-01",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 19,
+          "to": 34
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 19,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 24,
+          "to": 34
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20706179207468652072656e74205b6475653a3a20323032362d30382d30315d",
+      "informational_emitted": "- [ ] pay the rent [due:: 2026-08-01]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-repeat",
+      "description": "A recurrence rule behind the repeat marker.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b205d2077617465722074686520706c616e747320f09f948120657665727920332064617973",
+      "informational_markdown": "- [ ] water the plants 🔁 every 3 days",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 23,
+          "to": 27
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 28,
+          "to": 40
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "repeat": "every 3 days"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2077617465722074686520706c616e7473205b7265706561743a3a206576657279203320646179735d",
+      "informational_emitted": "- [ ] water the plants [repeat:: every 3 days]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-done",
+      "description": "A completion date behind the check marker, read as Myne's `done`.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b785d2073686970207468652072656c6561736520e29c8520323032362d30372d3237",
+      "informational_markdown": "- [x] ship the release ✅ 2026-07-27",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 37
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 23,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 27,
+          "to": 37
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "done": {
+          "date": "2026-07-27"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b785d2073686970207468652072656c65617365205b646f6e653a3a20323032362d30372d32375d",
+      "informational_emitted": "- [x] ship the release [done:: 2026-07-27]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-priority-marker-is-the-value",
+      "description": "A priority marker carries no value — the marker IS the value.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b205d20757267656e74207468696e6720e28fab",
+      "informational_markdown": "- [ ] urgent thing ⏫",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 19,
+          "to": 22
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 19,
+          "to": 22
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "priority": "high"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20757267656e74207468696e67205b7072696f726974793a3a20686967685d",
+      "informational_emitted": "- [ ] urgent thing [priority:: high]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-several-markers",
+      "description": "Several emoji fields on one line; each value ends at the next marker.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e636520f09f938520323032362d30382d303120f09f9481206576657279207765656b20e28fb020323032362d30372d33312030383a303020f09f94ba",
+      "informational_markdown": "- [ ] everything at once 📅 2026-08-01 🔁 every week ⏰ 2026-07-31 08:00 🔺",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 25,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 25,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 30,
+          "to": 40
+        },
+        {
+          "node": "TaskField",
+          "from": 41,
+          "to": 56
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 41,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 46,
+          "to": 56
+        },
+        {
+          "node": "TaskField",
+          "from": 57,
+          "to": 77
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 57,
+          "to": 60
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 61,
+          "to": 77
+        },
+        {
+          "node": "TaskField",
+          "from": 78,
+          "to": 82
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 78,
+          "to": 82
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "highest",
+        "remind": {
+          "date": "2026-07-31",
+          "time": "08:00"
+        },
+        "repeat": "every week"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e6365205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a20686967686573745d205b72656d696e643a3a20323032362d30372d33312030383a30305d205b7265706561743a3a206576657279207765656b5d",
+      "informational_emitted": "- [ ] everything at once [due:: 2026-08-01] [priority:: highest] [remind:: 2026-07-31 08:00] [repeat:: every week]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/emoji-value-stops-at-trailing-tag",
+      "description": "An emoji value terminates at a token-initial `#`, so a trailing tag stays a tag instead of being swallowed into the value.",
+      "case_kind": "emoji",
+      "input_markdown_utf8_hex": "2d205b205d2061207461736b2077697468206120747261696c696e672074616720f09f938520323032362d30382d3031202363686f726573",
+      "informational_markdown": "- [ ] a task with a trailing tag 📅 2026-08-01 #chores",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 33,
+          "to": 48
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 33,
+          "to": 37
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 38,
+          "to": 48
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2061207461736b2077697468206120747261696c696e6720746167202363686f726573205b6475653a3a20323032362d30382d30315d",
+      "informational_emitted": "- [ ] a task with a trailing tag #chores [due:: 2026-08-01]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/myne-done",
+      "description": "Myne's own key for a completion date.",
+      "case_kind": "myne",
+      "input_markdown_utf8_hex": "2d205b785d2073686970207468652072656c65617365205b646f6e653a3a20323032362d30372d32375d",
+      "informational_markdown": "- [x] ship the release [done:: 2026-07-27]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 23,
+          "to": 24
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 24,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 28,
+          "to": 30
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 31,
+          "to": 41
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 41,
+          "to": 42
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "done": {
+          "date": "2026-07-27"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b785d2073686970207468652072656c65617365205b646f6e653a3a20323032362d30372d32375d",
+      "informational_emitted": "- [x] ship the release [done:: 2026-07-27]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/myne-emitted-form-is-a-fixed-point",
+      "description": "A line already in the emitted form rewrites to itself — the property that keeps opening a vault from dirtying its task lines (§6 C1).",
+      "case_kind": "myne",
+      "input_markdown_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e6365205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a20686967686573745d205b72656d696e643a3a20323032362d30372d33312030383a30305d205b7265706561743a3a206576657279207765656b5d205b646f6e653a3a20323032362d30372d32375d",
+      "informational_markdown": "- [ ] everything at once [due:: 2026-08-01] [priority:: highest] [remind:: 2026-07-31 08:00] [repeat:: every week] [done:: 2026-07-27]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 25,
+          "to": 43
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 25,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 26,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 29,
+          "to": 31
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 32,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 42,
+          "to": 43
+        },
+        {
+          "node": "TaskField",
+          "from": 44,
+          "to": 64
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 44,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 45,
+          "to": 53
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 53,
+          "to": 55
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 56,
+          "to": 63
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 63,
+          "to": 64
+        },
+        {
+          "node": "TaskField",
+          "from": 65,
+          "to": 92
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 65,
+          "to": 66
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 66,
+          "to": 72
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 72,
+          "to": 74
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 75,
+          "to": 91
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 91,
+          "to": 92
+        },
+        {
+          "node": "TaskField",
+          "from": 93,
+          "to": 114
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 93,
+          "to": 94
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 94,
+          "to": 100
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 100,
+          "to": 102
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 103,
+          "to": 113
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 113,
+          "to": 114
+        },
+        {
+          "node": "TaskField",
+          "from": 115,
+          "to": 134
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 115,
+          "to": 116
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 116,
+          "to": 120
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 120,
+          "to": 122
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 123,
+          "to": 133
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 133,
+          "to": 134
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "highest",
+        "remind": {
+          "date": "2026-07-31",
+          "time": "08:00"
+        },
+        "repeat": "every week",
+        "done": {
+          "date": "2026-07-27"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2065766572797468696e67206174206f6e6365205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a20686967686573745d205b72656d696e643a3a20323032362d30372d33312030383a30305d205b7265706561743a3a206576657279207765656b5d205b646f6e653a3a20323032362d30372d32375d",
+      "informational_emitted": "- [ ] everything at once [due:: 2026-08-01] [priority:: highest] [remind:: 2026-07-31 08:00] [repeat:: every week] [done:: 2026-07-27]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/myne-due-with-time",
+      "description": "A due date carrying a wall-clock time.",
+      "case_kind": "myne",
+      "input_markdown_utf8_hex": "2d205b205d20647565207769746820612074696d65205b6475653a3a20323032362d30382d30312031343a33305d",
+      "informational_markdown": "- [ ] due with a time [due:: 2026-08-01 14:30]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 22,
+          "to": 46
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 22,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 23,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 26,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 29,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 45,
+          "to": 46
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01",
+          "time": "14:30"
+        }
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20647565207769746820612074696d65205b6475653a3a20323032362d30382d30312031343a33305d",
+      "informational_emitted": "- [ ] due with a time [due:: 2026-08-01 14:30]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/mixed-emoji-then-bracketed",
+      "description": "One field of each form on one line — the shape a vault takes mid-migration.",
+      "case_kind": "mixed",
+      "input_markdown_utf8_hex": "2d205b205d206f6e65206f66206561636820f09f938520323032362d30382d3031205b7072696f726974793a3a20686967685d",
+      "informational_markdown": "- [ ] one of each 📅 2026-08-01 [priority:: high]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 18,
+          "to": 33
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 18,
+          "to": 22
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 23,
+          "to": 33
+        },
+        {
+          "node": "TaskField",
+          "from": 34,
+          "to": 51
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 34,
+          "to": 35
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 35,
+          "to": 43
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 43,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 46,
+          "to": 50
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 50,
+          "to": 51
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "high"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d206f6e65206f662065616368205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a20686967685d",
+      "informational_emitted": "- [ ] one of each [due:: 2026-08-01] [priority:: high]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/mixed-bracketed-then-emoji",
+      "description": "The same, in the other order.",
+      "case_kind": "mixed",
+      "input_markdown_utf8_hex": "2d205b205d20746865206f74686572206f72646572205b6475653a3a20323032362d30382d30315d20f09f9481206576657279207765656b",
+      "informational_markdown": "- [ ] the other order [due:: 2026-08-01] 🔁 every week",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 22,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 22,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 23,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 26,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 29,
+          "to": 39
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 39,
+          "to": 40
+        },
+        {
+          "node": "TaskField",
+          "from": 41,
+          "to": 56
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 41,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 46,
+          "to": 56
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "repeat": "every week"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20746865206f74686572206f72646572205b6475653a3a20323032362d30382d30315d205b7265706561743a3a206576657279207765656b5d",
+      "informational_emitted": "- [ ] the other order [due:: 2026-08-01] [repeat:: every week]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/mixed-description-between-fields",
+      "description": "Description text between two fields; emission preserves the description and moves the fields to the end.",
+      "case_kind": "mixed",
+      "input_markdown_utf8_hex": "2d205b205d206465736372697074696f6e206265747765656e206669656c6473205b6475653a3a20323032362d30382d30315d2074686520706c756d626572205b7072696f726974793a3a206c6f775d",
+      "informational_markdown": "- [ ] description between fields [due:: 2026-08-01] the plumber [priority:: low]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 33,
+          "to": 51
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 33,
+          "to": 34
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 34,
+          "to": 37
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 37,
+          "to": 39
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 40,
+          "to": 50
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 50,
+          "to": 51
+        },
+        {
+          "node": "TaskField",
+          "from": 64,
+          "to": 80
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 64,
+          "to": 65
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 65,
+          "to": 73
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 73,
+          "to": 75
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 76,
+          "to": 79
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 79,
+          "to": 80
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "low"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d206465736372697074696f6e206265747765656e206669656c64732074686520706c756d626572205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a206c6f775d",
+      "informational_emitted": "- [ ] description between fields the plumber [due:: 2026-08-01] [priority:: low]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/mixed-emoji-value-stops-at-bracket",
+      "description": "An emoji value terminates at a `[`, so both dialects can share a line.",
+      "case_kind": "mixed",
+      "input_markdown_utf8_hex": "2d205b205d20656d6f6a69207468656e20627261636b657420f09f938520323032362d30382d3031205b7072696f726974793a3a206c6f775d",
+      "informational_markdown": "- [ ] emoji then bracket 📅 2026-08-01 [priority:: low]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 25,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 25,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 30,
+          "to": 40
+        },
+        {
+          "node": "TaskField",
+          "from": 41,
+          "to": 57
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 41,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 42,
+          "to": 50
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 50,
+          "to": 52
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 53,
+          "to": 56
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 56,
+          "to": 57
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [],
+        "due": {
+          "date": "2026-08-01"
+        },
+        "priority": "low"
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20656d6f6a69207468656e20627261636b6574205b6475653a3a20323032362d30382d30315d205b7072696f726974793a3a206c6f775d",
+      "informational_emitted": "- [ ] emoji then bracket [due:: 2026-08-01] [priority:: low]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/preserve-obsidian-other-keys",
+      "description": "Obsidian's remaining keys are recognized, preserved verbatim, and never typed.",
+      "case_kind": "preserve",
+      "input_markdown_utf8_hex": "2d205b205d206f6273696469616e2773206f74686572206b657973205b7363686564756c65643a3a20323032362d30382d30355d205b73746172743a3a20323032362d30382d30315d205b63616e63656c6c65643a3a20323032362d30382d30395d205b637265617465643a3a20323032362d30372d30315d205b69643a3a206162635d205b646570656e64734f6e3a3a2078797a5d",
+      "informational_markdown": "- [ ] obsidian's other keys [scheduled:: 2026-08-05] [start:: 2026-08-01] [cancelled:: 2026-08-09] [created:: 2026-07-01] [id:: abc] [dependsOn:: xyz]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 28,
+          "to": 52
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 28,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 29,
+          "to": 38
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 38,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 41,
+          "to": 51
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 51,
+          "to": 52
+        },
+        {
+          "node": "TaskField",
+          "from": 53,
+          "to": 73
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 53,
+          "to": 54
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 54,
+          "to": 59
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 59,
+          "to": 61
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 62,
+          "to": 72
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 72,
+          "to": 73
+        },
+        {
+          "node": "TaskField",
+          "from": 74,
+          "to": 98
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 74,
+          "to": 75
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 75,
+          "to": 84
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 84,
+          "to": 86
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 87,
+          "to": 97
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 97,
+          "to": 98
+        },
+        {
+          "node": "TaskField",
+          "from": 99,
+          "to": 121
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 99,
+          "to": 100
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 100,
+          "to": 107
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 107,
+          "to": 109
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 110,
+          "to": 120
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 120,
+          "to": 121
+        },
+        {
+          "node": "TaskField",
+          "from": 122,
+          "to": 132
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 122,
+          "to": 123
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 123,
+          "to": 125
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 125,
+          "to": 127
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 128,
+          "to": 131
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 131,
+          "to": 132
+        },
+        {
+          "node": "TaskField",
+          "from": 133,
+          "to": 150
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 133,
+          "to": 134
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 134,
+          "to": 143
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 143,
+          "to": 145
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 146,
+          "to": 149
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 149,
+          "to": 150
+        }
+      ],
+      "expected_fields": {
+        "preserved": [
+          {
+            "key": "scheduled",
+            "value": "2026-08-05",
+            "raw": "[scheduled:: 2026-08-05]"
+          },
+          {
+            "key": "start",
+            "value": "2026-08-01",
+            "raw": "[start:: 2026-08-01]"
+          },
+          {
+            "key": "cancelled",
+            "value": "2026-08-09",
+            "raw": "[cancelled:: 2026-08-09]"
+          },
+          {
+            "key": "created",
+            "value": "2026-07-01",
+            "raw": "[created:: 2026-07-01]"
+          },
+          {
+            "key": "id",
+            "value": "abc",
+            "raw": "[id:: abc]"
+          },
+          {
+            "key": "dependsOn",
+            "value": "xyz",
+            "raw": "[dependsOn:: xyz]"
+          }
+        ],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d206f6273696469616e2773206f74686572206b657973205b7363686564756c65643a3a20323032362d30382d30355d205b73746172743a3a20323032362d30382d30315d205b63616e63656c6c65643a3a20323032362d30382d30395d205b637265617465643a3a20323032362d30372d30315d205b69643a3a206162635d205b646570656e64734f6e3a3a2078797a5d",
+      "informational_emitted": "- [ ] obsidian's other keys [scheduled:: 2026-08-05] [start:: 2026-08-01] [cancelled:: 2026-08-09] [created:: 2026-07-01] [id:: abc] [dependsOn:: xyz]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/preserve-oncompletion-uninterpreted",
+      "description": "`onCompletion` is preserved byte-for-byte and assigned NO meaning — interpreting it would cross the no-code-eval line.",
+      "case_kind": "preserve",
+      "input_markdown_utf8_hex": "2d205b205d20616e20616374696f6e206c616e6775616765204d796e65206e657665722072756e73205b6f6e436f6d706c6574696f6e3a3a2064656c6574655d",
+      "informational_markdown": "- [ ] an action language Myne never runs [onCompletion:: delete]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 41,
+          "to": 64
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 41,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 42,
+          "to": 54
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 54,
+          "to": 56
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 57,
+          "to": 63
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 63,
+          "to": 64
+        }
+      ],
+      "expected_fields": {
+        "preserved": [
+          {
+            "key": "onCompletion",
+            "value": "delete",
+            "raw": "[onCompletion:: delete]"
+          }
+        ],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20616e20616374696f6e206c616e6775616765204d796e65206e657665722072756e73205b6f6e436f6d706c6574696f6e3a3a2064656c6574655d",
+      "informational_emitted": "- [ ] an action language Myne never runs [onCompletion:: delete]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/preserve-emoji-untyped-keys",
+      "description": "The emoji form of the untyped keys is likewise recognized and preserved.",
+      "case_kind": "preserve",
+      "input_markdown_utf8_hex": "2d205b205d206669656c6473204d796e6520646f6573206e6f74207479706520e28fb320323032362d30382d303520f09f9bab20323032362d30382d303120f09f869420616263313233",
+      "informational_markdown": "- [ ] fields Myne does not type ⏳ 2026-08-05 🛫 2026-08-01 🆔 abc123",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 32,
+          "to": 46
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 32,
+          "to": 35
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 36,
+          "to": 46
+        },
+        {
+          "node": "TaskField",
+          "from": 47,
+          "to": 62
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 47,
+          "to": 51
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 52,
+          "to": 62
+        },
+        {
+          "node": "TaskField",
+          "from": 63,
+          "to": 74
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 63,
+          "to": 67
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 68,
+          "to": 74
+        }
+      ],
+      "expected_fields": {
+        "preserved": [
+          {
+            "key": "scheduled",
+            "value": "2026-08-05",
+            "raw": "⏳ 2026-08-05"
+          },
+          {
+            "key": "start",
+            "value": "2026-08-01",
+            "raw": "🛫 2026-08-01"
+          },
+          {
+            "key": "id",
+            "value": "abc123",
+            "raw": "🆔 abc123"
+          }
+        ],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d206669656c6473204d796e6520646f6573206e6f742074797065205b7363686564756c65643a3a20323032362d30382d30355d205b73746172743a3a20323032362d30382d30315d205b69643a3a206162633132335d",
+      "informational_emitted": "- [ ] fields Myne does not type [scheduled:: 2026-08-05] [start:: 2026-08-01] [id:: abc123]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-half-written-date",
+      "description": "A half-written date does not type; it is preserved rather than completed.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d2068616c662d7772697474656e2064617465205b6475653a3a20323032362d30385d",
+      "informational_markdown": "- [ ] half-written date [due:: 2026-08]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 24,
+          "to": 39
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 24,
+          "to": 25
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 25,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 28,
+          "to": 30
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 31,
+          "to": 38
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 38,
+          "to": 39
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "due",
+            "value": "2026-08",
+            "raw": "[due:: 2026-08]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2068616c662d7772697474656e2064617465205b6475653a3a20323032362d30385d",
+      "informational_emitted": "- [ ] half-written date [due:: 2026-08]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-impossible-date",
+      "description": "A date that passes the shape but does not exist is refused, never corrected.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d20696d706f737369626c652064617465205b6475653a3a20323032362d30322d33315d",
+      "informational_markdown": "- [ ] impossible date [due:: 2026-02-31]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 22,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 22,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 23,
+          "to": 26
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 26,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 29,
+          "to": 39
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 39,
+          "to": 40
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "due",
+            "value": "2026-02-31",
+            "raw": "[due:: 2026-02-31]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20696d706f737369626c652064617465205b6475653a3a20323032362d30322d33315d",
+      "informational_emitted": "- [ ] impossible date [due:: 2026-02-31]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-out-of-range-time",
+      "description": "An out-of-range hour is refused.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d206f75742d6f662d72616e67652074696d65205b6475653a3a20323032362d30382d30312032353a30305d",
+      "informational_markdown": "- [ ] out-of-range time [due:: 2026-08-01 25:00]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 24,
+          "to": 48
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 24,
+          "to": 25
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 25,
+          "to": 28
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 28,
+          "to": 30
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 31,
+          "to": 47
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 47,
+          "to": 48
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "due",
+            "value": "2026-08-01 25:00",
+            "raw": "[due:: 2026-08-01 25:00]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d206f75742d6f662d72616e67652074696d65205b6475653a3a20323032362d30382d30312032353a30305d",
+      "informational_emitted": "- [ ] out-of-range time [due:: 2026-08-01 25:00]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-utc-offset",
+      "description": "A Z offset does not type at all — stripping it would silently shift the due date.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d2061205a206f6666736574205b6475653a3a20323032362d30382d30315431303a30303a30305a5d",
+      "informational_markdown": "- [ ] a Z offset [due:: 2026-08-01T10:00:00Z]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 17,
+          "to": 45
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 17,
+          "to": 18
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 18,
+          "to": 21
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 21,
+          "to": 23
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 24,
+          "to": 44
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 44,
+          "to": 45
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "due",
+            "value": "2026-08-01T10:00:00Z",
+            "raw": "[due:: 2026-08-01T10:00:00Z]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2061205a206f6666736574205b6475653a3a20323032362d30382d30315431303a30303a30305a5d",
+      "informational_emitted": "- [ ] a Z offset [due:: 2026-08-01T10:00:00Z]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-numeric-offset",
+      "description": "A numeric offset is refused for the same reason, and keeps a coarse geolocation datum out of an exported plaintext file.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d2061206e756d65726963206f6666736574205b6475653a3a20323032362d30382d30315431303a30303a30302b30333a30305d",
+      "informational_markdown": "- [ ] a numeric offset [due:: 2026-08-01T10:00:00+03:00]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 23,
+          "to": 56
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 23,
+          "to": 24
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 24,
+          "to": 27
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 27,
+          "to": 29
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 30,
+          "to": 55
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 55,
+          "to": 56
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "due",
+            "value": "2026-08-01T10:00:00+03:00",
+            "raw": "[due:: 2026-08-01T10:00:00+03:00]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d2061206e756d65726963206f6666736574205b6475653a3a20323032362d30382d30315431303a30303a30302b30333a30305d",
+      "informational_emitted": "- [ ] a numeric offset [due:: 2026-08-01T10:00:00+03:00]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/malformed-unknown-priority",
+      "description": "A priority word outside the five levels is preserved, not approximated.",
+      "case_kind": "malformed",
+      "input_markdown_utf8_hex": "2d205b205d20616e20756e6b6e6f776e207072696f7269747920776f7264205b7072696f726974793a3a20757267656e745d",
+      "informational_markdown": "- [ ] an unknown priority word [priority:: urgent]",
+      "expected_dialect_spans": [
+        {
+          "node": "TaskField",
+          "from": 31,
+          "to": 50
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 31,
+          "to": 32
+        },
+        {
+          "node": "TaskFieldKey",
+          "from": 32,
+          "to": 40
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 40,
+          "to": 42
+        },
+        {
+          "node": "TaskFieldValue",
+          "from": 43,
+          "to": 49
+        },
+        {
+          "node": "TaskFieldMark",
+          "from": 49,
+          "to": 50
+        }
+      ],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": [
+          {
+            "key": "priority",
+            "value": "urgent",
+            "raw": "[priority:: urgent]"
+          }
+        ]
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20616e20756e6b6e6f776e207072696f7269747920776f7264205b7072696f726974793a3a20757267656e745d",
+      "informational_emitted": "- [ ] an unknown priority word [priority:: urgent]"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/inert-code-span",
+      "description": "A field inside a code span is not a field — inline parsing never runs inside a range the code node has consumed.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "2d205b205d20696e73696465206120636f6465207370616e20605b6475653a3a20323032362d30382d30315d60",
+      "informational_markdown": "- [ ] inside a code span `[due:: 2026-08-01]`",
+      "expected_dialect_spans": [],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20696e73696465206120636f6465207370616e20605b6475653a3a20323032362d30382d30315d60",
+      "informational_emitted": "- [ ] inside a code span `[due:: 2026-08-01]`"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/inert-plain-link",
+      "description": "An ordinary markdown link and a dangling label are not fields, even though the bracketed rule outranks Link.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "2d205b205d20612064616e676c696e67206c6162656c205b6c6162656c5d20616e6420616e206f7264696e617279205b6c696e6b5d2868747470733a2f2f6578616d706c652e636f6d29",
+      "informational_markdown": "- [ ] a dangling label [label] and an ordinary [link](https://example.com)",
+      "expected_dialect_spans": [],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20612064616e676c696e67206c6162656c205b6c6162656c5d20616e6420616e206f7264696e617279205b6c696e6b5d2868747470733a2f2f6578616d706c652e636f6d29",
+      "informational_emitted": "- [ ] a dangling label [label] and an ordinary [link](https://example.com)"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/inert-shortcode",
+      "description": "A `:emoji:` shortcode is not an emoji marker.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "2d205b205d20612073686f7274636f6465203a63616c656e6461723a20323032362d30382d3031",
+      "informational_markdown": "- [ ] a shortcode :calendar: 2026-08-01",
+      "expected_dialect_spans": [],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20612073686f7274636f6465203a63616c656e6461723a20323032362d30382d3031",
+      "informational_emitted": "- [ ] a shortcode :calendar: 2026-08-01"
+    },
+    {
+      "vector_id": "task-inline-format/v0.1/inert-no-fields",
+      "description": "A task line with no fields at all.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "2d205b205d20706c61696e207461736b2c206e6f7468696e6720746f20736565",
+      "informational_markdown": "- [ ] plain task, nothing to see",
+      "expected_dialect_spans": [],
+      "expected_fields": {
+        "preserved": [],
+        "malformed": []
+      },
+      "expected_emitted_utf8_hex": "2d205b205d20706c61696e207461736b2c206e6f7468696e6720746f20736565",
+      "informational_emitted": "- [ ] plain task, nothing to see"
+    }
+  ]
+}

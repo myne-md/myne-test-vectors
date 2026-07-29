@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-query-grammar.json",
+  "title": "task-query-grammar — case shape (v0.1)",
+  "description": "Pins the closed task-query grammar (src/notes/taskQuery.ts in the main myne repository; markdown-dialect.md §3.9) — BOTH what it accepts and what it refuses. A parse-only vector set would still pass for a port that accepted one extra clause, so the drop cases are where the closedness claim actually lives: all THREE function-valued forms (naming only the filtering one and silently accepting the others would break the claim), a field name in a value position (the boundary rule — a field name may never appear where a value goes), arithmetic over a field, and out-of-roster words. The 'refuse' cases pin the widen guard: a query whose clauses were ALL dropped must not collapse to matching everything, because a misunderstood query rendering the whole vault looks like a correct enormous result — while a genuinely empty query is legitimately unfiltered. Not an on-disk codec and not cryptographic; deterministic cross-client behaviour. TS-runner category (no Rust generator).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "query",
+    "expected_clause_kinds",
+    "expected_dropped",
+    "expected_refused"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^task-query-grammar/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'task-query-grammar/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse", "drop", "refuse"],
+      "description": "parse: every clause understood (no warnings, not refused). drop: some clauses dropped while the rest still execute. refuse: every clause dropped, so the query refuses rather than widening."
+    },
+    "query": {
+      "type": "string",
+      "description": "The query body, exactly as it appears between the fence markers. May be empty — an empty query is legitimately unfiltered, which is the distinction the widen guard rests on."
+    },
+    "expected_clause_kinds": {
+      "type": "array",
+      "description": "The clause kinds the parser produced, in source order. The roster is closed: only these eight names may appear.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "done",
+          "dueCompare",
+          "noDueDate",
+          "pathIncludes",
+          "tagIncludes",
+          "priorityIs",
+          "sortBy",
+          "limit"
+        ]
+      }
+    },
+    "expected_dropped": {
+      "type": "array",
+      "description": "Clauses the parser could not read. Each names the source text VERBATIM — the widget shows the user what they actually wrote — and a stable machine-readable reason.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "reason"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The dropped clause, verbatim (trimmed, case as written)."
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["unrecognized", "function-valued", "expression", "malformed-value"],
+            "description": "function-valued: one of the three function forms. expression: a shape that reads a field and operates on it. malformed-value: a recognized clause whose value is outside the closed value union — including a bare field name. unrecognized: outside the roster entirely."
+          }
+        }
+      }
+    },
+    "expected_refused": {
+      "type": "boolean",
+      "description": "True only when EVERY clause was dropped and at least one was written. A parser must never let this collapse to 'match everything'."
+    }
+  }
+}

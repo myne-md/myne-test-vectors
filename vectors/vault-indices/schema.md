@@ -32,7 +32,7 @@ This `vault-indices` category exercises both end-to-end through the full encode/
 4. **Assemble the outer envelope** per spec § 9.8.1 fixed-offset layout (total `34 + ciphertext_len` bytes):
    - `[0..4]` magic `MYI1`
    - `[4]` protocol_version `0x01`
-   - `[5]` index_format_version `0x01` (inner structured-index serialization format — a future client bumps this so an old decoder rejects cleanly → fall to rebuild)
+   - `[5]` index_format_version `0x02` (inner structured-index serialization format — a future client bumps this so an old decoder rejects cleanly → fall to rebuild). Bumped from `0x01` by MYND-612, which added per-note line-task records to the payload; `0x01` blobs are now **rejected rather than migrated**, which is safe because the index is a rebuildable cache.
    - `[6..30]` `nonce` (24 B)
    - `[30..34]` `ciphertext_len` (big-endian uint32, `plaintext.len() + 32`)
    - `[34..]` ciphertext + 32-byte CTX commitment tag
@@ -74,13 +74,13 @@ Any mismatch is a stop-the-world bug (per repo `README.md` "Cross-implementation
 
 ## Invariants the vectors pin
 
-- **MYI1 magic + version + index_format bytes.** Encoder output `[0..4]` = `MYI1`, `[4]` = `0x01`, `[5]` = `0x01`. Decoder rejects any other value at parse time before reaching AEAD verification — distinct, distinguishable errors (`parse_fail` cases). `MYI1 != MYS1` (separate family).
+- **MYI1 magic + version + index_format bytes.** Encoder output `[0..4]` = `MYI1`, `[4]` = `0x01`, `[5]` = `0x02`. Decoder rejects any other value at parse time before reaching AEAD verification — distinct, distinguishable errors (`parse_fail` cases). `MYI1 != MYS1` (separate family).
 - **Header byte layout.** `[6..30]` = supplied `nonce` (24 B); `[30..34]` = `ciphertext_len` big-endian uint32; `[34..]` = ciphertext + 32-byte CTX tag.
 - **Empty index round-trips.** An empty plaintext (no persisted index — the fall-to-rebuild default) encodes to a 66-byte blob (34 header + 0 plaintext + 32 CTX tag) and decodes back to empty.
 - **AAD binds account identity, not items_key lineage.** Cross-vault attack (`decrypt-cross-vault-account-hash`): a blob encoded under vault A's `account_number_hash` MUST fail to decrypt under vault B's. The `vault_indices_key` derives from `root_key` independent of the `itemsKey` lineage.
 - **Tamper rejection.** Flipping a single bit in the ciphertext / CTX tag MUST cause a non-distinguishing AEAD failure (CTX commitment construction).
 - **Non-distinguishing AEAD surface vs distinguishable structural surface.** The two `decrypt_aead_fail` cases (tamper + cross-vault) MUST be indistinguishable from each other; the six `parse_fail` cases MUST each surface their specific structural reject. This split is the spec § 6.4 boundary-policy discipline applied to the vault-indices codec.
-- **`index_format_version` forward-migration.** The `parse-fail-format-unsupported` case pins that a v0.1 decoder rejects a higher `index_format_version` cleanly (`FormatUnsupported`) so the caller falls to rebuild from the notes — the load-bearing forward hook (§ 9.8.4).
+- **`index_format_version` forward-migration.** The `parse-fail-format-unsupported` case pins that a v0.1 decoder rejects a higher `index_format_version` cleanly (`FormatUnsupported`) so the caller falls to rebuild from the notes — the load-bearing forward hook (§ 9.8.4). It pinned `0x02` until MYND-612 made `0x02` the current format; the hook then moved to `0x03`. It was **relocated, not burned**: what it proves — a client rejects a version it does not know — is unchanged, and a hook that pins the current version would prove nothing at all.
 - **`ciphertext_len` overflow guard.** The `parse-fail-ciphertext-len-overflow` case pins that an absurd `ciphertext_len` (`0xFFFFFFFF`, far above the 256 MiB + 32 cap) is rejected before any slice indexing / allocation — a port MUST bound-check before allocating.
 
 ## Regeneration
