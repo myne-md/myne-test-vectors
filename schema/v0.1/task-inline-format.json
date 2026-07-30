@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/task-inline-format.json",
+  "title": "task-inline-format — case shape (v0.1)",
+  "description": "Pins one case of the Myne dialect's inline task-field extension (dialect/src/lezer/task-field.ts, taskFields.ts and taskFieldWriter.ts in the main myne repository; markdown-dialect.md §3.8). Myne READS three dialects — Obsidian's emoji markers, Obsidian's Dataview-style bracketed fields, and Myne's own key names — and WRITES one. A case therefore carries three layers: expected_dialect_spans (which UTF-8 byte ranges are recognized as which node, pre-order), expected_fields (the single typed record all three dialects collapse into), and expected_emitted_utf8_hex (the whole line as Myne would write it, since editing any field converts the whole line). Byte offsets rather than code-unit indices are load-bearing here: every emoji marker is a surrogate pair in UTF-16 and four bytes in UTF-8. An 'inert' case is a near-miss the recognizer must NOT claim. Not an on-disk codec and not cryptographic — deterministic cross-client behaviour: a port that types a value Myne refuses, or drops a field Myne preserves, silently loses user data. TS-runner category (no Rust generator).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_markdown_utf8_hex",
+    "informational_markdown",
+    "expected_dialect_spans",
+    "expected_fields",
+    "expected_emitted_utf8_hex",
+    "informational_emitted"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^task-inline-format/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'task-inline-format/v0.1/<slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "dataview",
+        "emoji",
+        "myne",
+        "mixed",
+        "preserve",
+        "malformed",
+        "inert"
+      ],
+      "description": "Which surface the case exercises. dataview/emoji/myne: one of the three read dialects. mixed: both forms on one line (a half-migrated vault). preserve: a field recognized but never typed, kept verbatim. malformed: a value that must NOT type and must NOT be corrected. inert: a near-miss the recognizer must not claim (spans empty)."
+    },
+    "input_markdown_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The source line as exact UTF-8 bytes (hex). The byte sequence is the contract, immune to JSON-tooling normalization."
+    },
+    "informational_markdown": {
+      "type": "string",
+      "description": "Human-readable mirror of input_markdown_utf8_hex; the runner cross-checks it byte-equal against the hex."
+    },
+    "expected_dialect_spans": {
+      "type": "array",
+      "description": "The recognized task-field spans in document (pre-order) traversal order, as UTF-8 byte offsets. Empty for inert cases.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["node", "from", "to"],
+        "properties": {
+          "node": {
+            "type": "string",
+            "enum": ["TaskField", "TaskFieldKey", "TaskFieldValue", "TaskFieldMark"],
+            "description": "The recognized node name. TaskFieldMark appears only in the bracketed form ('[', '::', ']'); the emoji form has no marks."
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Start UTF-8 byte offset (inclusive)."
+          },
+          "to": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "End UTF-8 byte offset (exclusive)."
+          }
+        }
+      }
+    },
+    "expected_fields": {
+      "type": "object",
+      "description": "The typed record. Absent fields are OMITTED rather than null, so a port with its own optional representation does not have to invent a null encoding to agree. A value that does not type never appears here as a typed field — it appears in `malformed`.",
+      "additionalProperties": false,
+      "required": ["preserved", "malformed"],
+      "properties": {
+        "due": { "$ref": "#/$defs/instant" },
+        "done": { "$ref": "#/$defs/instant" },
+        "remind": { "$ref": "#/$defs/instant" },
+        "repeat": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The recurrence rule expression, verbatim. Its vocabulary is pinned by the separate `task-recurrence` category, not here."
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["highest", "high", "medium", "low", "lowest"],
+          "description": "One of the five levels, whether it arrived as a word or as a priority marker emoji (where the marker IS the value)."
+        },
+        "preserved": {
+          "type": "array",
+          "description": "Fields recognized but NOT typed by Myne — Obsidian's scheduled/start/cancelled/created/id/dependsOn, `onCompletion`, and any other inline field on the line. Kept so a whole-line rewrite cannot destroy data Myne did not understand. `onCompletion` in particular is carried and assigned no meaning whatsoever.",
+          "items": { "$ref": "#/$defs/verbatimField" }
+        },
+        "malformed": {
+          "type": "array",
+          "description": "Supported keys whose value did not type — an impossible date, a UTC offset, an unknown priority word. Preserved verbatim and surfaced as unparsed: a silently shifted due date is worse than one shown as raw text.",
+          "items": { "$ref": "#/$defs/verbatimField" }
+        }
+      }
+    },
+    "expected_emitted_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The whole line as Myne writes it, as exact UTF-8 bytes (hex). Editing any field converts the ENTIRE line into the emitted form — bracketed fields with Myne's key names, single-space separated, in the stable order due, priority, remind, repeat, done, then preserved, then malformed. A line already in the emitted form is a FIXED POINT: re-emitting it changes nothing, which is what keeps opening a vault from dirtying its task lines."
+    },
+    "informational_emitted": {
+      "type": "string",
+      "description": "Human-readable mirror of expected_emitted_utf8_hex; the runner cross-checks it byte-equal against the hex."
+    }
+  },
+  "$defs": {
+    "instant": {
+      "type": "object",
+      "description": "A local wall-clock instant. NO UTC offset and NO IANA zone identifier is ever carried: '09:00' means 09:00 wherever the user is, and a value bearing an offset does not type at all rather than being silently shifted.",
+      "additionalProperties": false,
+      "required": ["date"],
+      "properties": {
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "A full-date that must be a REAL calendar date; 2026-02-31 passes the shape and is still refused."
+        },
+        "time": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}(:\\d{2})?$",
+          "description": "Optional wall-clock time, HH:MM or HH:MM:SS."
+        }
+      }
+    },
+    "verbatimField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value", "raw"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The canonical key. Case-folded on read; Obsidian's `completion` folds onto Myne's `done`."
+        },
+        "value": {
+          "type": "string",
+          "description": "The value as written, uninterpreted."
+        },
+        "raw": {
+          "type": "string",
+          "description": "The whole matched field, verbatim from the source — which differs between the two read dialects ('[due:: X]' versus the emoji form) and is therefore worth pinning."
+        }
+      }
+    }
+  }
+}
