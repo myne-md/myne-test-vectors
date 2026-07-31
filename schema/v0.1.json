@@ -46,6 +46,7 @@
         "pending-capture",
         "attachment-text",
         "d1-clip-serializer",
+        "color-group",
         "saved-view",
         "paired-extension",
         "footnote",
@@ -461,6 +462,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/d1-clip-serializer.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "color-group"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/color-group.json"
           }
         }
       }

@@ -183,10 +183,14 @@
               }
             },
             "item_order": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": "MYND-183/MYND-596 container-keyed manual sidebar order. BTreeMap<String, Vec<String>> — container path (\"\" ≡ the tree root, or a canonical trailing-slash folder display path) → that container's children in manual order (note UUIDs + full-path child folder paths, freely interleaved, discriminated by the trailing /). Keys NFC-normalized + lexicographically ordered; each value sequence is order-preserved (NOT sorted, NOT deduped). Omitted-when-empty. Retyped from a flat string array by MYND-596 (per-container LWW merge). Canonical key 'item_o' — after item_colors ('item_c'), before keymap ('k')."
             },
             "keymap": {
               "type": "object",
@@ -359,6 +363,154 @@
                 "type": "string"
               },
               "description": "Right-panel tabs display order. Vec<String>; sequence (verbatim), omitted-when-empty. Canonical key after the hidden-tabs set, before saved_views."
+            },
+            "attachment_compression_enabled": {
+              "type": "boolean",
+              "description": "ingest-image-compression toggle. Inverse-default bool: default true, emitted ONLY when false (like attachment_ocr_enabled). Canonical key 'attachment_c' — before attachment_ocr_enabled."
+            },
+            "attachment_ocr_enabled": {
+              "type": "boolean",
+              "description": "image-OCR toggle (MYND-441). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'attachment_o'."
+            },
+            "transcription_enabled": {
+              "type": "boolean",
+              "description": "speech-to-text toggle (MYND-592). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'transcription_enabled' — after theme, before view_order."
+            },
+            "show_note_timestamps": {
+              "type": "boolean",
+              "description": "sidebar-note-timestamps toggle. Inverse-default bool: default true, emitted ONLY when false. Canonical key 'show_n' — before show_task_marker."
+            },
+            "show_task_marker": {
+              "type": "boolean",
+              "description": "task-marker toggle (MYND-613). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'show_t'."
+            },
+            "reminders_enabled": {
+              "type": "boolean",
+              "description": "reminders toggle (MYND-618). Inverse-default bool: default true, emitted ONLY when false. Device-local. Canonical key 'reminders_enabled' — after reminder_horizon_days."
+            },
+            "reminder_horizon_days": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "reminder horizon in days (MYND-618). Option<int>; bare decimal, omitted-when-unset. Device-local. Canonical key 'reminder_h' — before reminders_enabled."
+            },
+            "developer_mode": {
+              "type": "boolean",
+              "description": "Developer-mode master switch (MYND-593). Positive-opt-in bool: default false, emitted ONLY when true (ai_enabled convention). Canonical key 'developer_mode' — between deliberate_folders and device_names."
+            },
+            "cli_enabled": {
+              "type": "boolean",
+              "description": "CLI terminal-access door (MYND-490). Positive-opt-in bool: default false, emitted ONLY when true. Canonical key 'cli_e' — after bar_items_order, before cli_excluded_folders."
+            },
+            "cli_excluded_folders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "CLI folder-exclusion set (MYND-490). Set-canonical (NFC + sorted + deduped), omitted-when-empty. Canonical key 'cli_ex'."
+            },
+            "cli_rate_limit_disabled": {
+              "type": "boolean",
+              "description": "CLI socket rate-limit off switch (MYND-490). Option<bool> (archive_disabled shape); omitted-when-unset. Canonical key 'cli_r'."
+            },
+            "color_groups": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Graph color-group rules (MYND-604). Array of {color, enabled, filter, id, name} objects encoded in caller order VERBATIM (order is rule precedence — never id-sorted, unlike saved_views); the array-grammar itself is pinned by the color-group vector category. Omitted-when-empty. Canonical key 'col' — between bar_items_order (via cli_*) and custom_theme."
+            },
+            "custom_theme": {
+              "type": "string",
+              "description": "Custom-theme file-stem name (MYND-297). Option<String>, NFC, omitted-when-unset; takes precedence over theme. Canonical key 'cus' — the only 'c'-after-'col' key, between color_groups/cli_* and daily_*."
+            },
+            "icon": {
+              "type": "string",
+              "description": "Vault-switcher glyph name (vault-icon). Option<String>, NFC, encrypted-only, omitted-when-unset. Canonical key 'icon' — between hidden_bar_items and item_colors."
+            },
+            "bar_items_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Bottom-bar element order (bottom-bar customization). Sequence array (NFC, order preserved verbatim, NOT sorted/deduped), omitted-when-empty. Canonical key 'bar_items_order'."
+            },
+            "hidden_bar_items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Bottom-bar hidden set (bottom-bar customization). Set-canonical (NFC + sorted + deduped), omitted-when-empty. Canonical key 'hidden_bar_items'."
+            },
+            "editor_content_width": {
+              "type": "string",
+              "description": "editor-typography content-width preset (narrow|normal|wide|full). Option<String> stored verbatim, omitted-when-unset. Canonical key 'editor_c'."
+            },
+            "editor_font_family": {
+              "type": "string",
+              "description": "editor-typography font-family preset (mono|sans). Option<String> stored verbatim, omitted-when-unset. Canonical key 'editor_fo' — before editor_layout."
+            },
+            "editor_line_spacing": {
+              "type": "string",
+              "description": "editor-typography line-spacing preset (tight|normal|relaxed). Option<String> stored verbatim, omitted-when-unset. Canonical key 'editor_line_s' — after editor_line_numbers."
+            },
+            "editor_text_size": {
+              "type": "string",
+              "description": "editor-typography text-size preset (sm|md|lg|xl). Option<String> stored verbatim, omitted-when-unset. Canonical key 'editor_t' — after editor_slash_order, before editor_toolbar_*."
+            },
+            "editor_slash_hidden": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slash-menu hidden set (MYND-336). Set-canonical (NFC + sorted + deduped), omitted-when-empty. Canonical key 'editor_slash_h'."
+            },
+            "editor_slash_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Slash-menu display order (MYND-336). Sequence array (order preserved verbatim), omitted-when-empty. Canonical key 'editor_slash_o'."
+            },
+            "editor_toolbar_hidden": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Floating-toolbar hidden set (MYND-336). Set-canonical (NFC + sorted + deduped), omitted-when-empty. Canonical key 'editor_toolbar_h'."
+            },
+            "editor_toolbar_order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Floating-toolbar display order (MYND-336). Sequence array (order preserved verbatim), omitted-when-empty. Canonical key 'editor_toolbar_o' — before editor_vim_mode."
+            },
+            "spell_enabled": {
+              "type": "boolean",
+              "description": "Spell-check toggle (MYND-267). Option<bool>, omitted-when-unset. Canonical key 'spell_e' — before spell_languages."
+            },
+            "spell_languages": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Active spell-check BCP-47 language tags (MYND-267). Set-canonical (NFC + sorted + deduped), omitted-when-empty, case-sensitive. Canonical key 'spell_l'."
+            },
+            "new_note_location": {
+              "type": "string",
+              "description": "New-note placement mode (MYND-462, root|current|specific). Option<String> stored verbatim, omitted-when-unset. Canonical key 'new_note_location' — between last_backup_at and new_note_location_folder."
+            },
+            "new_note_location_folder": {
+              "type": "string",
+              "description": "New-note target folder for the 'specific' mode (MYND-462). Option<String>, canonical trailing-slash, omitted-when-unset. Canonical key 'new_note_location_f'."
+            },
+            "startup_open": {
+              "type": "string",
+              "description": "Startup file mode (MYND-462, last|empty|specific). Option<String> stored verbatim, omitted-when-unset, device-local. Canonical key 'startup_open' — between screen_capture_protection and theme."
+            },
+            "startup_open_note": {
+              "type": "string",
+              "description": "Startup note UUID for the 'specific' mode (MYND-462). Option<String>, omitted-when-unset, device-local. Canonical key 'startup_open_n'."
             }
           },
           "description": "Parsed PrefsView shape. v0.1.x fields (MYND-160 + MYND-183 + MYND-110 + MYND-205): screen_capture_protection (required bool) + the omitted-when-default optionals deliberate_folders / auto_lock_seconds / editor_layout / favorites / item_order (item_order heterogeneous: note UUIDs + folder paths) / theme (light|dark, absent ≡ system) / label (per-vault display name, absent ≡ unlabelled). The cases-array shape stays additive — new cases, immutable old ones. / last_backup_at (epoch seconds, absent ≡ never backed up, MYND-58)"
