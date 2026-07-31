@@ -1,0 +1,60 @@
+name: Vector disagreement
+description: My implementation produces a different output than a published vector.
+title: "[Vector]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A failed vector in any port is a **stop-the-world bug** — either the port has drifted or the spec is wrong. Please don't propose regenerating a vector to "fix" a failing port without establishing which side is correct.
+
+        The normative protocol is in the main repo: [`docs/spec/protocol.md`](https://github.com/myne-md/myne/blob/main/docs/spec/protocol.md) and [`docs/spec/account-number.md`](https://github.com/myne-md/myne/blob/main/docs/spec/account-number.md).
+  - type: input
+    id: vector-id
+    attributes:
+      label: vector_id
+      description: The stable id of the failing case (e.g. hkdf-sha256/v0.1/prefs-key-alpha-root).
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: Category
+      placeholder: "e.g. hkdf-sha256, myn-blob, account-number"
+    validations:
+      required: true
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation / language
+      placeholder: "e.g. Go port, Swift port, my JS runner"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output (from the vector)
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Output your implementation produced
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: analysis
+    attributes:
+      label: Which side do you think is wrong, and why?
+      description: Reference the spec section if you can.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I compared bytes, not parsed structures (endianness, padding, and reserved bytes all matter).
+          required: true
+        - label: I confirmed my input hex is lowercase with no 0x prefix and matches the vector's inputs exactly.
+          required: true

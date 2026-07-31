@@ -1,0 +1,39 @@
+name: Coverage gap / new vector request
+description: A protocol surface is unvectored, or an existing category is missing a case.
+title: "[Coverage]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a new category means landing a sub-schema under `schema/v0.1/`, extending the root schema's `schema` enum AND `oneOf` branches in lockstep, and adding the `cases.json` plus its generator/runner in the main repo. The invariant to preserve: **category dirs = sub-schema files = root-schema enum entries = root-schema oneOf branches.**
+  - type: input
+    id: surface
+    attributes:
+      label: Which protocol surface or spec section is unvectored?
+      placeholder: "e.g. protocol.md §9.x MYxx blob family, a new SubkeyRole, an AAD builder"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Is this a new category or a missing case?
+      options:
+        - New category (needs a schema + generator + runner)
+        - Missing case in an existing category
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What should it cover?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked this surface isn't already covered by an existing category.
+          required: true

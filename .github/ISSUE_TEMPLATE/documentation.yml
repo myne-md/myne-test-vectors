@@ -1,0 +1,22 @@
+name: Documentation
+description: A category's schema.md, the README, or a naming convention is wrong or unclear.
+title: "[Docs]: "
+labels: [documentation]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Which document or schema?
+      placeholder: "e.g. vectors/hkdf-sha256/schema.md, README.md, the field-naming convention"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Suggested fix
