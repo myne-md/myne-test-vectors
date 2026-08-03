@@ -1,0 +1,16 @@
+{
+  "schema": "tls-exporter",
+  "protocol_version": "v0.1",
+  "spec_section": "RFC 9266 §3; server-protocol.md §3.1 (SCRAM-SHA-256-PLUS)",
+  "description": "The frozen RFC 9266 tls-exporter parameters that generate SCRAM -PLUS channel-binding data. Pinned as data so the Rust client's TLS_EXPORTER_LABEL/TLS_EXPORTER_LEN and the Go server's ExporterLabel/ExporterLen are each checked against one published contract rather than against a comment in the other repository.",
+  "cases": [
+    {
+      "vector_id": "tls-exporter/v0.1/rfc9266-parameters",
+      "description": "The exporter label and output length every Myne -PLUS handshake uses. A divergence in either value makes both sides derive different cbind_data, so the client proof fails and no -PLUS handshake can complete — a total, silent authentication break rather than a degraded one. Hex-encoded so whitespace or a homoglyph in the label cannot survive an edit unnoticed.",
+      "case_kind": "parameters",
+      "expected_label_utf8_hex": "4558504f525445522d4368616e6e656c2d42696e64696e67",
+      "informational_label_utf8": "EXPORTER-Channel-Binding",
+      "expected_length": 32
+    }
+  ]
+}

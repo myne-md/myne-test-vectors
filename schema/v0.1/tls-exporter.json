@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/tls-exporter.json",
+  "title": "tls-exporter — case shape (v0.1)",
+  "description": "Pins the RFC 9266 TLS keying-material exporter parameters that produce the SCRAM-SHA-256-PLUS channel-binding data. The 'scram-auth' category pins the SCRAM arithmetic FOR A GIVEN cbind_data and says nothing about where those bytes come from; this category pins the two inputs that generate them. Both values are frozen and cross-implementation load-bearing: the Rust client and the Go server must feed the exact same label and the same output length to their TLS exporter, or the binding diverges and every -PLUS handshake fails. Until this category existed the two were hand-written copies in two repositories, each documenting that the other must match it byte-for-byte, and neither checked against anything. Reference: core/src/plugins/sync/enroll.rs (TLS_EXPORTER_LABEL / TLS_EXPORTER_LEN); myne-server/internal/auth/scram/scram.go (ExporterLabel / ExporterLen); RFC 9266 §3.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^tls-exporter/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'tls-exporter/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "const": "parameters",
+      "description": "The only kind. There is no derivation to exercise here — the exporter itself is the TLS library's, not Myne's — so the case is the frozen input pair, asserted as data by each implementation against its own constant."
+    },
+    "expected_label_utf8_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]*$",
+      "description": "The exporter label as hex-encoded UTF-8. Hex rather than a bare string so a trailing space, a NUL, or a homoglyph cannot survive an editor round-trip unnoticed — the label is compared byte-for-byte by the TLS stack."
+    },
+    "informational_label_utf8": {
+      "type": "string",
+      "description": "Human-readable rendering of expected_label_utf8_hex. Informational; the hex is normative."
+    },
+    "expected_length": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The exporter output length in bytes. RFC 9266 uses 32."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "case_kind": { "const": "parameters" } } },
+      "then": {
+        "required": ["expected_label_utf8_hex", "informational_label_utf8", "expected_length"]
+      }
+    }
+  ]
+}
