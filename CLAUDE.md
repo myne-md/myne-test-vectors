@@ -88,94 +88,23 @@ Independent ports (Phase 2 Go server, Phase 3 web/mobile clients) verify primiti
 ## Common commands
 
 ```bash
-# Validate every landed cases.json against its canonical sub-schema:
-npx -y ajv-cli@5 validate \
-  -s schema/v0.1.json \
-  -r schema/v0.1/phrase_normalize.json \
-  -r schema/v0.1/vault-prefs.json \
-  -r schema/v0.1/vault_meta_rewrite.json \
-  -r schema/v0.1/hkdf-sha256.json \
-  -r schema/v0.1/vault-meta.json \
-  -r schema/v0.1/account-number.json \
-  -r schema/v0.1/myn-blob.json \
-  -r schema/v0.1/ctx-aead.json \
-  -r schema/v0.1/argon2id.json \
-  -r schema/v0.1/vault-search.json \
-  -r schema/v0.1/password-policy.json \
-  -r schema/v0.1/bip39-recovery.json \
-  -r schema/v0.1/aad-construction.json \
-  -r schema/v0.1/damm32-table.json \
-  -r schema/v0.1/attachment-blob.json \
-  -r schema/v0.1/attachments-catalog.json \
-  -r schema/v0.1/note-template.json \
-  -r schema/v0.1/vault-workspace.json \
-  -r schema/v0.1/backup-container.json \
-  -r schema/v0.1/property-coercion.json \
-  -r schema/v0.1/vault-indices.json \
-  -r schema/v0.1/markdown-comment.json \
-  -r schema/v0.1/vault-dictionary.json \
-  -r schema/v0.1/vault-quickunlock.json \
-  -r schema/v0.1/pending-capture.json \
-  -r schema/v0.1/attachment-text.json \
-  -r schema/v0.1/d1-clip-serializer.json \
-  -r schema/v0.1/color-group.json \
-  -r schema/v0.1/saved-view.json \
-  -r schema/v0.1/paired-extension.json \
-  -r schema/v0.1/footnote.json \
-  -r schema/v0.1/highlight.json \
-  -r schema/v0.1/wikilink.json \
-  -r schema/v0.1/definition-list.json \
-  -r schema/v0.1/inline-tag.json \
-  -r schema/v0.1/math.json \
-  -r schema/v0.1/frontmatter-surgery.json \
-  -r schema/v0.1/rename-journal.json \
-  -r schema/v0.1/vault-head.json \
-  -r schema/v0.1/scram-auth.json \
-  -r schema/v0.1/manifest.json \
-  -r schema/v0.1/head-fingerprint.json \
-  -d "vectors/phrase_normalize/v0.1/cases.json" \
-  -d "vectors/vault-prefs/v0.1/cases.json" \
-  -d "vectors/vault_meta_rewrite/v0.1/cases.json" \
-  -d "vectors/hkdf-sha256/v0.1/cases.json" \
-  -d "vectors/vault-meta/v0.1/cases.json" \
-  -d "vectors/account-number/v0.1/cases.json" \
-  -d "vectors/myn-blob/v0.1/cases.json" \
-  -d "vectors/ctx-aead/v0.1/cases.json" \
-  -d "vectors/argon2id/v0.1/cases.json" \
-  -d "vectors/vault-search/v0.1/cases.json" \
-  -d "vectors/password-policy/v0.1/cases.json" \
-  -d "vectors/bip39-recovery/v0.1/cases.json" \
-  -d "vectors/aad-construction/v0.1/cases.json" \
-  -d "vectors/damm32-table/v0.1/cases.json" \
-  -d "vectors/attachment-blob/v0.1/cases.json" \
-  -d "vectors/attachments-catalog/v0.1/cases.json" \
-  -d "vectors/note-template/v0.1/cases.json" \
-  -d "vectors/vault-workspace/v0.1/cases.json" \
-  -d "vectors/backup-container/v0.1/cases.json" \
-  -d "vectors/property-coercion/v0.1/cases.json" \
-  -d "vectors/vault-indices/v0.1/cases.json" \
-  -d "vectors/markdown-comment/v0.1/cases.json" \
-  -d "vectors/vault-dictionary/v0.1/cases.json" \
-  -d "vectors/vault-quickunlock/v0.1/cases.json" \
-  -d "vectors/pending-capture/v0.1/cases.json" \
-  -d "vectors/attachment-text/v0.1/cases.json" \
-  -d "vectors/d1-clip-serializer/v0.1/cases.json" \
-  -d "vectors/color-group/v0.1/cases.json" \
-  -d "vectors/saved-view/v0.1/cases.json" \
-  -d "vectors/paired-extension/v0.1/cases.json" \
-  -d "vectors/footnote/v0.1/cases.json" \
-  -d "vectors/highlight/v0.1/cases.json" \
-  -d "vectors/wikilink/v0.1/cases.json" \
-  -d "vectors/definition-list/v0.1/cases.json" \
-  -d "vectors/inline-tag/v0.1/cases.json" \
-  -d "vectors/math/v0.1/cases.json" \
-  -d "vectors/frontmatter-surgery/v0.1/cases.json" \
-  -d "vectors/rename-journal/v0.1/cases.json" \
-  -d "vectors/vault-head/v0.1/cases.json" \
-  -d "vectors/scram-auth/v0.1/cases.json" \
-  -d "vectors/manifest/v0.1/cases.json" \
-  -d "vectors/head-fingerprint/v0.1/cases.json" \
-  --spec=draft2020
+# Validate every landed cases.json against its canonical sub-schema.
+#
+# Two shapes here are load-bearing, and both were learned the hard way:
+#   * ONE quoted glob for -r, not one flag per sub-schema. ajv-cli 5 accepts
+#     exactly one -r; a second is rejected outright as "too many arguments",
+#     so a per-file loop reports EVERY category invalid and reads like 51
+#     broken vector files rather than one broken invocation.
+#   * ONE category per run (-d inside the loop). A combined all--d run has
+#     tripped a false-negative through a schema oneOf artefact.
+# `.woodpecker.yml` runs exactly this; keep the three copies in step.
+for d in vectors/*/v0.1/cases.json; do
+  npx -y ajv-cli@5 validate \
+    -s schema/v0.1.json \
+    -r "schema/v0.1/*.json" \
+    -d "$d" \
+    --spec=draft2020
+done
 
 # Inspect a single case via jq:
 jq '.cases[0]' vectors/hkdf-sha256/v0.1/cases.json

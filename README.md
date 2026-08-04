@@ -75,12 +75,22 @@ Hex-encoded values are lowercase with no `0x` prefix.
 There is no package to install. Validate every landed `cases.json` against its canonical sub-schema with [`ajv-cli`](https://github.com/ajv-validator/ajv-cli), run from the repo root:
 
 ```bash
-npx -y ajv-cli@5 validate \
-  -s schema/v0.1.json \
-  $(for f in schema/v0.1/*.json; do printf -- '-r %s ' "$f"; done) \
-  $(for f in vectors/*/v0.1/cases.json; do printf -- '-d %s ' "$f"; done) \
-  --spec=draft2020
+for d in vectors/*/v0.1/cases.json; do
+  npx -y ajv-cli@5 validate \
+    -s schema/v0.1.json \
+    -r "schema/v0.1/*.json" \
+    -d "$d" \
+    --spec=draft2020
+done
 ```
+
+Both shapes above are load-bearing. The sub-schemas go in as **one quoted glob**,
+which `ajv` expands itself: `ajv-cli` 5 accepts exactly one `-r`, and rejects a
+second outright as `invalid syntax (too many arguments)` — so a flag-per-file
+loop reports every category invalid and reads like broken vectors rather than a
+broken command. And each category is validated on **its own run**, because a
+combined all-`-d` run has tripped a false negative through a schema `oneOf`
+artefact.
 
 Inspect a single case with `jq`:
 

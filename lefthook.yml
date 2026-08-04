@@ -56,20 +56,30 @@ pre-commit:
 
 # JSON-Schema conformance gate — automates the previously-MANUAL ajv step
 # documented in README.md ("Every cases.json must validate clean").
+#
 # Validated PER CATEGORY (single -d each), never all -d in one ajv run: a
-# combined run mis-reports vault-prefs as invalid (a oneOf artefact). All 46
-# sub-schemas stay loaded as -r refs. `npx -y ajv-cli@5` downloads on each run
-# (slow/network) — acceptable at pre-push for the conformance source of truth.
+# combined run mis-reports vault-prefs as invalid (a oneOf artefact).
+#
+# The sub-schemas go in as ONE QUOTED GLOB, which ajv expands internally. This
+# is not a tidier spelling of a -r-per-file loop — that loop never worked.
+# `ajv-cli` 5 accepts exactly one -r and rejects a second outright with
+# `invalid syntax (too many arguments)`, so with 51 sub-schemas EVERY category
+# failed, and the gate's own message ("INVALID against schema: <file>") named
+# the vector files rather than the command that could not run. A gate that
+# cannot pass is a gate that gets bypassed. `.woodpecker.yml` has always used
+# the glob and says why; keep the two in step (README.md + CLAUDE.md carry the
+# same command for humans).
+#
+# `npx -y ajv-cli@5` downloads on each run (slow/network) — acceptable at
+# pre-push for the conformance source of truth.
 pre-push:
   parallel: false
   commands:
     ajv-schema:
       run: |
         fail=0
-        refs=""
-        for f in schema/v0.1/*.json; do refs="$refs -r $f"; done
         for d in vectors/*/v0.1/cases.json; do
-          if ! npx -y ajv-cli@5 validate -s schema/v0.1.json $refs -d "$d" --spec=draft2020 >/dev/null 2>&1; then
+          if ! npx -y ajv-cli@5 validate -s schema/v0.1.json -r "schema/v0.1/*.json" -d "$d" --spec=draft2020 >/dev/null 2>&1; then
             echo "INVALID against schema: $d"
             fail=1
           fi
