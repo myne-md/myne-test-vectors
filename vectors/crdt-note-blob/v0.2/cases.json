@@ -1,0 +1,109 @@
+{
+  "schema": "crdt-note-blob",
+  "protocol_version": "v0.2",
+  "spec_section": "protocol.md §10.7 + §5.2",
+  "description": "Pins protocol::encode_crdt_note_blob_raw + decode_crdt_note_blob (NC05 next-major CRDT note-type, v0.2) and the two aad_nc05_* builders. Same §9.2 three-level envelope as MY01 with three changes: magic NC05, protocol_version 0x02, and both AEAD tags binding the v0.2 AAD prefix 'myne.v0.2|'. The inner plaintext is OPAQUE (the note's Automerge save() bytes) — never parsed. Reference impl: protocol/src/crdt_note_blob.rs.",
+  "cases": [
+    {
+      "vector_id": "crdt-note-blob/v0.2/encrypt",
+      "description": "Encode an opaque payload to an NC05 blob; pins full byte output.",
+      "case_kind": "encrypt",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_item_key_hex": "4444444444444444444444444444444444444444444444444444444444444444",
+      "input_item_key_nonce_hex": "555555555555555555555555555555555555555555555555",
+      "input_content_nonce_hex": "666666666666666666666666666666666666666666666666",
+      "input_plaintext_hex": "6175746f6d6572676520736176652829206f706171756520627974657320000102ff20666f7220746865204e43303520766563746f72",
+      "expected_blob_hex": "4e43303502002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/decrypt-ok",
+      "description": "Decode the NC05 blob back to its opaque payload.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4e43303502002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_plaintext_hex": "6175746f6d6572676520736176652829206f706171756520627974657320000102ff20666f7220746865204e43303520766563746f72"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/decrypt-fail-v0_1-aad-domain-sep",
+      "description": "The enc_item_key was sealed under the v0.1 wrap AAD; the NC05 (v0.2) decoder's outer unwrap fails — an NC05 tag must never verify under 'myne.v0.1|' (§10.5 domain separation).",
+      "case_kind": "decrypt_aead_fail",
+      "input_blob_hex": "4e43303502002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc79f88db3745bfe6be9e07478f4df431662d4db9257d058964a00c191581f5bd466666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/decrypt-fail-wrong-items-key",
+      "description": "Valid NC05 blob, wrong itemsKey (cross-vault) — non-distinguishing AEAD failure (§6.4).",
+      "case_kind": "decrypt_aead_fail",
+      "input_blob_hex": "4e43303502002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "9999999999999999999999999999999999999999999999999999999999999999",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/parse-fail-my01-magic",
+      "description": "MY01 (v0.1) magic in an NC05 slot — a v0.2 decoder rejects the wrong family magic before decrypting.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4d59303102002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "parse_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/parse-fail-v0_1-version",
+      "description": "protocol_version 0x01 (v0.1) in an NC05 blob — rejected at parse.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4e43303501002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "parse_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/parse-fail-reserved-nonzero",
+      "description": "reserved byte set to 0x01 — unconditional reject.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4e43303502012222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e8",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "parse_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/parse-fail-trailing-byte",
+      "description": "one 0x00 appended after a valid blob — strict-trailing (§10.3.1) rejects; a tolerant port decodes Ok and the runner catches it.",
+      "case_kind": "parse_fail",
+      "input_blob_hex": "4e43303502002222222222222222222222222222222255555555555555555555555555555555555555555555555500401fe39acb500ef2efc55e67fc7e4d1c5281414a635fb3973286f1d892e91254fc21e51db1c7482f06a24e1ea71b3539fb28a2bad31fbfdd527fca12cea8c6651c66666666666666666666666666666666666666666666666600000056cfe8cecb566d9c735a9b520f72d52bc6157773fabe86545b21209eb879c4991eccbad3d2c0afb2d13a03efcec8c743639a9c61bf397775ec35cbe4ca6c3be345528babb6e40325c017b8cad95ddbaa5b273734a4c8e800",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "input_items_key_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "expected_kind": "parse_fail"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/aad-nc05-item-key-wrap",
+      "description": "aad_nc05_item_key_wrap canonical bytes: 'myne.v0.2|' || 0x02 || items_key_id(16) || note_uuid(16).",
+      "case_kind": "aad_construction",
+      "input_aad_builder": "aad_nc05_item_key_wrap",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "expected_aad_hex": "6d796e652e76302e327c022222222222222222222222222222222233333333333333333333333333333333"
+    },
+    {
+      "vector_id": "crdt-note-blob/v0.2/aad-nc05-content-encrypt",
+      "description": "aad_nc05_content_encrypt canonical bytes: 'myne.v0.2|' || 0x02 || items_key_id(16) || note_uuid(16) || u16_be(13)||'text/markdown'.",
+      "case_kind": "aad_construction",
+      "input_aad_builder": "aad_nc05_content_encrypt",
+      "input_items_key_id_hex": "22222222222222222222222222222222",
+      "input_note_uuid_hex": "33333333333333333333333333333333",
+      "expected_aad_hex": "6d796e652e76302e327c022222222222222222222222222222222233333333333333333333333333333333000d746578742f6d61726b646f776e"
+    }
+  ]
+}
