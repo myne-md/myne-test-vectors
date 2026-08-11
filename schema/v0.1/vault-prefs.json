@@ -152,6 +152,30 @@
               },
               "description": "Local-AI per-folder exclusion set (SYNC-14, local-ai epic MYND-406). Folder-path strings the AI runtime must never read/embed. Set-canonical: sorted+deduped; omitted-when-empty. Canonical key 'ai_ex' sorts after ai_enabled, ahead of screen_capture_protection."
             },
+            "ai_provider": {
+              "type": "string",
+              "enum": [
+                "ollama-cloud",
+                "openrouter"
+              ],
+              "description": "The REMOTE AI provider the user named (ai-remote-providers, myne#415, SYNC-15). Closed wire value; omitted when unset, and unset is the default and the UNREACHABLE state rather than a disabled one. The destination URL is NOT carried here \u2014 it is a compiled-in client constant, so a tampered blob cannot redirect traffic. Canonical key 'ai_provider' sorts after ai_excluded_folders, ahead of archive_disabled. A decoder MUST treat an unrecognized value as no provider rather than rejecting the blob; this enum pins the set a v0.1 client emits, not the set it must tolerate."
+            },
+            "ai_provider_consent": {
+              "type": "string",
+              "enum": [
+                "ollama-cloud",
+                "openrouter"
+              ],
+              "description": "WHICH provider the one-time consent was given for (myne#415, SYNC-22). A provider NAME, not a boolean, because consent is per provider: the consent screen names the recipient, so an approval for one cannot stand in for another. A request is permitted only when this equals the active ai_provider \u2014 a comparison, rather than an invariant every setter must remember to maintain. Omitted when consent has not been given (the default). It is a GATE, not a display flag: the request path checks it. Account-scoped \u2014 it syncs, so a newly enrolled device inherits it. Canonical key between ai_provider and ai_provider_key."
+            },
+            "ai_provider_key": {
+              "type": "string",
+              "description": "API key for the named remote provider (myne#415, SYNC-15). Present in the ENCRYPTED blob like any other vault content, and MUST NOT cross the host\u2192UI boundary in any implementation \u2014 the reference client marks it serde-skip and hands the UI a has-key boolean instead (protocol.md \u00a79.5.2). Omitted when unset. Canonical key 'ai_provider_key' sorts after ai_provider_consent, ahead of ai_provider_model."
+            },
+            "ai_provider_model": {
+              "type": "string",
+              "description": "WHICH model at the named provider answers (myne#415, SYNC-24). There is no default and an implementation MUST NOT substitute one \u2014 the value comes from the list the provider itself reports, because a client-pinned model tag rots faster than the release that pinned it and on a metered API a default nobody chose is a bill nobody chose. Absent, the remote arm has nothing to ask with and refuses; it never falls back. Unlike ai_provider_key beside it this value DOES cross the host\u2192UI boundary \u2014 a published model name is not a credential and the settings surface renders the current selection back. Omitted when unset. Canonical key 'ai_provider_model' sorts after ai_provider_key, ahead of archive_disabled."
+            },
             "deliberate_folders": {
               "type": "array",
               "items": {
