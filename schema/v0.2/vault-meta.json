@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta.json",
+  "title": "vault-meta — case shape (v0.2)",
+  "description": "Pins one byte-level case for protocol::serialize_vault_meta_v0_2 + protocol::parse_vault_meta_v0_2 — the NTV5 vault.meta of a migrated v0.2 vault (docs/spec/protocol.md §9.3 + §10.4.1 + §10.5). The layout is the MYV1 layout byte-for-byte, 345 bytes, with exactly two substitutions: magic NTV5 at [0..4] and protocol_version 0x02 at [4]. Everything after those five bytes — account_number_hash, the canonical KDF param block, both wrap salts and nonces, both enc_root_key copies, items_key_id, its nonce and enc_items_key — sits at the offsets §9.3 already pins. Three case kinds: 'roundtrip' (serialize + parse agree on the bytes), 'parse_fail' (the v0.2 parser refuses an MYV1 blob) and 'parse_fail_v0_1' (the v0.1 parser refuses an NTV5 blob). The two reject kinds are the load-bearing ones and they are deliberately a PAIR: §10.5's anti-downgrade property is bidirectional, and a round-trip case alone passes in an implementation that ignores the magic entirely. Reference implementation: protocol/src/vault_meta_v0_2.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-meta/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'vault-meta/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["roundtrip", "parse_fail", "parse_fail_v0_1"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "roundtrip — pin the v0.2 encoder's byte output and its parse",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_account_number_hash_hex",
+        "input_kdf_params",
+        "input_random_salt_password_hex",
+        "input_random_salt_recovery_hex",
+        "input_nonce_password_wrap_hex",
+        "input_enc_root_key_password_hex",
+        "input_nonce_recovery_wrap_hex",
+        "input_enc_root_key_recovery_hex",
+        "input_items_key_id_hex",
+        "input_items_key_nonce_hex",
+        "input_enc_items_key_hex",
+        "expected_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "roundtrip" },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex) at offset 5."
+        },
+        "input_kdf_params": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["m_kib", "t", "p", "argon2_version_hex"],
+          "properties": {
+            "m_kib": {
+              "type": "integer",
+              "minimum": 8,
+              "description": "Argon2id memory cost in KiB. v0.2 has NOT allocated its own KDF yet, so a vector may legitimately carry either the canonical production block or a weak test block — the case pins the ENCODING of whatever params it names, at the offsets §9.3 fixes, not a v0.2 parameter choice."
+            },
+            "t": { "type": "integer", "minimum": 1 },
+            "p": { "type": "integer", "minimum": 1 },
+            "argon2_version_hex": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{2}$",
+              "description": "Argon2 version byte, 13 (0x13 = v1.3). Parsed and validated rather than merely copied."
+            }
+          }
+        },
+        "input_random_salt_password_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_random_salt_recovery_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_nonce_password_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_root_key_password_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$",
+          "description": "64-byte wrapped root_key copy (32-byte ciphertext + 32-byte CTX tag), password side."
+        },
+        "input_nonce_recovery_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_root_key_recovery_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$",
+          "description": "64-byte wrapped root_key copy, recovery side. Two independent copies of the SAME root_key is what makes recovery possible without the password (§3.1)."
+        },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_items_key_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_enc_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{690}$",
+          "description": "The full 345-byte vault.meta (hex). Opens with 4e545635 ('NTV5') and 02. The length is fixed by the schema pattern rather than merely described: a 345-byte record with no length field means a port that miscounts one field produces a blob of the wrong size, and that is worth failing on at validation time."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — the v0.2 parser must refuse a v0.1 blob",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_error"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A blob the v0.2 parser must reject — canonically the same 345 bytes with MYV1 + 0x01 restored at [0..5], so magic is the ONLY difference from the roundtrip case."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": ["invalid_vault_meta"],
+          "description": "Rust reference: ProtocolError::InvalidVaultMeta. vault.meta rejects are deliberately NOT differentiated by cause — the file is read before any credential exists, so a caller learns 'this is not a v0.2 vault.meta' and nothing finer."
+        }
+      }
+    },
+    {
+      "title": "parse_fail_v0_1 — the v0.1 parser must refuse a v0.2 blob",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_error"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail_v0_1" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "An NTV5 blob fed to parse_vault_meta (the v0.1 entry point). This is the direction that matters for a MIXED FLEET: an old client meeting a migrated vault must refuse it cleanly rather than half-parse a structure whose meaning it does not know."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": ["invalid_vault_meta"],
+          "description": "Rust reference: ProtocolError::InvalidVaultMeta, raised by the v0.1 parser."
+        }
+      }
+    }
+  ]
+}

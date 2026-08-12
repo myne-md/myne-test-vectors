@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2.json",
+  "title": "Myne test vector — v0.2 root schema",
+  "description": "Canonical machine-readable contract for every cases.json file under vectors/<category>/v0.2/. The v0.1 twin of this file (schema/v0.1.json) governs the v0.1 directories; the two are separate documents because `protocol_version` is a const in each, and that is deliberate rather than incidental — v0.1 and v0.2 are forward-incompatible by design (no extension points, no algorithm-agility headers), so one schema spanning both would have to relax the pin that makes each version's shape checkable at all. Cross-category top-level shape lives here; per-category case shapes live in schema/v0.2/<category>.json and are dispatched via the `schema` field. Adding a v0.2 category means landing its sub-schema under schema/v0.2/ and extending BOTH the enum and the oneOf branches here, in lockstep — the same rule the v0.1 root states. The local validation command is documented in the repository README; note that it validates each version directory against its OWN root schema, so a v0.2 file is never silently checked against v0.1's.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "protocol_version",
+    "spec_section",
+    "description",
+    "cases"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "description": "Registered category identifier. Selects the sub-schema applied to each cases[] element via the oneOf dispatch below. A category may appear in BOTH version enums (vault-meta, vault-themes and aad-construction do — each has a v0.1 side and a v0.2 side) or in this one alone (crdt-note-blob is a v0.2-only note type).",
+      "enum": [
+        "aad-construction",
+        "crdt-note-blob",
+        "vault-meta",
+        "vault-themes"
+      ]
+    },
+    "protocol_version": {
+      "type": "string",
+      "const": "v0.2",
+      "description": "Pins the protocol version this vector set targets. The identifiers that make v0.2 a distinct major are frozen: AAD prefix \"myne.v0.2|\", HKDF context prefix \"myne.v0.2 \", header protocol_version byte 0x02, and the NC05 per-note magic. Each is a major-version-event constant in the repo-root identifier table."
+    },
+    "spec_section": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Anchor in the main repo's docs/spec/ that pins the byte-level contract being verified (e.g. 'protocol.md §10.7')."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "schema": {
+          "const": "aad-construction"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/aad-construction.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "crdt-note-blob"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/crdt-note-blob.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-meta"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-themes"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-themes.json"
+          }
+        }
+      }
+    }
+  ]
+}

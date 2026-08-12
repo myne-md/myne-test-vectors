@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/aad-construction.json",
+  "title": "aad-construction — case shape (v0.2)",
+  "description": "Pins one v0.2 AAD builder's canonical bytes plus its structural segment breakdown — the next-major mirror of the v0.1 category (protocol/src/aead.rs; docs/spec/protocol.md §10.4.1 + §10.5 + §5.2). Every case opens with the 10-byte prefix 'myne.v0.2|' and the 0x02 protocol_version byte; both are major-version-event constants in the repo-root identifier table, and together they are what stops a v0.1 tag verifying as v0.2 or the reverse. These builders are the §10.4.1 whole-vault migration's re-seal path, so a port that frames them wrong migrates a vault into bytes no other implementation can open — a failure that surfaces only after the migration, on a vault that no longer has a v0.1 copy. TWO STRUCTURAL DIFFERENCES FROM v0.1 are worth stating because they are easy to mis-port: (1) v0.2 has NO per-family singleton builders — there is no aad_prefs_blob_v0_2 — the migration rebuilds each family's AAD from its role string through the generic aad_singleton_blob_v0_2, so the role is an INPUT here rather than baked into a function name; (2) the two note-scoped v0.2 builders (aad_nc05_item_key_wrap / aad_nc05_content_encrypt) are NOT in this category — crdt-note-blob/v0.2 pins them as its own aad_construction cases, one home per builder.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "input_builder_name",
+    "expected_aad_hex",
+    "informational_aad_segments"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^aad-construction/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'aad-construction/v0.2/<descriptive-slug>'. The slug is NOT required to equal input_builder_name: the generic singleton builder appears under more than one role, so the cases are distinguished by role in the id while the builder name stays the real function name."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_builder_name": {
+      "type": "string",
+      "enum": [
+        "aad_password_wrap_v0_2",
+        "aad_recovery_wrap_v0_2",
+        "aad_vault_items_key_wrap_v0_2",
+        "aad_singleton_blob_v0_2"
+      ],
+      "description": "The pub fn in protocol/src/aead.rs the case pins. A closed enum: a new v0.2 vault-scoped builder must be added here AND to the runner's match arm and `required` list in the same change, which is the drift the v0.1 family's hand-maintained lists once had."
+    },
+    "input_kdf_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "m_kib",
+        "t",
+        "p",
+        "argon2_version_hex"
+      ],
+      "description": "Present for the password/recovery wrap builders, which bind the canonical 11-byte KDF param block for downgrade defense. v0.2's own KDF is NOT allocated yet, so these cases carry the v0.1 canonical block: what they pin is the FRAMING — that the block is bound, and at which offset — not a v0.2 parameter choice. When v0.2 picks its KDF the values change and the offsets do not. A case for any OTHER builder that carries this field is REJECTED — the conditional branches forbid the fields they do not use, so a copy-paste that leaves a stale input on a case cannot validate.",
+      "properties": {
+        "m_kib": {
+          "type": "integer",
+          "minimum": 8
+        },
+        "t": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "p": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "argon2_version_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$"
+        }
+      }
+    },
+    "input_items_key_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "Present for aad_vault_items_key_wrap_v0_2 — the 16-byte items_key_id, bound with no length-prefixed role at all (prefix + version + id)."
+    },
+    "input_account_number_hash_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "Present for aad_singleton_blob_v0_2 — the 16-byte account_number_hash that trails the role label."
+    },
+    "input_role_label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Present for aad_singleton_blob_v0_2 — the family's role string ('prefs-blob', 'custom-themes-blob', …), passed as an argument because v0.2 has one generic builder rather than one function per family. Pin at least two roles of DIFFERENT lengths: same-length roles cannot catch an implementation that hardcoded the u16 length prefix instead of computing it."
+    },
+    "expected_aad_hex": {
+      "type": "string",
+      "pattern": "^6d796e652e76302e327c02([0-9a-f]{2})+$",
+      "description": "Canonical AAD bytes (hex). The pattern pins the opening 11 bytes structurally rather than describing them: 6d796e652e76302e327c is 'myne.v0.2|' and 02 is the protocol_version byte. A regenerated fixture that lost the v0.2 prefix fails validation here, by shape, before any runner sees it."
+    },
+    "informational_aad_segments": {
+      "type": "array",
+      "minItems": 2,
+      "description": "The labeled byte-range decomposition of expected_aad_hex. Informational in the sense that the full bytes are normative, but the runner still checks that the segments are contiguous from offset 0 and that their concatenation reproduces the AAD — so a wrong decomposition fails rather than misleading a reader.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "offset",
+          "length",
+          "label",
+          "bytes_hex"
+        ],
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "label": {
+            "type": "string",
+            "enum": [
+              "aad_prefix",
+              "protocol_version",
+              "role_length_be16",
+              "role_label",
+              "kdf_params_canonical",
+              "items_key_id",
+              "account_number_hash"
+            ]
+          },
+          "bytes_hex": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{2})+$"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "enum": [
+              "aad_password_wrap_v0_2",
+              "aad_recovery_wrap_v0_2"
+            ]
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_kdf_params"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_account_number_hash_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_role_label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_vault_items_key_wrap_v0_2"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_items_key_id_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_account_number_hash_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_role_label"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_singleton_blob_v0_2"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label",
+          "input_account_number_hash_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

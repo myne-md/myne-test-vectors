@@ -70,6 +70,18 @@ pre-commit:
 # the glob and says why; keep the two in step (README.md + CLAUDE.md carry the
 # same command for humans).
 #
+# EVERY VERSION DIRECTORY, EACH AGAINST ITS OWN ROOT SCHEMA. The loop used to
+# read `vectors/*/v0.1/cases.json`, which was fine while v0.1 was all there was
+# and became a hole the moment the first `v0.2/` landed: three files carrying
+# next-major magic (NC05, NTV5, MYT5) and the frozen "myne.v0.2|" AAD prefix sat
+# in the repo validated by NOTHING, and could not have been validated by the
+# v0.1 root anyway — `protocol_version` is a const there, so a v0.2 file is
+# INVALID against it by construction. The version comes from the directory name
+# and selects `schema/<version>.json`; a new version directory added without its
+# root schema therefore turns the gate RED (ajv fails on the missing -s file)
+# rather than being skipped silently, which is the failure mode this loop shape
+# is chosen for.
+#
 # `npx -y ajv-cli@5` downloads on each run (slow/network) — acceptable at
 # pre-push for the conformance source of truth.
 pre-push:
@@ -78,13 +90,21 @@ pre-push:
     ajv-schema:
       run: |
         fail=0
-        for d in vectors/*/v0.1/cases.json; do
-          if ! npx -y ajv-cli@5 validate -s schema/v0.1.json -r "schema/v0.1/*.json" -d "$d" --spec=draft2020 >/dev/null 2>&1; then
-            echo "INVALID against schema: $d"
+        count=0
+        for d in vectors/*/v*/cases.json; do
+          ver=$(basename "$(dirname "$d")")
+          if [ ! -f "schema/$ver.json" ]; then
+            echo "NO ROOT SCHEMA for $ver (needed by $d) — add schema/$ver.json + schema/$ver/"
+            fail=1
+            continue
+          fi
+          count=$((count + 1))
+          if ! npx -y ajv-cli@5 validate -s "schema/$ver.json" -r "schema/$ver/*.json" -d "$d" --spec=draft2020 >/dev/null 2>&1; then
+            echo "INVALID against schema/$ver.json: $d"
             fail=1
           fi
         done
-        [ "$fail" -eq 0 ] && echo "all $(ls vectors/*/v0.1/cases.json | wc -l | tr -d ' ') cases.json valid"
+        [ "$fail" -eq 0 ] && echo "all $count cases.json valid"
         exit $fail
 
 # Reject accidental AI co-author / attribution trailers in commit messages

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-themes.json",
+  "title": "vault-themes — case shape (v0.2)",
+  "description": "Pins the MYT5 vault.themes envelope — the v0.2 side of the §10.4.1 md.6 protocol_version split (myne-md/myne#441), and the KEK-envelope archetype every single-KEK blob family shares byte-for-byte. Two case kinds: 'encrypt' (encoder byte output under the v0.2 envelope) and 'decode_fail_v0_1' (a v0.1 decoder must not open it). ONE DETAIL HERE READS LIKE A BUG AND IS NOT: the header's themes_format_version byte stays 0x01 even though the family is v0.2. That byte is the FORMAT version of the inner payload, not the protocol major, and it is not AEAD-bound — the domain separation is carried entirely by the magic (MYT5 vs MYT1), the AAD prefix ('myne.v0.2|' via aad_singleton_blob_v0_2) and the KEK's HKDF context prefix ('myne.v0.2 '). A port that 'fixes' this byte to 0x02 produces a blob the reference decoder rejects. Reference implementation: protocol/src/themes_blob.rs (decode_themes_blob_versioned) in the main myne repository.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-themes/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'vault-themes/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decode_fail_v0_1"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the v0.2 envelope's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_custom_themes_key_hex",
+        "input_account_number_hash_hex",
+        "input_plaintext_hex",
+        "input_nonce_hex",
+        "expected_magic_ascii",
+        "expected_version_byte_hex",
+        "expected_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_custom_themes_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte KEK (hex), supplied DIRECTLY rather than derived from a root_key. The v0.2 subkey derivation uses the 'myne.v0.2 ' HKDF context prefix, which is pinned as its own concern; handing the KEK in keeps this case about the envelope."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex), AAD-bound via aad_singleton_blob_v0_2(b\"custom-themes-blob\", hash) — the generic v0.2 singleton builder, since v0.2 has no per-family AAD functions."
+        },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Opaque inner plaintext (hex) — the client layer's serialized {theme_name -> palette} map. Empty allowed (the empty theme store)."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Fixed here so the bytes are reproducible (the raw encoder); production callers pull from a CSPRNG."
+        },
+        "expected_magic_ascii": {
+          "type": "string",
+          "const": "MYT5",
+          "description": "The v0.2 themes magic, spelled in ASCII beside the hex so a reviewer can read it without decoding. MYT5 is the reserved next-major counterpart of MYT1 in the §10.3 allocation table."
+        },
+        "expected_version_byte_hex": {
+          "type": "string",
+          "const": "01",
+          "description": "The themes_format_version byte — 0x01, NOT 0x02. It versions the inner payload format, not the protocol major, and it is not AEAD-bound; magic + AAD prefix + KEK context carry the domain separation on their own. Pinned as a const here precisely because it looks like an inconsistency and would otherwise get 'corrected'."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full encoder output (header + ciphertext + 32-byte CTX tag), hex-encoded lowercase. Opens with 4d595435 ('MYT5') then 01."
+        }
+      }
+    },
+    {
+      "title": "decode_fail_v0_1 — a v0.1 decoder must not open a v0.2 envelope",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_error"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decode_fail_v0_1" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The MYT5 blob offered to a decoder expecting the v0.1 envelope. The mixed-fleet direction: an un-migrated client meeting a migrated vault's theme store."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": ["cannot_decrypt", "magic_mismatch"],
+          "description": "Which refusal the decoder surfaces. 'cannot_decrypt' is the expected outcome when the caller asks for a v0.1 read of bytes whose AAD was built under the v0.2 prefix — the AEAD simply does not verify, and per §6.4 that failure stays non-distinguishing. 'magic_mismatch' is admissible for an implementation that checks the magic before attempting the AEAD. Both are correct refusals; what a port may NOT do is return a plaintext."
+        }
+      }
+    }
+  ]
+}

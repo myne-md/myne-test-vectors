@@ -19,11 +19,22 @@ steps:
       # passed as a single quoted glob to -r (ajv expands it internally) because
       # the root schema dispatches to them by $id, and 40+ separate -r flags trip
       # a "too many arguments" limit in ajv-cli.
+      #
+      # The version comes from the directory name and selects its own root
+      # schema. This loop used to read `v0.1` literally, and the first `v0.2/`
+      # directory to land was therefore validated by nothing at all — files
+      # carrying next-major magic and the frozen "myne.v0.2|" AAD prefix, ungated
+      # in the one repository whose entire job is to be the gate. A v0.2 file
+      # cannot be checked against the v0.1 root either: `protocol_version` is a
+      # const there. A new version directory without a matching root schema fails
+      # the step (missing -s file) instead of being skipped — deliberate.
       - |
         set -eu
-        for d in vectors/*/v0.1/cases.json; do
-          echo "validating $d"
-          ajv validate -s schema/v0.1.json -r "schema/v0.1/*.json" -d "$d" --spec=draft2020
+        for d in vectors/*/v*/cases.json; do
+          ver=$(basename "$(dirname "$d")")
+          test -f "schema/$ver.json" || { echo "NO ROOT SCHEMA for $ver (needed by $d)"; exit 1; }
+          echo "validating $d against schema/$ver.json"
+          ajv validate -s "schema/$ver.json" -r "schema/$ver/*.json" -d "$d" --spec=draft2020
         done
 
   # Failure notification via Pushover. The token + group come ONLY from CI
