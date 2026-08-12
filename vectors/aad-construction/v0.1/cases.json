@@ -70,7 +70,7 @@
     },
     {
       "vector_id": "aad-construction/v0.1/aad_prefs_blob",
-      "description": "AAD bound into the AEAD encryption of the vault.prefs blob (§5.2 + §9.5.3). Length-prefixed role 'prefs-blob' + account_number_hash (NOT items_key_id — prefs live outside the items_key lineage for v005 portability).",
+      "description": "AAD bound into the AEAD encryption of the vault.prefs blob (§5.2 + §9.5.3). Length-prefixed role 'prefs-blob' + account_number_hash (NOT items_key_id — prefs live outside the items_key lineage for later portability).",
       "input_builder_name": "aad_prefs_blob",
       "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
       "expected_aad_hex": "6d796e652e76302e317c01000a70726566732d626c6f62a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",

@@ -84,7 +84,7 @@
     },
     {
       "vector_id": "vault-head-state/v0.1/parse-fail-protocol-version-mismatch",
-      "description": "protocol_version byte at offset 4 set to 0x02. v0.1 and v005 are forward-incompatible by design: a decoder MUST reject rather than attempt a best-effort parse.",
+      "description": "protocol_version byte at offset 4 set to 0x02. v0.1 and a later major version are forward-incompatible by design: a decoder MUST reject rather than attempt a best-effort parse.",
       "case_kind": "parse_fail",
       "input_blob_hex": "4d59483102016d796e652e76302e317c01013333333333333333333333333333333355555555555555555555555555555555555555555555555555555555555555550000000000000001000000001c00000001a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a10000000000000001ac412969241362afdff191753b4c9a3cfe91e3732b5f50eb050d36b47d6f8b48",
       "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
