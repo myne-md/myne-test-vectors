@@ -31,7 +31,7 @@ The encode side is **pure and deterministic** given the caller-supplied `prefs_n
 vectors/vault-prefs/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 25 KAT cases (encrypt + decrypt + failure-mode families, grown additively per feature — MYND-183/110/191/184/185/205/58 + the MYND-227 parse_fail family)
+    └── cases.json         ← array of 52 KAT cases (encrypt + decrypt + failure-mode families, grown additively per feature — MYND-183/110/191/184/185/205/58 + the MYND-227 parse_fail family)
 ```
 
 ## JSON shape
@@ -60,7 +60,9 @@ JSON natively supports UTF-8 strings via `\uXXXX` escapes, but escape behavior v
 
 ## Invariants the vectors pin
 
-For the 25 cases in `cases.json`:
+For the 52 cases in `cases.json`:
+
+- **Every field is pinned beside BOTH of its canonical neighbours, not alone.** `vault.prefs` is canonical JSON, so **key order is part of the bytes**: a port that emits a correct value in the wrong slot produces a blob the reference decoder rejects, and a case that pinned the value alone would not notice. The `encrypt-datetime-quartet` pair is the worked example — `auto_tag_enabled`, `date_format`, `time_format` and `timezone` each sit between their two neighbours (`auto_lock_seconds` < `auto_tag_enabled` < `bar_items_order`; `daily_template` < `date_format` < `deliberate_folders`; `theme` < `time_format` < `timezone` < `transcription_enabled`). Those four shipped with no cross-implementation vector at all until that pair landed, exercised only by `#[cfg(test)]` unit tests that no port can run.
 
 - **MYP1 magic + version + reserved bytes.** Encoder output `[0..4]` = `MYP1`, `[4]` = `0x01`, `[5]` = `0x00`. Decoder rejects any other value at parse time before reaching AEAD verification.
 - **Header byte layout.** Encoder output `[6..30]` = supplied `prefs_nonce` (24 B); `[30..34]` = `ciphertext_len` as big-endian uint32; `[34..]` = ciphertext + 32-byte CTX tag.

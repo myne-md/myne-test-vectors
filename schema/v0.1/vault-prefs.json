@@ -200,6 +200,10 @@
               "type": "integer",
               "minimum": 0
             },
+            "auto_tag_enabled": {
+              "type": "boolean",
+              "description": "On-device tag-suggestion toggle (MYND-651). Positive-opt-in bool: default false, emitted ONLY when true — so a vault that never enabled it is byte-identical to a pre-feature vault.prefs (the ai_enabled / cli_enabled convention). Canonical key 'auto_tag_enabled' — after auto_lock_seconds (auto_l < auto_t), before bar_items_order (a < b). It is the second half of a two-key gate: the tag pass runs only when this AND ai_enabled are both on, and the host re-reads both before touching the model."
+            },
             "favorites": {
               "type": "array",
               "items": {
@@ -267,6 +271,10 @@
             "daily_template": {
               "type": "string",
               "description": "MYND-191 daily-notes template pointer (UUIDv7). Option<String>; absent ≡ blank daily note."
+            },
+            "date_format": {
+              "type": "string",
+              "description": "Display date format (myne#279) — one of system / iso / dmy / mdy / dmmmy. Option<String>; absent ≡ system (follow the OS locale), applied host-side. Stored as a free string rather than an enum, with the unknown→default fallback on the client (the editor_content_width precedent) — so like 'theme' the codec round-trips an unrecognized value verbatim rather than rejecting the blob. DISPLAY ONLY: it never enters a .myn file, a blob or the sync wire as a formatting instruction; the on-disk task bytes stay format-free. Canonical key 'date_format' — after daily_template (dai < dat), before deliberate_folders (da < de). Omitted when absent."
             },
             "field_clocks": {
               "type": "object",
@@ -396,9 +404,17 @@
               "type": "boolean",
               "description": "image-OCR toggle (MYND-441). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'attachment_o'."
             },
+            "time_format": {
+              "type": "string",
+              "description": "Display time format (myne#279) — one of system / 24h / 12h. Option<String>; absent ≡ system (follow the OS locale), applied host-side. Same free-string + client-side-validation discipline as date_format. DISPLAY ONLY — never enters a .myn file, a blob or the sync wire. Canonical key 'time_format' — after theme (th < ti), before timezone (_ < z). Omitted when absent."
+            },
+            "timezone": {
+              "type": "string",
+              "description": "Display timezone override (myne#279) — an IANA zone identifier; absent ≡ system (the host's own zone). DISPLAY ONLY, and load-bearing for a privacy reason the other two are not: it decides what the app calls 'today' and how a stored wall-clock value is printed, and it NEVER reaches note bytes. Myne emits no timezone offset and no zone identifier into a .myn file — times are local wall-clock — which keeps a coarse geolocation datum out of a file that gets exported as plaintext. Storing the DISPLAY choice in the encrypted vault.prefs does not walk that back. Canonical key 'timezone' — after time_format (_ < z), before transcription_enabled (ti < tr). Omitted when absent."
+            },
             "transcription_enabled": {
               "type": "boolean",
-              "description": "speech-to-text toggle (MYND-592). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'transcription_enabled' — after theme, before view_order."
+              "description": "speech-to-text toggle (MYND-592). Inverse-default bool: default true, emitted ONLY when false. Canonical key 'transcription_enabled' — after timezone (ti < tr), before view_order."
             },
             "show_note_timestamps": {
               "type": "boolean",
