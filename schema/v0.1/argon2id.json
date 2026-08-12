@@ -55,7 +55,7 @@
         "p": { "type": "integer", "const": 2 },
         "argon2_version_hex": { "type": "string", "const": "13", "description": "Argon2 v1.3 (RFC 9106)." }
       },
-      "description": "Canonical Phase 1 Argon2id parameter block. All 4 fields pinned to const values in v0.1; relaxed in v005."
+      "description": "Canonical Phase 1 Argon2id parameter block. All 4 fields pinned to const values in v0.1. A later major version may relax them — v0.2 has not allocated its KDF yet, so nothing is relaxed today."
     },
     "expected_wrap_key_hex": {
       "type": "string",

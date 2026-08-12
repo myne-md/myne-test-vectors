@@ -45,7 +45,7 @@ Encode is pure and deterministic given the caller-supplied nonce (`_raw` convent
 vectors/attachments-catalog/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 7 KAT cases (encrypt + decrypt + AEAD-fail + AAD + forward-compat tolerance)
+    └── cases.json         ← array of 16 KAT cases (encrypt + decrypt + AEAD-fail + AAD + forward-compat tolerance)
 ```
 
 ## JSON shape

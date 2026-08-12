@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1.json",
   "title": "Myne test vector — v0.1 root schema",
-  "description": "Canonical machine-readable contract for every cases.json file under vectors/<category>/v0.1/. Cross-category top-level shape lives here; per-category case shapes live in schema/v0.1/<category>.json and are dispatched via the `schema` field. v0.1 and v005 are forward-incompatible by design (see myne-test-vectors/CLAUDE.md). The local validation command is documented in the repository README.",
+  "description": "Canonical machine-readable contract for every cases.json file under vectors/<category>/v0.1/. Cross-category top-level shape lives here; per-category case shapes live in schema/v0.1/<category>.json and are dispatched via the `schema` field. The next major version has its own root schema (schema/v0.2.json) rather than sharing this one: `protocol_version` is a const in each, because v0.1 and a later major are forward-incompatible by design — no extension points, no algorithm-agility headers — so one schema spanning both would have to relax the very pin that makes each version's shape checkable. The repository's validation loop derives the root schema from the version directory name for that reason; the command is documented in the repository README.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -46,8 +46,10 @@ The encode side is **pure and deterministic** given the caller-supplied `nonce` 
 ```
 vectors/vault-themes/
 ├── schema.md              ← this file
-└── v0.1/
-    └── cases.json         ← array of 12 KAT cases (encrypt + decrypt + AEAD-fail + structural parse-fail)
+├── v0.1/
+│   └── cases.json         ← array of 12 KAT cases (encrypt + decrypt + AEAD-fail + structural parse-fail)
+└── v0.2/
+    └── cases.json         ← 2 cases pinning the MYT5 envelope (see "The v0.2 side" below)
 ```
 
 ## JSON shape
@@ -94,6 +96,33 @@ cat /tmp/myne_vault_themes_vectors.json
 ```
 
 The regenerator test lives in `protocol/src/themes_blob.rs::tests::emit_themes_blob_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations.
+
+## The v0.2 side (`v0.2/cases.json`)
+
+`v0.2/` pins the `MYT5` envelope — the v0.2 side of the §10.4.1 md.6
+`protocol_version` split (myne-md/myne#441), and the KEK-envelope archetype the
+other single-KEK families share byte-for-byte.
+
+**One detail here reads like a bug and is not.** The header's
+`themes_format_version` byte stays `0x01` even though the family is v0.2. That
+byte versions the *inner payload format*, not the protocol major, and it is not
+AEAD-bound — the domain separation is carried entirely by the magic (`MYT5` vs
+`MYT1`), the AAD prefix (`"myne.v0.2|"`, via `aad_singleton_blob_v0_2` with the
+`"custom-themes-blob"` role) and the KEK's HKDF context prefix (`"myne.v0.2 "`).
+A port that "corrects" this byte to `0x02` produces a blob the reference decoder
+rejects. The sub-schema pins it as a `const` for that reason.
+
+The second case kind, **`decode_fail_v0_1`**, is the mixed-fleet direction: an
+un-migrated client meeting a migrated vault's theme store must not open it.
+Either refusal is correct — `cannot_decrypt` (the AEAD simply does not verify,
+since the tag was computed under the v0.2 AAD prefix; per §6.4 that failure stays
+non-distinguishing) or `magic_mismatch` (an implementation that checks the magic
+before attempting the AEAD). What a port may **not** do is return a plaintext.
+
+Schema: [`schema/v0.2.json`](../../schema/v0.2.json) +
+[`schema/v0.2/vault-themes.json`](../../schema/v0.2/vault-themes.json).
+Generator: `emit_vault_themes_v0_2_vectors_for_paste` (`protocol/src/themes_blob.rs`).
+Runner: `vault_themes_v0_2_vectors` (`protocol/tests/vectors.rs`).
 
 ## What this does NOT cover
 

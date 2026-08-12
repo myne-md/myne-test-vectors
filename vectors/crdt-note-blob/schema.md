@@ -23,8 +23,30 @@ builders). Generator: `emit_crdt_note_blob_vectors_for_paste` in that module.
 ## Version note
 
 This family lives under `v0.2/` (not `v0.1/`) because the format IS the v0.2
-next-major note-type — the first vector family for a next-major format. The
-native + browser runners read `crdt-note-blob/v0.2/cases.json`.
+next-major note-type — the first vector family for a next-major format, and the
+only category with **no** `v0.1/` directory at all. The native + browser runners
+read `crdt-note-blob/v0.2/cases.json`.
+
+## File layout
+
+```
+vectors/crdt-note-blob/
+├── schema.md              ← this file
+└── v0.2/
+    └── cases.json         ← 10 cases (encrypt + decrypt + AEAD-fail + parse-fail + AAD)
+```
+
+## JSON shape
+
+The machine-readable contract lives at [`schema/v0.2.json`](../../schema/v0.2.json)
+(top-level shape) and [`schema/v0.2/crdt-note-blob.json`](../../schema/v0.2/crdt-note-blob.json)
+(per-case shape, 5-way `case_kind` discriminator). Note the **`v0.2` root
+schema**, not `v0.1`'s: `protocol_version` is a `const` in each root, so the two
+are separate documents and a v0.2 file is invalid against the v0.1 root by
+construction. The repository's validation loop derives the root schema from the
+directory name for exactly this reason — see the root `README.md`.
+
+The sub-schema is authoritative; this document covers only the domain semantics.
 
 ## Case kinds
 

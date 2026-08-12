@@ -55,4 +55,4 @@ The regenerator (`protocol/src/account_number.rs::tests::emit_damm32_table_vecto
 
 - **Full account-number parsing / normalization** — that is the `account-number` category.
 - **The `generate_account_number` CSPRNG path** — non-deterministic, not pinnable.
-- **Cross-major (v005) tables** — v005 may redefine the polynomial or entropy length; would land under `vectors/damm32-table/v005/`.
+- **Cross-major tables** — a later major version may redefine the polynomial or entropy length; those would land under `vectors/damm32-table/<version>/` beside `v0.1/`. (The next major is `v0.2`; the retired `v005` codename is recorded in `design notes.md` 2026-08-01.)

@@ -63,7 +63,7 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 
 - **`encode`** — pins the deterministic member-set → container-bytes mapping. Inputs: `input_members` (array of `{path, bytes_hex}` in deliberately arbitrary order). Output: `expected_container_hex`.
 - **`verify_ok`** — pins the verifier's parse. Input: `input_container_hex`. Output: `expected_member_records` (array of `{path, len, sha256_hex}` in table order; the `sha256_hex` values independently pin the § 9.11.2 hash formula).
-- **`verify_fail`** — pins a credential-free reject. Input: `input_container_hex`. Output: `expected_error`, one of: `header_too_short`, `magic_mismatch`, `protocol_version_mismatch`, `reserved_byte_nonzero`, `member_count_overflow`, `member_table_overflow`, `path_invalid`, `path_not_allowlisted`, `duplicate_path`, `path_order_violation`, `member_len_overflow`, `lengths_inconsistent`, `hash_mismatch`. The `MYB5` reserved v005 magic appears as a second `magic_mismatch` case — a v0.1 consumer MUST reject it (the desktop caller re-checks the bytes to phrase a migration prompt).
+- **`verify_fail`** — pins a credential-free reject. Input: `input_container_hex`. Output: `expected_error`, one of: `header_too_short`, `magic_mismatch`, `protocol_version_mismatch`, `reserved_byte_nonzero`, `member_count_overflow`, `member_table_overflow`, `path_invalid`, `path_not_allowlisted`, `duplicate_path`, `path_order_violation`, `member_len_overflow`, `lengths_inconsistent`, `hash_mismatch`. The `MYB5` reserved next-major MYB5 magic appears as a second `magic_mismatch` case — a v0.1 consumer MUST reject it (the desktop caller re-checks the bytes to phrase a migration prompt).
 - **`classify_path`** — pins the § 9.11.3 grammar from both directions. Input: `input_member_path` (plain string). Output: `expected_family` (a family name from the table above, or `rejected`).
 
 ## How to consume
@@ -83,7 +83,7 @@ Any mismatch is a stop-the-world bug (per repo `README.md` "Cross-implementation
 - **Canonical encoding**: unsorted input → sorted table → identical bytes; data order = table order (`encode-full-allowlist-canonical-order`).
 - **The path-inclusive hash formula** `SHA-256(path_len_be16 || path || member_bytes)` — independently checkable from `verify_ok`'s `sha256_hex` values.
 - **The § 9.11.6 validation order**: ceilings before the file-length equation (`verify-fail-member-count-overflow` / `verify-fail-member-table-overflow` are header-only files).
-- **The MYB5 v005 reservation**: refused by a v0.1 consumer, collapsing to `magic_mismatch`.
+- **The MYB5 next-major reservation**: refused by a v0.1 consumer, collapsing to `magic_mismatch`.
 - **The closed allowlist from both directions**: every family accepted at least once; the reserved-out singletons (`vault.search`, `vault.workspace`) and the grammar edges (uppercase hex, 63-char id, uppercase UUID, missing `__` pair, `.tmp` suffix) rejected.
 - **Family caps from the read direction**: a 346-byte `vault.meta` member rejects as `member_len_overflow` at table parse, with all length equations holding.
 

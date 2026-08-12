@@ -40,16 +40,18 @@ A port runs each case by:
 
 ## Runtime cost
 
-**~3 seconds per case** at canonical v0.1 parameters (m=256 MiB, t=3, p=2). With 6 cases the category adds ~18 seconds to a default `cargo test -p protocol --test vectors` run. This is the **only** category in the landed Lane D set with non-trivial runtime; all other categories run in under a second total.
+**~3 seconds per case** at canonical v0.1 parameters (m=256 MiB, t=3, p=2). With 7 cases the category adds ~21 seconds to a default `cargo test -p protocol --test vectors` run. This is the **only** category in the landed Lane D set with non-trivial runtime; all other categories run in under a second total.
 
 The cost is accepted as the trade-off for cross-implementation byte-level verification at the deployed parameters. The vectors are NOT `#[ignore]`-gated — protocol-contract assertions warrant default execution. Only the regenerator (`emit_argon2id_wrap_vectors_for_paste`) is `#[ignore]`-gated, since regeneration is a deliberate act.
 
 ## Invariants the vectors pin
 
-For the 6 cases in `cases.json`:
+For the 7 cases in `cases.json` (password × {short, long, unicode}, recovery × {short, long, NFKD-unicode}, and the `quickunlock-pin` path):
 
 - **Canonical Argon2id parameters across all cases.** `m_kib = 262_144` (256 MiB), `t = 3`, `p = 2`, `argon2_version = 0x13`. The schema's `const` constraints on each field structurally enforce this — a future regenerator that lands fast-test params accidentally would fail schema validation. Future v0.1.x mobile-profile vectors (lower memory cost) would land in a separate sub-directory or a successor schema version.
-- **Two distinct salt prefixes domain-separate the two paths.** Password derivations use `"myne.v0.1 argon2id-password|"`; recovery derivations use `"myne.v0.1 argon2id-recovery|"`. Same `(salt_random, account_number_hash, password_bytes)` tuple produces DIFFERENT wrap keys depending on path. The 6 cases (password-short + recovery-short, password-long + recovery-long, password-unicode + recovery-nfkd-unicode) deliberately use the same `salt_random` + `account_number_hash` so any cross-path drift surfaces as differing wrap keys for the same other inputs.
+- **Two distinct salt prefixes domain-separate the two paths.** Password derivations use `"myne.v0.1 argon2id-password|"`; recovery derivations use `"myne.v0.1 argon2id-recovery|"`. Same `(salt_random, account_number_hash, password_bytes)` tuple produces DIFFERENT wrap keys depending on path. The six password/recovery cases (password-short + recovery-short, password-long + recovery-long, password-unicode + recovery-nfkd-unicode) deliberately use the same `salt_random` + `account_number_hash` so any cross-path drift surfaces as differing wrap keys for the same other inputs.
+
+- **A third path: the quick-unlock PIN.** The seventh case pins `derive_quick_unlock_pin_wrap_key` (§9.14.2) — the PIN run through Argon2id under its own salt prefix `"myne.v0.1 argon2id-quickunlock-pin|"`, with `input_salt_random_hex` carrying the 16-byte `pin_salt`. It is a **third** domain, not a variant of the password path: the key it produces wraps the device-local third `root_key` copy in `vault.quickunlock` (`MYQ1`), so a port that reused the password prefix here would produce a credential that unlocks under the wrong secret. The runner pins all three derivation paths through a coverage guard rather than a case count.
 - **NFKD normalization byte-output is observable.** The `recovery-nfkd-unicode` case feeds 11 UTF-8 bytes representing the NFKD decomposition of `"şifre-ñ"` (`s` + COMBINING CEDILLA + `ifre-` + `n` + COMBINING TILDE). An implementation that incorrectly skips the NFKD step would feed the 9 NFC bytes (`ş` as 0xC5 0x9F instead of `s` + 0xCC 0xA7) and produce a different wrap key. Cross-impl ports MUST honor the NFKD pre-normalization contract for recovery; the case demonstrates the byte-level consequences.
 - **Raw unicode in passwords (no Myne-side normalization).** The `password-unicode` case feeds the 9 NFC bytes of `"şifre-ñ"` directly — Myne deliberately does NOT normalize passwords. The wrap-key bytes for this case differ from `recovery-nfkd-unicode` even with the same byte length and salt structure, because the salt prefix differs.
 
@@ -59,7 +61,7 @@ If the reference implementation changes (must not happen byte-stably without a m
 
 ```bash
 cargo test -p protocol --lib emit_argon2id_wrap_vectors_for_paste -- --ignored
-# Allow ~20 seconds; 6 cases × ~3s per Argon2id derivation at canonical params.
+# Allow ~25 seconds; 7 cases × ~3s per Argon2id derivation at canonical params.
 cp /tmp/myne_argon2id_vectors.json vectors/argon2id/v0.1/cases.json
 ```
 

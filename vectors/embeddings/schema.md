@@ -51,7 +51,7 @@ The encode side is **pure and deterministic** given the caller-supplied `nonce` 
 vectors/embeddings/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 12 KAT cases (encrypt + decrypt + AEAD-fail + structural parse-fail)
+    └── cases.json         ← array of 13 KAT cases (encrypt + decrypt + AEAD-fail + structural parse-fail)
 ```
 
 ## JSON shape

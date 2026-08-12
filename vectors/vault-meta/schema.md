@@ -71,6 +71,31 @@ cargo test -p protocol --lib emit_vault_meta_parse_fail_vectors -- --ignored
 # splice the JSON array fragment at /tmp/myne_vault_meta_parse_fail_vectors.json into the cases array
 ```
 
+## The v0.2 side (`v0.2/cases.json`)
+
+`v0.2/` pins `serialize_vault_meta_v0_2` + `parse_vault_meta_v0_2` — the `NTV5`
+`vault.meta` of a **migrated** vault (§10.4.1). The layout is this one,
+byte-for-byte, 345 bytes, with exactly two substitutions: magic `NTV5` at
+`[0..4]` and `protocol_version` `0x02` at `[4]`. Every field after those five
+bytes sits at the offset §9.3 already pins.
+
+The two reject case kinds are the load-bearing ones and they are deliberately a
+**pair**, because §10.5's anti-downgrade property is bidirectional:
+
+- **`parse_fail`** — the v0.2 parser must refuse an `MYV1` blob.
+- **`parse_fail_v0_1`** — the v0.1 parser must refuse an `NTV5` blob. This is the
+  direction that matters for a mixed fleet: an un-migrated client meeting a
+  migrated vault has to refuse it cleanly rather than half-parse a structure
+  whose meaning it does not know.
+
+A `roundtrip` case alone would pass in an implementation that ignored the magic
+entirely, which is precisely the implementation the pair exists to fail.
+
+Schema: [`schema/v0.2.json`](../../schema/v0.2.json) +
+[`schema/v0.2/vault-meta.json`](../../schema/v0.2/vault-meta.json).
+Generator: `emit_vault_meta_v0_2_vectors_for_paste` (`protocol/src/vault_meta_v0_2.rs`).
+Runner: `vault_meta_v0_2_vectors` (`protocol/tests/vectors.rs`).
+
 ## What this does NOT cover
 
 - **Password-side rewrite path.** Pinned by `vectors/vault_meta_rewrite/` — that category covers the `rewrite_vault_meta_password_side` function which preserves the recovery + items_key fields byte-for-byte while re-deriving the password-side under fresh KDF inputs. This category covers the full create-time encoder.

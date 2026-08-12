@@ -50,7 +50,7 @@ Both directions are pure and deterministic given the caller-supplied nonces (`_r
 vectors/attachment-blob/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 9 KAT cases (encrypt + decrypt + AEAD-fail + AAD + id-determinism)
+    └── cases.json         ← array of 18 KAT cases (encrypt + decrypt + AEAD-fail + AAD + id-determinism)
 ```
 
 ## JSON shape

@@ -55,6 +55,46 @@ For each case, a port:
 - **Field order and width.** `items_key_id` (16) always precedes `note_uuid` (16) where both appear; `content_type` is the trailing length-prefixed segment in `aad_note_content_encrypt`.
 - **Coverage.** The harness asserts all 8 `pub aad_*` builders have a case — adding a 9th builder without a vector fails the suite.
 
+## The v0.2 side (`v0.2/cases.json`)
+
+This category has a second version directory, and it is not a copy of the first.
+
+`v0.2/` pins the four **next-major** vault-scoped builders —
+`aad_password_wrap_v0_2`, `aad_recovery_wrap_v0_2`,
+`aad_vault_items_key_wrap_v0_2` and the generic `aad_singleton_blob_v0_2`. Every
+one of them opens with the 10-byte prefix `"myne.v0.2|"` and the `0x02`
+`protocol_version` byte, both listed as **major-version-event constants** in the
+main repo's root `CLAUDE.md`. Those 11 bytes are the whole of the §10.5
+anti-downgrade separation: the same role under the two majors yields different
+AAD, which is why role strings are safely reused across versions.
+
+Two structural differences are easy to mis-port:
+
+1. **There are no per-family singleton builders in v0.2.** No
+   `aad_prefs_blob_v0_2`. The §10.4.1 whole-vault migration walks the blob
+   families and rebuilds each one's AAD from its role string through the single
+   generic `aad_singleton_blob_v0_2`, so **the role is an input** rather than
+   baked into a function name. The v0.2 cases therefore carry
+   `input_role_label`, and at least two roles of *different lengths* are pinned
+   — same-length roles cannot catch an implementation that hardcoded the `u16`
+   length prefix instead of computing it.
+2. **The two note-scoped v0.2 builders are not here.** `aad_nc05_item_key_wrap`
+   and `aad_nc05_content_encrypt` are pinned by
+   [`crdt-note-blob`](../crdt-note-blob/schema.md)'s own `aad_construction`
+   cases. One home per builder — duplicating them would create a second place to
+   forget.
+
+On `input_kdf_params` in the two wrap cases: v0.2's own KDF is **not allocated
+yet**, so those cases carry the v0.1 canonical block. What they pin is the
+*framing* — that the param block is bound at all, and at which offset — not a
+v0.2 parameter choice. When v0.2 picks its KDF the values change and the offsets
+do not.
+
+Schema: [`schema/v0.2.json`](../../schema/v0.2.json) +
+[`schema/v0.2/aad-construction.json`](../../schema/v0.2/aad-construction.json).
+Generator: `emit_aad_construction_v0_2_vectors_for_paste` (`protocol/src/aead.rs`).
+Runner: `aad_construction_v0_2_vectors` (`protocol/tests/vectors.rs`).
+
 ## What this does NOT cover
 
 - **The CTX/AEAD seal itself.** How the AAD is hashed into the Poly1305 tag and the CTX commitment is pinned by `ctx-aead`'s `encrypt` / `decrypt_ok` / `decrypt_aead_fail` cases, not here.

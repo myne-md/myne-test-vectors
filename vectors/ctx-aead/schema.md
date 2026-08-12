@@ -47,7 +47,7 @@ A port runs each case based on `case_kind`:
 
 ## Invariants the vectors pin
 
-For the 13 cases in `cases.json`:
+For the 18 cases in `cases.json`:
 
 - **Every pub `aad_*` builder gets at least one canonical-bytes pin.** The 8 `aad_canonical_bytes` cases collectively name each builder by `input_builder_name`. Drift in any builder's byte assembly surfaces immediately on regeneration.
 - **Primitive AEAD byte output at empty-AAD and content-AAD scopes.** The 2 `encrypt` cases cover (a) bare-primitive bytes with no AAD, (b) realistic AAD shape (58-byte `aad_note_content_encrypt` output) — same primitive, different AAD context.

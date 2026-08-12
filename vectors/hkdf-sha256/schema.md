@@ -39,7 +39,7 @@ A port runs each case as: decode `input_root_key_hex` (32 bytes), map `input_rol
 
 ## Invariants the vectors pin
 
-For the 18 cases in `cases.json`:
+For the 40 cases in `cases.json` (the runner iterates `SubkeyRole::ALL`, so this count follows the registry rather than pinning it):
 
 - **HKDF prefix is exactly `"myne.v0.1 "`.** Trailing space is load-bearing. Drift here surfaces as a mismatch across every vector.
 - **Role-string registry is exact.** The six registered strings only — case-sensitive, no whitespace, no separator. The `informational_info_utf8_hex` field documents the exact info-parameter assemblies (23 B `itemsKey-wrap`, 19 B `prefs-key`, 26 B `search-index-key`, 33 B `attachments-catalog-key`, 29 B `attachments-id-hmac`, 27 B `session-state-key`, each including the 10-byte prefix).
