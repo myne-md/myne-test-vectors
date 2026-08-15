@@ -14,7 +14,8 @@
     "expected_filename",
     "expected_layout",
     "expected_dropped",
-    "expected_export_suffix"
+    "expected_export_suffix",
+    "expected_emit_alias"
   ],
   "properties": {
     "vector_id": {
@@ -117,6 +118,82 @@
     "expected_export_suffix": {
       "type": "string",
       "description": "What the attachments-included export appends after the final filename inside `![[<final name><suffix>]]` (markdown-dialect.md §6 export transform 1). A pixel `w=` (optionally with `h=`) becomes Obsidian's own `|300` / `|300x200` spelling; every other segment, including a percentage width Obsidian has no slot for, travels through unchanged in its original order after the dimension. An unkeyed segment contributes nothing, because the final export name already stands in for the whole filename. Empty string when there is nothing to carry."
+    },
+    "expected_emit_alias": {
+      "type": "string",
+      "description": "The alias the emitter must produce from this parse, byte for byte. REQUIRED, because without it the retention half of the rule is pinned by nothing on the side that owns it: for an `unknown-key` case, expected_filename, expected_layout and expected_dropped are all byte-identical whether the parser retains the unrecognised segment or throws it away, and retention was observable only through expected_export_suffix, which the RUST runner reads. A TypeScript parser that dropped `future=keepme` therefore passed every case in this file, and the next time the author touched that embed the emitter rebuilt the alias without it and the bytes were gone. Both retained buckets belong here: an unrecognised key, and a KNOWN key whose value this version cannot read (the second is what version skew produces the moment a newer client widens a bound, and it is dropped-and-reported rather than dropped-and-silent, which is a difference in whether the reader is TOLD, not in whether the bytes survive)."
     }
-  }
+  },
+  "allOf": [
+    {
+      "title": "An `invalid` case must report at least one dropped segment",
+      "description": "The category's one normative rule is the split between a KNOWN key with a bad value (dropped AND reported) and an UNRECOGNISED key (dropped SILENTLY). Nothing bound `case_kind` to `expected_dropped`, so flipping an `invalid` case to `expected_dropped: []` and an `unknown-key` case to a non-empty one both validated clean. A mislabelled case then teaches every port the opposite of the rule this category exists to pin. Eight other injections were correctly rejected, so the schema was strict everywhere except the one place it had to be.",
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "invalid"
+          }
+        },
+        "required": [
+          "case_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "expected_dropped": {
+            "minItems": 1,
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "title": "An `unknown-key` case must report nothing",
+      "description": "The other half of the same split, and the direction that costs a user something: reporting an unrecognised key would put a warning on every image a newer client styled.",
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "unknown-key"
+          }
+        },
+        "required": [
+          "case_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "expected_dropped": {
+            "maxItems": 0,
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "title": "A width is a pixel count or a percentage, never both",
+      "description": "The grammar makes it unreachable, and a case setting both validated clean, so the schema accepted a shape no implementation could produce.",
+      "not": {
+        "properties": {
+          "expected_layout": {
+            "properties": {
+              "width_px": {
+                "type": "integer"
+              },
+              "width_percent": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "width_px",
+              "width_percent"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "expected_layout"
+        ]
+      }
+    }
+  ]
 }

@@ -69,12 +69,44 @@ pins the parse and the export. One case shape, discriminated by `case_kind`:
   Empty for every `unknown-key` case, which is the whole point of the split.
 - `expected_export_suffix`: what the export appends after the final filename inside
   `![[<final name><suffix>]]`. Empty when there is nothing to carry.
+- `expected_emit_alias`: the alias the emitter must produce from this parse, byte for byte.
+  It carries the RETENTION half of the rule, which nothing else here pins. For an `unknown-key`
+  case the three fields above are byte-identical whether the parser retains the unrecognised
+  segment or throws it away, so retention was observable only through `expected_export_suffix`,
+  which the **Rust** runner reads. A TypeScript parser that dropped `future=keepme` therefore
+  passed every case in this file, and the next time the author touched that embed the emitter
+  rebuilt the alias without it and the bytes were gone. Both retained buckets belong here: an
+  unrecognised key, and a known key whose value this version cannot read. The second is what
+  version skew produces the moment a newer client widens a bound, and the two differ in whether
+  the reader is TOLD, not in whether the bytes survive.
 
 ## Consumers
 
 - **TypeScript**, in the main repo's Vitest suite: asserts `parseEmbedAlias` against
-  `expected_filename` / `expected_layout` / `expected_dropped`.
+  `expected_filename` / `expected_layout` / `expected_dropped`, and `emitEmbedAlias` against
+  `expected_emit_alias`.
 - **Rust**, in `myne-core`: asserts `obsidian_layout_suffix` against `expected_export_suffix`.
 
 A case that fails on either side is a stop-the-world bug: it means a note laid out on one client
 reads differently on another, or an export silently loses a choice the author made.
+
+## What this does NOT cover
+
+Stated rather than left to be discovered, because a conformance category's silence reads as
+coverage.
+
+- **Four ambiguous parses have no case**, and a reader building from the prose here has to guess
+  the same way: an unkeyed segment AFTER a keyed one (`photo.png|w=300|foo.png`), a trailing pipe
+  or empty segment (`photo.png|`), whitespace around a key (`photo.png| w=300`, `w = 300`), and an
+  empty filename carrying layout (`|w=300`). A hand-typed alias will have the third.
+- **The `h=` semantic is one word in the grammar and two behaviours in the renderer.** An image
+  applies it as an exact box; a PDF applies it as a maximum height. The value grammar is identical
+  and no case distinguishes them, because these vectors pin the PARSE, not the render.
+- **Nothing here exercises a `]` or a line break inside an alias.** Both are forbidden by
+  `wikilink.md` §10 rather than by this grammar, and both are refused at the authoring path.
+
+## Regeneration
+
+Hand-curated, no generator. `expected_emit_alias` is the one field mechanically derivable from the
+others, and it is written out rather than derived on purpose: a field the runner computes the same
+way the implementation does asserts nothing.

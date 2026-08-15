@@ -19,7 +19,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": ""
+      "expected_export_suffix": "",
+      "expected_emit_alias": "photo.png"
     },
     {
       "vector_id": "embed-layout/v0.1/width-px",
@@ -36,7 +37,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300"
+      "expected_export_suffix": "|300",
+      "expected_emit_alias": "photo.png|w=300"
     },
     {
       "vector_id": "embed-layout/v0.1/width-percent",
@@ -53,7 +55,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|w=100%"
+      "expected_export_suffix": "|w=100%",
+      "expected_emit_alias": "photo.png|w=100%"
     },
     {
       "vector_id": "embed-layout/v0.1/width-and-height",
@@ -70,7 +73,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300x200"
+      "expected_export_suffix": "|300x200",
+      "expected_emit_alias": "photo.png|w=300|h=200"
     },
     {
       "vector_id": "embed-layout/v0.1/align-center",
@@ -87,7 +91,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|align=center"
+      "expected_export_suffix": "|align=center",
+      "expected_emit_alias": "photo.png|align=center"
     },
     {
       "vector_id": "embed-layout/v0.1/order-free",
@@ -104,7 +109,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300|align=center"
+      "expected_export_suffix": "|300|align=center",
+      "expected_emit_alias": "photo.png|w=300|align=center"
     },
     {
       "vector_id": "embed-layout/v0.1/ceiling-exact",
@@ -121,7 +127,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|8192"
+      "expected_export_suffix": "|8192",
+      "expected_emit_alias": "photo.png|w=8192"
     },
     {
       "vector_id": "embed-layout/v0.1/filename-with-pipe",
@@ -138,7 +145,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": ""
+      "expected_export_suffix": "",
+      "expected_emit_alias": "re|port.png"
     },
     {
       "vector_id": "embed-layout/v0.1/filename-with-pipe-and-key",
@@ -155,7 +163,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300"
+      "expected_export_suffix": "|300",
+      "expected_emit_alias": "re|port.png|w=300"
     },
     {
       "vector_id": "embed-layout/v0.1/filename-looks-like-a-key",
@@ -172,7 +181,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": ""
+      "expected_export_suffix": "",
+      "expected_emit_alias": "w=300.png"
     },
     {
       "vector_id": "embed-layout/v0.1/alt-plain",
@@ -189,7 +199,8 @@
         "alt": "A sunset"
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|alt=A sunset"
+      "expected_export_suffix": "|alt=A sunset",
+      "expected_emit_alias": "photo.png|alt=A sunset"
     },
     {
       "vector_id": "embed-layout/v0.1/alt-terminal-with-pipes",
@@ -206,7 +217,8 @@
         "alt": "A sunset | 2026"
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|alt=A sunset | 2026"
+      "expected_export_suffix": "|alt=A sunset | 2026",
+      "expected_emit_alias": "photo.png|alt=A sunset | 2026"
     },
     {
       "vector_id": "embed-layout/v0.1/alt-terminal-swallows-later-key",
@@ -223,7 +235,8 @@
         "alt": "a|w=300"
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|alt=a|w=300"
+      "expected_export_suffix": "|alt=a|w=300",
+      "expected_emit_alias": "photo.png|alt=a|w=300"
     },
     {
       "vector_id": "embed-layout/v0.1/alt-authored-empty",
@@ -240,7 +253,8 @@
         "alt": ""
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|alt="
+      "expected_export_suffix": "|alt=",
+      "expected_emit_alias": "photo.png|alt="
     },
     {
       "vector_id": "embed-layout/v0.1/all-keys",
@@ -257,7 +271,8 @@
         "alt": "A | B"
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300x200|align=center|alt=A | B"
+      "expected_export_suffix": "|300x200|align=center|alt=A | B",
+      "expected_emit_alias": "photo.png|w=300|h=200|align=center|alt=A | B"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-width-non-numeric",
@@ -276,7 +291,8 @@
       "expected_dropped": [
         "w=abc"
       ],
-      "expected_export_suffix": "|w=abc"
+      "expected_export_suffix": "|w=abc",
+      "expected_emit_alias": "photo.png|w=abc"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-width-zero",
@@ -295,7 +311,8 @@
       "expected_dropped": [
         "w=0"
       ],
-      "expected_export_suffix": "|w=0"
+      "expected_export_suffix": "|w=0",
+      "expected_emit_alias": "photo.png|w=0"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-width-leading-zero",
@@ -314,7 +331,8 @@
       "expected_dropped": [
         "w=0300"
       ],
-      "expected_export_suffix": "|w=0300"
+      "expected_export_suffix": "|w=0300",
+      "expected_emit_alias": "photo.png|w=0300"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-width-over-ceiling",
@@ -333,7 +351,8 @@
       "expected_dropped": [
         "w=8193"
       ],
-      "expected_export_suffix": "|w=8193"
+      "expected_export_suffix": "|w=8193",
+      "expected_emit_alias": "photo.png|w=8193"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-percent-over-100",
@@ -352,7 +371,8 @@
       "expected_dropped": [
         "w=101%"
       ],
-      "expected_export_suffix": "|w=101%"
+      "expected_export_suffix": "|w=101%",
+      "expected_emit_alias": "photo.png|w=101%"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-height-percent",
@@ -371,7 +391,8 @@
       "expected_dropped": [
         "h=50%"
       ],
-      "expected_export_suffix": "|h=50%"
+      "expected_export_suffix": "|h=50%",
+      "expected_emit_alias": "photo.png|h=50%"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-align-value",
@@ -390,7 +411,8 @@
       "expected_dropped": [
         "align=diagonal"
       ],
-      "expected_export_suffix": "|align=diagonal"
+      "expected_export_suffix": "|align=diagonal",
+      "expected_emit_alias": "photo.png|align=diagonal"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-align-case",
@@ -409,7 +431,8 @@
       "expected_dropped": [
         "align=Center"
       ],
-      "expected_export_suffix": "|align=Center"
+      "expected_export_suffix": "|align=Center",
+      "expected_emit_alias": "photo.png|align=Center"
     },
     {
       "vector_id": "embed-layout/v0.1/invalid-keeps-siblings",
@@ -428,7 +451,8 @@
       "expected_dropped": [
         "w=abc"
       ],
-      "expected_export_suffix": "|w=abc|align=center"
+      "expected_export_suffix": "|w=abc|align=center",
+      "expected_emit_alias": "photo.png|align=center|w=abc"
     },
     {
       "vector_id": "embed-layout/v0.1/duplicate-key",
@@ -447,7 +471,8 @@
       "expected_dropped": [
         "w=400"
       ],
-      "expected_export_suffix": "|300|w=400"
+      "expected_export_suffix": "|300|w=400",
+      "expected_emit_alias": "photo.png|w=300|w=400"
     },
     {
       "vector_id": "embed-layout/v0.1/unknown-key-silent",
@@ -464,7 +489,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|z=9"
+      "expected_export_suffix": "|z=9",
+      "expected_emit_alias": "photo.png|z=9"
     },
     {
       "vector_id": "embed-layout/v0.1/unknown-key-not-folded-into-filename",
@@ -481,7 +507,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|future=x"
+      "expected_export_suffix": "|future=x",
+      "expected_emit_alias": "photo.png|future=x"
     },
     {
       "vector_id": "embed-layout/v0.1/unknown-key-case-sensitive",
@@ -498,7 +525,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|W=300"
+      "expected_export_suffix": "|W=300",
+      "expected_emit_alias": "photo.png|W=300"
     },
     {
       "vector_id": "embed-layout/v0.1/empty-alias",
@@ -515,7 +543,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": ""
+      "expected_export_suffix": "",
+      "expected_emit_alias": ""
     },
     {
       "vector_id": "embed-layout/v0.1/height-only",
@@ -532,7 +561,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|h=200"
+      "expected_export_suffix": "|h=200",
+      "expected_emit_alias": "photo.png|h=200"
     },
     {
       "vector_id": "embed-layout/v0.1/percent-width-with-height",
@@ -549,7 +579,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|w=100%|h=200"
+      "expected_export_suffix": "|w=100%|h=200",
+      "expected_emit_alias": "photo.png|w=100%|h=200"
     },
     {
       "vector_id": "embed-layout/v0.1/filename-with-pipe-and-equals",
@@ -566,7 +597,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|port=v2.png"
+      "expected_export_suffix": "|port=v2.png",
+      "expected_emit_alias": "re|port=v2.png"
     },
     {
       "vector_id": "embed-layout/v0.1/unknown-key-retained-on-emit",
@@ -583,7 +615,8 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": "|300|future=keepme"
+      "expected_export_suffix": "|300|future=keepme",
+      "expected_emit_alias": "photo.png|w=300|future=keepme"
     },
     {
       "vector_id": "embed-layout/v0.1/non-canonical-key-is-filename",
@@ -600,7 +633,214 @@
         "alt": null
       },
       "expected_dropped": [],
-      "expected_export_suffix": ""
+      "expected_export_suffix": "",
+      "expected_emit_alias": "re|2024=report.png"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/align-left",
+      "description": "align=left, one of the two closed-vocabulary values no case exercised. An implementation that recognised only `center` passed every other case here.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d6c656674",
+      "informational_alias": "photo.png|align=left",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": "left",
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|align=left",
+      "expected_emit_alias": "photo.png|align=left"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/align-right",
+      "description": "align=right, the other. This category's sibling `task-query-grammar` pins BOTH halves of its closedness claim; this one pinned a third of one.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d7269676874",
+      "informational_alias": "photo.png|align=right",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": "right",
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|align=right",
+      "expected_emit_alias": "photo.png|align=right"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-align-uppercase",
+      "description": "A value outside the closed set, differing only in case. The vocabulary is exact, so `Center` is dropped and reported rather than folded.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d43656e746572",
+      "informational_alias": "photo.png|align=Center",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "align=Center"
+      ],
+      "expected_export_suffix": "|align=Center",
+      "expected_emit_alias": "photo.png|align=Center"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-height-zero",
+      "description": "h=0 is below the closed grammar's floor. Dropped and reported, never clamped to 1: substituting the nearest legal number silently replaces a choice the author stated.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c683d30",
+      "informational_alias": "photo.png|h=0",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "h=0"
+      ],
+      "expected_export_suffix": "|h=0",
+      "expected_emit_alias": "photo.png|h=0"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-height-over-ceiling",
+      "description": "h=8193 is one past the 8192 ceiling. The ceiling exists to close the grammar rather than to bound the render, and the boundary was asserted by no case.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c683d38313933",
+      "informational_alias": "photo.png|h=8193",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "h=8193"
+      ],
+      "expected_export_suffix": "|h=8193",
+      "expected_emit_alias": "photo.png|h=8193"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/height-at-ceiling",
+      "description": "h=8192 is the last legal value, so the reject above is a boundary rather than a range.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c683d38313932",
+      "informational_alias": "photo.png|h=8192",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": 8192,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|h=8192",
+      "expected_emit_alias": "photo.png|h=8192"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-width-percent-zero",
+      "description": "w=0% is below the percentage floor. `w=100%` was the only percentage any case carried.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d3025",
+      "informational_alias": "photo.png|w=0%",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=0%"
+      ],
+      "expected_export_suffix": "|w=0%",
+      "expected_emit_alias": "photo.png|w=0%"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/width-percent-at-floor",
+      "description": "w=1%, the first legal percentage.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d3125",
+      "informational_alias": "photo.png|w=1%",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": 1,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|w=1%",
+      "expected_emit_alias": "photo.png|w=1%"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-non-ascii",
+      "description": "A filename in a non-Latin script, carried byte-for-byte. The hex encoding is justified by non-ASCII transport and no case carried a single non-ASCII byte.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "e58699e79c9f2e706e677c773d333030",
+      "informational_alias": "写真.png|w=300",
+      "expected_filename": "写真.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300",
+      "expected_emit_alias": "写真.png|w=300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/alt-non-ascii",
+      "description": "Alt prose outside ASCII, including a combining sequence. An implementation that normalised the alias would change the author's words.",
+      "case_kind": "alt-terminal",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c743dc39c6ec3af636f64652064c3a96ac3a0207675",
+      "informational_alias": "photo.png|alt=Ünïcode déjà vu",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": "Ünïcode déjà vu"
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|alt=Ünïcode déjà vu",
+      "expected_emit_alias": "photo.png|alt=Ünïcode déjà vu"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-nfd-preserved",
+      "description": "A filename in NFD (e + combining acute) is NOT normalised to NFC. Byte-preservation is the rule for note bytes; a client that normalised here would rewrite a filename the catalog stores in the other form.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "63616665cc812e706e677c616c69676e3d63656e746572",
+      "informational_alias": "café.png|align=center",
+      "expected_filename": "café.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": "center",
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|align=center",
+      "expected_emit_alias": "café.png|align=center"
     }
   ]
 }
