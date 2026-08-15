@@ -14,8 +14,8 @@ This is a companion repo of the [Myne multi-repo project](https://github.com/myn
 
 What exists today:
 
-- **52 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json` — 708 cases across 55 files.
-- **Two protocol versions.** 51 categories have a `v0.1/`; four have a `v0.2/` (`crdt-note-blob`, which is v0.2-only, plus the `vault-meta`, `vault-themes` and `aad-construction` sides of the next major).
+- **53 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json` — 726 cases across 56 files.
+- **Two protocol versions.** 52 categories have a `v0.1/`; four have a `v0.2/` (`crdt-note-blob`, which is v0.2-only, plus the `vault-meta`, `vault-themes` and `aad-construction` sides of the next major).
 - A **canonical machine-readable contract** per version: the root schema `schema/<version>.json` dispatches per-category sub-schemas under `schema/<version>/` (one file per category) via `oneOf` keyed on the `schema` field. The two roots are separate documents because `protocol_version` is a `const` in each — see [Validating vectors](#validating-vectors).
 - **Git hooks** (`lefthook.yml`): JSON well-formedness and text hygiene on commit, plus the full `ajv` schema sweep on push.
 - **CI** (`.woodpecker.yml`): the same per-category `ajv` sweep on every push, pull request and manual run.
@@ -33,7 +33,7 @@ Myne is end-to-end encrypted and local-first: a 20-character account number iden
 
 Each category pins one surface of the protocol. They fall into a few shapes:
 
-- **On-disk blob codecs** — encrypt, decrypt-success, non-distinguishing AEAD-failure, and distinguishable structural parse-reject cases for each magic-prefixed format (`MY01` notes, `MYV1` vault metadata, `MYP1` prefs, `MYS1` search, `MYW1` workspace, `MYI1` indices, `MYA1`/`MYC1` attachments, `MYD1` dictionary, `MYQ1` quick-unlock, `MYE1` attachment-text, `MYB1` backup container, `MYR1` AI embeddings, `MYG1` graph layout, `MYK1` pending capture, `MYF1` share import, `MYT1` custom themes). `MYH1` (`vault.head-state`) is the one family in this group that is **not** AEAD-encrypted — integrity is the vault head's own MAC — so it pins a `mac_fail` case kind instead of an AEAD-failure one.
+- **On-disk blob codecs** — encrypt, decrypt-success, non-distinguishing AEAD-failure, and distinguishable structural parse-reject cases for each magic-prefixed format (`MY01` notes, `MYV1` vault metadata, `MYP1` prefs, `MYS1` search, `MYW1` workspace, `MYI1` indices, `MYA1`/`MYC1` attachments, `MYD1` dictionary, `MYQ1` quick-unlock, `MYE1` attachment-text, `MYB1` backup container, `MYR1` AI embeddings, `MYG1` graph layout, `MYK1` pending capture, `MYF1` share import, `MYT1` custom themes, `MYL1` sealed vault label). `MYH1` (`vault.head-state`) is the one family in this group that is **not** AEAD-encrypted — integrity is the vault head's own MAC — so it pins a `mac_fail` case kind instead of an AEAD-failure one.
 - **Primitive derivations** — HKDF-SHA-256 subkey roles, Argon2id wrap-key derivations at canonical Phase 1 parameters, and the XChaCha20-Poly1305 + CTX-commitment AEAD with every AAD builder's canonical byte assembly.
 - **Identity** — Crockford-base32 account-number parsing plus the frozen Damm-32 quasigroup table that decides which account numbers are valid.
 - **Next-major (v0.2) formats** — the `NC05` CRDT note type, the `NTV5` vault-meta and `MYT5` themes envelopes, and the four v0.2 AAD builders. Each pins the two constants that make v0.2 a distinct major — the AAD prefix `"myne.v0.2|"` and the `0x02` version byte — and, more importantly, pins them in **both directions**: a v0.1 reader must refuse a v0.2 blob and a v0.2 reader must refuse a v0.1 one. A round-trip case alone passes in an implementation that ignores the magic entirely, which is the implementation these pairs exist to fail.
@@ -48,7 +48,7 @@ myne-test-vectors/
 ├── schema/
 │   ├── v0.1.json              ← v0.1 root schema (top-level shape + oneOf dispatch on `schema`)
 │   ├── v0.1/
-│   │   └── <category>.json    ← one per-category case schema (51 files)
+│   │   └── <category>.json    ← one per-category case schema (52 files)
 │   ├── v0.2.json              ← v0.2 root schema — a separate document, not an extension
 │   └── v0.2/
 │       └── <category>.json    ← one per-category case schema (4 files)
@@ -64,7 +64,7 @@ myne-test-vectors/
 
 Adding a new category requires landing its sub-schema under `schema/<version>/` and extending both the `schema` enum and the `oneOf` branches in that version's root schema in lockstep, then adding the `vectors/<category>/` files and a runner in the main repo.
 
-**The invariant to check after any landing**, per version: category directories = sub-schema files = root-schema `enum` entries = root-schema `oneOf` branches. Today that is 51 for v0.1 and 4 for v0.2. All four numbers move together or the landing is incomplete.
+**The invariant to check after any landing**, per version: category directories = sub-schema files = root-schema `enum` entries = root-schema `oneOf` branches. Today that is 52 for v0.1 and 4 for v0.2. All four numbers move together or the landing is incomplete.
 
 ### Field conventions
 
