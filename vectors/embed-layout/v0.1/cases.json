@@ -1,0 +1,606 @@
+{
+  "schema": "embed-layout",
+  "protocol_version": "v0.1",
+  "spec_section": "wikilink.md §2 form 12 / §5.1; markdown-dialect.md §6 / §7",
+  "description": "Pins the form-C embed layout segments (myne-md/myne#409): `![[att:<id>|filename|w=300|align=center|alt=free text to the end]]`. Two implementations must agree and neither can detect drift alone: the canonical grammar is TypeScript in `@myne/dialect/embedLayout` (source-consumed by desktop, web and mobile), the export transform is Rust in `myne-core`'s `rewrite_embeds_to_final_names`: so this category is what holds them together. It pins four rules that each exist because of a specific failure: segment 1 is ALWAYS the filename and an unkeyed later segment rejoins it (an attachment filename may already contain a pipe, so a positional or shape-recognised grammar would silently reinterpret notes already on disk); `alt=` is terminal (alt prose contains pipes, and the importer carries markdown-image alt straight into this slot); a KNOWN key with an invalid value is dropped AND reported while an UNRECOGNISED key is dropped SILENTLY (version skew across independently-versioned clients reading one synced vault is not an error the reader can act on); and the export translates only a pixel `w=` into Obsidian's own spelling, passing everything else through opaquely rather than deleting bytes it failed to understand. Deterministic cross-client behavior in the property-coercion / markdown-comment class: not a codec, not cryptographic. Hand-curated; a failing vector in any port is a stop-the-world bug.",
+  "cases": [
+    {
+      "vector_id": "embed-layout/v0.1/no-segments",
+      "description": "An alias with no segments is the filename entire.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e67",
+      "informational_alias": "photo.png",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": ""
+    },
+    {
+      "vector_id": "embed-layout/v0.1/width-px",
+      "description": "A pixel width, the most common case.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d333030",
+      "informational_alias": "photo.png|w=300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/width-percent",
+      "description": "A percentage width is column-relative and has no Obsidian slot, so it exports unchanged.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d31303025",
+      "informational_alias": "photo.png|w=100%",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": 100,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|w=100%"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/width-and-height",
+      "description": "Width with height exports as Obsidian's `x` form.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d3330307c683d323030",
+      "informational_alias": "photo.png|w=300|h=200",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": 200,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300x200"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/align-center",
+      "description": "An alignment is a Myne extension with no Obsidian counterpart, carried through verbatim.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d63656e746572",
+      "informational_alias": "photo.png|align=center",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": "center",
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|align=center"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/order-free",
+      "description": "Keys are order-free on parse, and the dimension still leads on export.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d63656e7465727c773d333030",
+      "informational_alias": "photo.png|align=center|w=300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": "center",
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300|align=center"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/ceiling-exact",
+      "description": "The ceiling value itself is valid.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d38313932",
+      "informational_alias": "photo.png|w=8192",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 8192,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|8192"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-with-pipe",
+      "description": "THE regression this grammar exists for: an attachment filename may already contain a pipe, so an unkeyed later segment rejoins the filename rather than being read as a layout segment.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "72657c706f72742e706e67",
+      "informational_alias": "re|port.png",
+      "expected_filename": "re|port.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": ""
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-with-pipe-and-key",
+      "description": "The same filename alongside a real key. The export suffix carries only the dimension, because the final export name already stands in for the whole filename.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "72657c706f72742e706e677c773d333030",
+      "informational_alias": "re|port.png|w=300",
+      "expected_filename": "re|port.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-looks-like-a-key",
+      "description": "Segment 1 is the filename POSITIONALLY, so a filename that looks like a key is not one.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "773d3330302e706e67",
+      "informational_alias": "w=300.png",
+      "expected_filename": "w=300.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": ""
+    },
+    {
+      "vector_id": "embed-layout/v0.1/alt-plain",
+      "description": "Author-supplied alt text replaces the filename as the accessible name.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c743d412073756e736574",
+      "informational_alias": "photo.png|alt=A sunset",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": "A sunset"
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|alt=A sunset"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/alt-terminal-with-pipes",
+      "description": "`alt=` is terminal and swallows pipes, so alt prose is unconstrained. The importer carries markdown-image alt text straight into this slot, so a forbidden character here would mean mutating user content on import.",
+      "case_kind": "alt-terminal",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c743d412073756e736574207c2032303236",
+      "informational_alias": "photo.png|alt=A sunset | 2026",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": "A sunset | 2026"
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|alt=A sunset | 2026"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/alt-terminal-swallows-later-key",
+      "description": "Anything after `alt=` is alt text, including something that looks like a later key.",
+      "case_kind": "alt-terminal",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c743d617c773d333030",
+      "informational_alias": "photo.png|alt=a|w=300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": "a|w=300"
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|alt=a|w=300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/alt-authored-empty",
+      "description": "An authored-EMPTY alt is a real value meaning a decorative image, distinct from an absent alt.",
+      "case_kind": "alt-terminal",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c743d",
+      "informational_alias": "photo.png|alt=",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": ""
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|alt="
+    },
+    {
+      "vector_id": "embed-layout/v0.1/all-keys",
+      "description": "Every key at once, with alt last as the emitter always writes it.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d3330307c683d3230307c616c69676e3d63656e7465727c616c743d41207c2042",
+      "informational_alias": "photo.png|w=300|h=200|align=center|alt=A | B",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": 200,
+        "align": "center",
+        "alt": "A | B"
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300x200|align=center|alt=A | B"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-width-non-numeric",
+      "description": "A KNOWN key with a value the closed grammar rejects is dropped AND reported. The export passes it through opaquely rather than deleting it: refusing to export bytes one side merely failed to understand is how an export loses data.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d616263",
+      "informational_alias": "photo.png|w=abc",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=abc"
+      ],
+      "expected_export_suffix": "|w=abc"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-width-zero",
+      "description": "Zero is not a valid dimension.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d30",
+      "informational_alias": "photo.png|w=0",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=0"
+      ],
+      "expected_export_suffix": "|w=0"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-width-leading-zero",
+      "description": "Leading zeros are rejected so that parse(emit(x)) stays canonical.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d30333030",
+      "informational_alias": "photo.png|w=0300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=0300"
+      ],
+      "expected_export_suffix": "|w=0300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-width-over-ceiling",
+      "description": "Above the ceiling is dropped, NOT clamped to the ceiling: clamping would silently change the author's stated intent.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d38313933",
+      "informational_alias": "photo.png|w=8193",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=8193"
+      ],
+      "expected_export_suffix": "|w=8193"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-percent-over-100",
+      "description": "A percentage above 100 is rejected.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d31303125",
+      "informational_alias": "photo.png|w=101%",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=101%"
+      ],
+      "expected_export_suffix": "|w=101%"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-height-percent",
+      "description": "Percent is width-only: a percentage height resolves against a container these widgets have no fixed height for.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c683d353025",
+      "informational_alias": "photo.png|h=50%",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "h=50%"
+      ],
+      "expected_export_suffix": "|h=50%"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-align-value",
+      "description": "The alignment vocabulary is a closed set.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d646961676f6e616c",
+      "informational_alias": "photo.png|align=diagonal",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "align=diagonal"
+      ],
+      "expected_export_suffix": "|align=diagonal"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-align-case",
+      "description": "The closed set is case-sensitive; a case-folding entry point would be a second grammar.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c616c69676e3d43656e746572",
+      "informational_alias": "photo.png|align=Center",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "align=Center"
+      ],
+      "expected_export_suffix": "|align=Center"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/invalid-keeps-siblings",
+      "description": "A valid key beside an invalid one still applies.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d6162637c616c69676e3d63656e746572",
+      "informational_alias": "photo.png|w=abc|align=center",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": "center",
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=abc"
+      ],
+      "expected_export_suffix": "|w=abc|align=center"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/duplicate-key",
+      "description": "A known key written twice: the first wins and the repeat is reported. The emitter never produces one, so a duplicate is hand-authored.",
+      "case_kind": "invalid",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d3330307c773d343030",
+      "informational_alias": "photo.png|w=300|w=400",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [
+        "w=400"
+      ],
+      "expected_export_suffix": "|300|w=400"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/unknown-key-silent",
+      "description": "An UNRECOGNISED key is dropped SILENTLY and never reported. This is version skew: three clients ship on independent versions against one synced vault, so a key an older client does not know is routine, the note is right and the reader can do nothing about it.",
+      "case_kind": "unknown-key",
+      "input_alias_utf8_hex": "70686f746f2e706e677c7a3d39",
+      "informational_alias": "photo.png|z=9",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|z=9"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/unknown-key-not-folded-into-filename",
+      "description": "An unrecognised key must NOT rejoin the filename, or an older client would render the chip label as `photo.png|align=center`.",
+      "case_kind": "unknown-key",
+      "input_alias_utf8_hex": "70686f746f2e706e677c6675747572653d78",
+      "informational_alias": "photo.png|future=x",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|future=x"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/unknown-key-case-sensitive",
+      "description": "The key vocabulary is case-sensitive, so `W=300` is an unknown key rather than a width.",
+      "case_kind": "unknown-key",
+      "input_alias_utf8_hex": "70686f746f2e706e677c573d333030",
+      "informational_alias": "photo.png|W=300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|W=300"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/empty-alias",
+      "description": "A malformed embed with an empty alias parses to an empty filename rather than erroring. Parsing is total.",
+      "case_kind": "parse",
+      "input_alias_utf8_hex": "",
+      "informational_alias": "",
+      "expected_filename": "",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": ""
+    },
+    {
+      "vector_id": "embed-layout/v0.1/height-only",
+      "description": "A height with no width. Obsidian has no height-only spelling, so it travels as its own opaque segment rather than being dropped. This case is why the export used to delete it: it was consumed into the dimension slot and then emitted only alongside a width.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c683d323030",
+      "informational_alias": "photo.png|h=200",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": 200,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|h=200"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/percent-width-with-height",
+      "description": "Reachable in two clicks: import an Obsidian `300x200`, then pick Full width. The percentage has no Obsidian slot and the height has no height-only spelling, so both travel opaquely.",
+      "case_kind": "export",
+      "input_alias_utf8_hex": "70686f746f2e706e677c773d313030257c683d323030",
+      "informational_alias": "photo.png|w=100%|h=200",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": 100,
+        "height_px": 200,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|w=100%|h=200"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/filename-with-pipe-and-equals",
+      "description": "A legal filename containing BOTH a pipe and an equals sign. Segment 2 has key shape, so it cannot be told apart from a newer client's key; it is retained verbatim rather than guessed at, which round-trips the bytes even though the displayed filename is only the first segment.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "72657c706f72743d76322e706e67",
+      "informational_alias": "re|port=v2.png",
+      "expected_filename": "re",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|port=v2.png"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/unknown-key-retained-on-emit",
+      "description": "An unrecognised key is invisible to render and silent to the reader, but it must survive a re-emit: the emitter rebuilds the alias from the parse, so anything not retained is destroyed the next time an author touches the embed.",
+      "case_kind": "unknown-key",
+      "input_alias_utf8_hex": "70686f746f2e706e677c6675747572653d6b6565706d657c773d333030",
+      "informational_alias": "photo.png|future=keepme|w=300",
+      "expected_filename": "photo.png",
+      "expected_layout": {
+        "width_px": 300,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": "|300|future=keepme"
+    },
+    {
+      "vector_id": "embed-layout/v0.1/non-canonical-key-is-filename",
+      "description": "A segment whose key does not match the canonical shape (leading letter, then letters/digits/underscore/hyphen) is filename bytes, not a key. Pinned because the two implementations disagreed here: TypeScript rejoined it to the filename while Rust re-emitted it as an alias segment.",
+      "case_kind": "filename",
+      "input_alias_utf8_hex": "72657c323032343d7265706f72742e706e67",
+      "informational_alias": "re|2024=report.png",
+      "expected_filename": "re|2024=report.png",
+      "expected_layout": {
+        "width_px": null,
+        "width_percent": null,
+        "height_px": null,
+        "align": null,
+        "alt": null
+      },
+      "expected_dropped": [],
+      "expected_export_suffix": ""
+    }
+  ]
+}
