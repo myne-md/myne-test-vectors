@@ -68,7 +68,8 @@
         "task-recurrence",
         "task-query-grammar",
         "tls-exporter",
-        "vault-label"
+        "vault-label",
+        "embed-layout"
       ]
     },
     "protocol_version": {
@@ -763,6 +764,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-label.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "embed-layout"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/embed-layout.json"
           }
         }
       }

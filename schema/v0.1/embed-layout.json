@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/embed-layout.json",
+  "title": "embed-layout: case shape (v0.1)",
+  "description": "Pins the form-C embed LAYOUT SEGMENTS (wikilink.md §2 form 12 / §5.1, markdown-dialect.md §6, myne-md/myne#409): how a client splits `![[att:<id>|<alias>]]`'s alias into a display filename plus the author's layout choices, and what the attachments-included export writes in their place. Two implementations must agree and neither can detect drift alone: the canonical grammar is TypeScript in `@myne/dialect/embedLayout` (source-consumed by desktop, web and mobile), while the export transform is Rust in `myne-core`'s `rewrite_embeds_to_final_names`. This category is what holds them together. Deterministic cross-client behavior in the property-coercion / markdown-comment class: not a codec, not cryptographic. Each case pins the PARSE (filename, layout, reported drops) and, where an export is defined, the exported alias suffix. Hand-curated against the grammar; a failing vector in any port is a stop-the-world bug.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_alias_utf8_hex",
+    "informational_alias",
+    "expected_filename",
+    "expected_layout",
+    "expected_dropped",
+    "expected_export_suffix",
+    "expected_emit_alias"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^embed-layout/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'embed-layout/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "parse",
+        "filename",
+        "invalid",
+        "unknown-key",
+        "alt-terminal",
+        "export"
+      ],
+      "description": "parse = a well-formed layout is read; filename = the unkeyed-rejoin rule (a filename may contain a pipe); invalid = a KNOWN key with a value the closed grammar rejects, dropped AND reported; unknown-key = a key outside the closed vocabulary, dropped SILENTLY (version skew across independently-versioned clients reading one synced vault); alt-terminal = `alt=` swallowing the remainder including pipes; export = the case exists primarily to pin the exported suffix."
+    },
+    "input_alias_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})*$",
+      "description": "The alias as exact UTF-8 bytes (hex): everything between the form-C embed's first `|` and its closing `]]`. Hex-pinned so pipes, spaces and any non-ASCII transport unambiguously."
+    },
+    "informational_alias": {
+      "type": "string",
+      "description": "Human-readable mirror of input_alias_utf8_hex. Informational: the runner cross-checks it byte-equal against the hex; the hex is the contract."
+    },
+    "expected_filename": {
+      "type": "string",
+      "description": "The display filename after the split. Segment 1 is always the filename, and from segment 2 on an UNKEYED segment rejoins it with its `|`. May be empty for a malformed embed."
+    },
+    "expected_layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width_px",
+        "width_percent",
+        "height_px",
+        "align",
+        "alt"
+      ],
+      "description": "The author's resolved layout. Every field null means no choices. `alt` distinguishes three states: absent (null: the filename stands in as the accessible name), authored-empty (\"\": a deliberately decorative image), and authored text.",
+      "properties": {
+        "width_px": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "width_percent": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 100
+        },
+        "height_px": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 8192
+        },
+        "align": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "left",
+            "center",
+            "right",
+            null
+          ]
+        },
+        "alt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "expected_dropped": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The verbatim source text of every segment dropped AND worth reporting to the author, in document order. A KNOWN key carrying an invalid value lands here; an UNRECOGNISED key never does. That split is normative rather than cosmetic: an unrecognised key is a newer client's choice read by an older one, where the note is right and the reader can do nothing about it, so reporting it would put a warning on every embed the newer client styled."
+    },
+    "expected_export_suffix": {
+      "type": "string",
+      "description": "What the attachments-included export appends after the final filename inside `![[<final name><suffix>]]` (markdown-dialect.md §6 export transform 1). A pixel `w=` (optionally with `h=`) becomes Obsidian's own `|300` / `|300x200` spelling; every other segment, including a percentage width Obsidian has no slot for, travels through unchanged in its original order after the dimension. An unkeyed segment contributes nothing, because the final export name already stands in for the whole filename. Empty string when there is nothing to carry."
+    },
+    "expected_emit_alias": {
+      "type": "string",
+      "description": "The alias the emitter must produce from this parse, byte for byte. REQUIRED, because without it the retention half of the rule is pinned by nothing on the side that owns it: for an `unknown-key` case, expected_filename, expected_layout and expected_dropped are all byte-identical whether the parser retains the unrecognised segment or throws it away, and retention was observable only through expected_export_suffix, which the RUST runner reads. A TypeScript parser that dropped `future=keepme` therefore passed every case in this file, and the next time the author touched that embed the emitter rebuilt the alias without it and the bytes were gone. Both retained buckets belong here: an unrecognised key, and a KNOWN key whose value this version cannot read (the second is what version skew produces the moment a newer client widens a bound, and it is dropped-and-reported rather than dropped-and-silent, which is a difference in whether the reader is TOLD, not in whether the bytes survive)."
+    }
+  },
+  "allOf": [
+    {
+      "title": "An `invalid` case must report at least one dropped segment",
+      "description": "The category's one normative rule is the split between a KNOWN key with a bad value (dropped AND reported) and an UNRECOGNISED key (dropped SILENTLY). Nothing bound `case_kind` to `expected_dropped`, so flipping an `invalid` case to `expected_dropped: []` and an `unknown-key` case to a non-empty one both validated clean. A mislabelled case then teaches every port the opposite of the rule this category exists to pin. Eight other injections were correctly rejected, so the schema was strict everywhere except the one place it had to be.",
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "invalid"
+          }
+        },
+        "required": [
+          "case_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "expected_dropped": {
+            "minItems": 1,
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "title": "An `unknown-key` case must report nothing",
+      "description": "The other half of the same split, and the direction that costs a user something: reporting an unrecognised key would put a warning on every image a newer client styled.",
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "unknown-key"
+          }
+        },
+        "required": [
+          "case_kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "expected_dropped": {
+            "maxItems": 0,
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "title": "A width is a pixel count or a percentage, never both",
+      "description": "The grammar makes it unreachable, and a case setting both validated clean, so the schema accepted a shape no implementation could produce.",
+      "not": {
+        "properties": {
+          "expected_layout": {
+            "properties": {
+              "width_px": {
+                "type": "integer"
+              },
+              "width_percent": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "width_px",
+              "width_percent"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "expected_layout"
+        ]
+      }
+    }
+  ]
+}
