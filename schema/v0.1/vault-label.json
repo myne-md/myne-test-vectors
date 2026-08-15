@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-label.json",
+  "title": "vault-label - case shape (v0.1)",
+  "description": "Pins the byte mapping of protocol::vault_label_blob::encode_vault_label_blob_raw + decode_vault_label_blob, the MYL1 sealed label store (vault.label, §9.22, myne-md/myne#411). One file per vault at the vault root, carrying that vault's human-readable name and nothing else, so the vault picker can render it BEFORE any unlock: the authoritative label lives in vault.prefs (§9.5.2), which is sealed under a root_key-derived KEK and therefore unreadable at exactly that moment. The store is device-local, never synced and never in a backup. It is sealed under a PER-VAULT 32-byte wrap_key held in the OS keychain (service md.myne.vaultlabel), NOT a DeriveSubkey(root_key, ...) subkey, so there is NO HKDF SubkeyRole and the vectors supply wrap_key directly: a derived subkey cannot be destroyed on its own while its root survives, and per-vault destruction is what the per-VaultId cryptographic-erase guarantee rests on. Unlike its device-local siblings MYK1 (§9.18) and MYF1 (§9.20), this family is NOT vault-agnostic: aad_vault_label_blob binds the 16-byte VaultId the READER EXPECTED, not merely the one the blob carries, so a file moved between vault directories fails structurally or cryptographically rather than depending on a reader-side comparison someone has to remember. ciphertext_len is variable (plaintext_len + 32) with a 4 KiB plaintext cap (§9.22.4), enforced on both sides: an oversize ciphertext_len is a CiphertextLenOverflow reject before allocation, and an over-cap label is refused at write time rather than truncated. §10.3.1 strict-trailing is ENFORCED, so a blob longer than header + ciphertext_len is TrailingBytes rather than tolerated. Six case kinds: 'aad_construction' (the 45 canonical AAD bytes), 'encrypt' (encoder byte output), 'encode_fail' (the write-side cap refusal), 'decrypt_ok' (round trip to the label bytes), 'decrypt_aead_fail' (non-distinguishing AEAD failure per §6.4), 'parse_fail' (distinguishable pre-decryption structural reject, one per VaultLabelBlobError decode variant). Reference impl: protocol/src/vault_label_blob.rs and protocol/src/aead.rs::aad_vault_label_blob (main myne repository); spec: docs/spec/protocol.md §9.22 + §5.2 + §10.3.1.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-label/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'vault-label/v0.1/<descriptive-slug>'. Immutable once shipped, since downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "aad_construction",
+        "encrypt",
+        "encode_fail",
+        "decrypt_ok",
+        "decrypt_aead_fail",
+        "parse_fail"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "aad_construction - pin the canonical AAD bytes",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_aad_builder",
+        "input_vault_id_hex",
+        "expected_aad_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "aad_construction" },
+        "input_aad_builder": {
+          "const": "aad_vault_label_blob",
+          "description": "The single AAD builder this family uses. The device-local, per-vault AAD is deliberately NOT enrolled in the vault-scoped ctx-aead / aad-construction builder-enumeration categories, which is why it is pinned inside its own family here, the same way pending-capture and share-import handle theirs."
+        },
+        "input_vault_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The 16-byte VaultId (a UUIDv7 in raw bytes, not its 36-character rendering) that names the vaults/<id>/ directory."
+        },
+        "expected_aad_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{90}$",
+          "description": "The 45 canonical AAD bytes: AAD prefix 'myne.v0.1|' (10 B) || protocol_version 0x01 (1 B) || u16_be(16) || 'vault-label-blob' (16 B) || vault_id (16 B). Neither account_number_hash nor items_key_id is bound: the label lives outside every root_key lineage, and one account can hold two vault directories on one device."
+        }
+      }
+    },
+    {
+      "title": "encrypt - pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_wrap_key_hex",
+        "input_vault_id_hex",
+        "input_label_utf8_hex",
+        "input_nonce_hex",
+        "expected_vault_label_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte per-vault wrap_key (hex), supplied DIRECTLY. The codec is provider-agnostic and never derives this key: it is a random 32-byte value held in the OS keychain under service md.myne.vaultlabel, one per VaultId."
+        },
+        "input_vault_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte VaultId (hex). Written into the public header at offset 5 AND bound into the 45-byte AAD via aad_vault_label_blob."
+        },
+        "input_label_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The vault's name as UTF-8 bytes (hex). Length is measured in BYTES, not characters, and the codec applies no normalization of its own: it seals what it is handed. Up to MAX_VAULT_LABEL_PLAINTEXT_LEN (4096) bytes. A zero-length label is never written in production (§9.22.4 makes 'no file' the single representation of 'this device has no name for that vault'), which is a host-layer rule the codec does not itself enforce, so no case encodes one."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source this from the OS CSPRNG via encode_vault_label_blob; the vectors pin a constant so the output is reproducible."
+        },
+        "expected_vault_label_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Full encoder output, hex-encoded lowercase. Length = 49-byte header + label_len + 32-byte CTX tag. Decoders compare byte-equal."
+        },
+        "informational_label": {
+          "type": "string",
+          "description": "The label as readable text, for a human reading the file. Non-normative: input_label_utf8_hex is the input."
+        }
+      }
+    },
+    {
+      "title": "encode_fail - pin the write-side cap refusal",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_wrap_key_hex",
+        "input_vault_id_hex",
+        "input_label_utf8_hex",
+        "input_nonce_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encode_fail" },
+        "input_wrap_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_vault_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_label_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A label longer than MAX_VAULT_LABEL_PLAINTEXT_LEN (4096 bytes). The encoder MUST refuse it outright rather than truncating (§9.22.4): a silently shortened name is a wrong name, and a truncating port produces a blob that decodes cleanly forever after."
+        },
+        "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "expected_error": {
+          "const": "ciphertext_len_overflow",
+          "description": "Rust reference: VaultLabelBlobError::CiphertextLenOverflow, the same variant the read side raises for an oversize ciphertext_len."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok - pin the decoder's successful round trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "input_expected_vault_id_hex",
+        "expected_label_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_wrap_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_expected_vault_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The VaultId the READER is reading for, which is a decode INPUT rather than something read out of the blob. It is compared against the header's copy first, and it is the id bound into the AAD. This is the one field that separates this family from its vault-agnostic siblings MYK1 and MYF1, whose decoders take the id from the header."
+        },
+        "expected_label_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The recovered label as UTF-8 bytes (hex), byte-identical to what was sealed. A port that round-trips through a lossy or re-encoded string type fails here while passing the encrypt cases."
+        },
+        "informational_label": {
+          "type": "string",
+          "description": "The label as readable text, for a human reading the file. Non-normative."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail - pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "input_expected_vault_id_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+        "input_wrap_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_expected_vault_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: VaultLabelBlobError::CannotDecrypt). Implementations MUST NOT distinguish a tampered tag from a wrong wrap_key from a blob whose header was rewritten to claim the expected vault (spec §6.4). Note the split with parse_fail: an UNTOUCHED blob from another vault is the structural vault_id_mismatch, because header and expectation disagree; a blob whose header was ALSO rewritten passes that comparison and is refused by the AAD instead, and it lands here."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail - pin a distinguishable pre-decryption structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_wrap_key_hex",
+        "input_expected_vault_id_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE attempting any decryption: magic, protocol_version, the vault_id binding, ciphertext_len and the strict-trailing equality all run ahead of the AEAD stage (§9.22.1)."
+        },
+        "input_wrap_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The REAL wrap_key, deliberately. These fixtures are structurally distinguishable rejects, so a port that skips one of the checks decodes them successfully and the runner catches it. A dummy key would mask exactly that bug as a coincidental AEAD failure."
+        },
+        "input_expected_vault_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The VaultId the reader is reading for. It is a decode input for every case, and it is the discriminating one for vault_id_mismatch."
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "vault_id_mismatch",
+            "ciphertext_len_overflow",
+            "header_too_short",
+            "ciphertext_truncated",
+            "trailing_bytes"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: VaultLabelBlobError::{MagicMismatch, ProtocolVersionMismatch, VaultIdMismatch, CiphertextLenOverflow, HeaderTooShort, CiphertextTruncated, TrailingBytes}). Two entries have no counterpart in the older device-local families: 'vault_id_mismatch', because those bind the id the blob carries rather than the id the reader expected; and 'trailing_bytes', because §10.3.1 strict-trailing is enforced here rather than inherited leniently, so a blob LONGER than header + ciphertext_len is a named reject rather than a tolerated tail. 'ciphertext_len_overflow' matches share-import rather than vault-quickunlock's 'ciphertext_len_invalid': the length is variable with a cap, not a fixed constant."
+        }
+      }
+    }
+  ]
+}

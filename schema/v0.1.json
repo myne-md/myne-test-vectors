@@ -67,7 +67,8 @@
         "task-inline-format",
         "task-recurrence",
         "task-query-grammar",
-        "tls-exporter"
+        "tls-exporter",
+        "vault-label"
       ]
     },
     "protocol_version": {
@@ -749,6 +750,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/tls-exporter.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-label"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-label.json"
           }
         }
       }
