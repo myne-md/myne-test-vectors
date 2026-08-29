@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/note-template.json",
   "title": "note-template — case shape (v0.1)",
-  "description": "Pins one behavioral case for protocol::template::render + protocol::template::supported_tokens — the deterministic note-template variable engine (MYND-188). render(template, ctx) is a PURE FUNCTION: one left-to-right pass over {{token}} placeholders matched case-sensitively against a closed 5-token registry (date, time, title, datetime, weekday). Unknown tokens, format-arg shapes ({{title:foo}}) and stray/unbalanced braces pass through verbatim — that passthrough IS the escape mechanism (there is no dedicated escape syntax). Substituted values are NEVER re-scanned (single pass). The engine reads no clock and no locale: every ctx field arrives pre-formatted from the host, and the engine is byte-transparent including NFD combining sequences (NO unicode normalization). Not an on-disk codec and not cryptographic — it is deterministic cross-client behavior in the password-policy class: every independent client renders the same (template, ctx) to bit-identical output. Two case kinds: 'render' (template + ctx → output bytes) and 'token_registry' (supported_tokens() order/set pin). The Rust reference implementation lives at protocol/src/template.rs (main myne repository); contract recorded in decisions.md 2026-06-07 (Note templates).",
+  "description": "Pins one behavioral case for protocol::template::render + protocol::template::supported_tokens — the deterministic note-template variable engine (MYND-188). render(template, ctx) is a PURE FUNCTION: one left-to-right pass over {{token}} placeholders matched case-sensitively against a closed 7-token registry (date, time, title, datetime, weekday, period_start, period_end; the last two are myne-md/myne#177 and are appended, so the five v1 names keep their positions). Unknown tokens, format-arg shapes ({{title:foo}}) and stray/unbalanced braces pass through verbatim — that passthrough IS the escape mechanism (there is no dedicated escape syntax). Substituted values are NEVER re-scanned (single pass). The engine reads no clock and no locale: every ctx field arrives pre-formatted from the host, and the engine is byte-transparent including NFD combining sequences (NO unicode normalization). Not an on-disk codec and not cryptographic — it is deterministic cross-client behavior in the password-policy class: every independent client renders the same (template, ctx) to bit-identical output. Two case kinds: 'render' (template + ctx → output bytes) and 'token_registry' (supported_tokens() order/set pin). The Rust reference implementation lives at protocol/src/template.rs (main myne repository); contract recorded in decisions.md 2026-06-07 (Note templates).",
   "type": "object",
   "required": ["vector_id", "description", "case_kind"],
   "unevaluatedProperties": false,
@@ -71,6 +71,16 @@
           "pattern": "^([0-9a-f]{2})+$",
           "description": "ctx.weekday as exact UTF-8 bytes (hex). Host-localized day name — the engine carries no locale logic and substitutes the bytes verbatim."
         },
+        "input_ctx_period_start_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.period_start as exact UTF-8 bytes (hex), myne-md/myne#177. Host-formatted LOCAL calendar date (YYYY-MM-DD) of the FIRST day of the periodic note being instantiated. Defined for every period including daily, where it equals ctx.date, so the token never renders empty."
+        },
+        "input_ctx_period_end_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "ctx.period_end as exact UTF-8 bytes (hex), myne-md/myne#177. The inclusive LAST day of that period, same formatting rule. ctx.date is NOT re-pointed at either bound: the same template file can be a weekly template and something instantiated by hand, so a token whose meaning depended on the call site would make one file say two things."
+        },
         "expected_output_utf8_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})*$",
@@ -96,10 +106,10 @@
         "case_kind": { "const": "token_registry" },
         "expected_tokens": {
           "type": "array",
-          "minItems": 5,
-          "maxItems": 5,
+          "minItems": 7,
+          "maxItems": 7,
           "items": { "type": "string", "minLength": 1 },
-          "description": "The exact return of supported_tokens(), order-sensitive (v1: date, time, title, datetime, weekday — registry order). The SET is load-bearing for render parity (advertised ⇔ substituted, single registry); the ORDER is load-bearing for UI parity (the {{ autocomplete lists tokens in this order)."
+          "description": "The exact return of supported_tokens(), order-sensitive: date, time, title, datetime, weekday, period_start, period_end. The two period tokens (myne-md/myne#177) are APPENDED, so the five v1 names keep their positions. The SET is load-bearing for render parity (advertised ⇔ substituted, single registry); the ORDER is load-bearing for UI parity (the {{ autocomplete lists tokens in this order)."
         }
       }
     }

@@ -839,6 +839,36 @@
         "timezone": "Europe/Istanbul",
         "transcription_enabled": false
       }
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-periodic-notes",
+      "description": "myne#177 periodic-notes settings: a string map keyed <period>.<setting> holding the weekly and monthly equivalents of the three daily_* fields. Pins two things a port can get wrong independently: the field's canonical position (after paired_extensions, before reminder_horizon_days) and the lexicographic key order INSIDE the map. The source map is built in a deliberately unsorted order across two periods, so an implementation that emits insertion order produces different bytes. Daily is NOT in this map by design and keeps its three top-level fields.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b22706572696f6469635f6e6f746573223a7b226d6f6e74686c792e666f6c646572223a224d6f6e74686c792f222c226d6f6e74686c792e666f726d6174223a22595959592d4d4d222c227765656b6c792e666f6c646572223a225765656b6c792f222c227765656b6c792e666f726d6174223a22676767672d5b575d7777222c227765656b6c792e74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303039227d2c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2000000fca5b9f72f70ce470e8686e60fb96aabe537f68f53439ddb022b0a81d498f9395adf13d521dbc9deabe0246b02895b93bce218361cc60ebb140b74b9568560194b14deb1ab59cdfa14102fd41e26b178eef698769b447b17738188b35edf46ea5c7965cb856f7c7cf8261a1415c3c12728ce153f4ee5623d45bab762ab31df658e727fd2b5a5cefcecebd68a7c11928c4fc485654ff71f7551393550d44a09671aee5cf5b0124541866c4034709241b3dfdaac41b39306d36ebc8fe160cff1a0fcc6b245391884a4363ab91fb74664d200053d83b07ccc8343ab957cd5ab526c7f9dbe08203aa06191f965aeaa52262792ad184abe75af5095290d382d"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-periodic-notes",
+      "description": "Round trip with encrypt-periodic-notes: the blob decodes back to the same five entries, and a decoder that dropped or reordered a key fails here rather than silently losing a period's settings.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2000000fca5b9f72f70ce470e8686e60fb96aabe537f68f53439ddb022b0a81d498f9395adf13d521dbc9deabe0246b02895b93bce218361cc60ebb140b74b9568560194b14deb1ab59cdfa14102fd41e26b178eef698769b447b17738188b35edf46ea5c7965cb856f7c7cf8261a1415c3c12728ce153f4ee5623d45bab762ab31df658e727fd2b5a5cefcecebd68a7c11928c4fc485654ff71f7551393550d44a09671aee5cf5b0124541866c4034709241b3dfdaac41b39306d36ebc8fe160cff1a0fcc6b245391884a4363ab91fb74664d200053d83b07ccc8343ab957cd5ab526c7f9dbe08203aa06191f965aeaa52262792ad184abe75af5095290d382d",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b22706572696f6469635f6e6f746573223a7b226d6f6e74686c792e666f6c646572223a224d6f6e74686c792f222c226d6f6e74686c792e666f726d6174223a22595959592d4d4d222c227765656b6c792e666f6c646572223a225765656b6c792f222c227765656b6c792e666f726d6174223a22676767672d5b575d7777222c227765656b6c792e74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303039227d2c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "screen_capture_protection": true,
+        "periodic_notes": {
+          "monthly.folder": "Monthly/",
+          "monthly.format": "YYYY-MM",
+          "weekly.folder": "Weekly/",
+          "weekly.format": "gggg-[W]ww",
+          "weekly.template": "0190a000-0000-7000-8000-000000000009"
+        }
+      }
     }
   ]
 }

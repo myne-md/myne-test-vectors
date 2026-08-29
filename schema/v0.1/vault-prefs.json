@@ -428,6 +428,13 @@
               "type": "boolean",
               "description": "reminders toggle (MYND-618). Inverse-default bool: default true, emitted ONLY when false. Device-local. Canonical key 'reminders_enabled' — after reminder_horizon_days."
             },
+            "periodic_notes": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Weekly and monthly periodic-notes settings (myne-md/myne#177). A FLAT string map keyed '<period>.<setting>', where <period> is a bare lowercase word (weekly, monthly) and <setting> is one of folder / format / template. Daily is NOT here: it keeps its three flat daily_* fields, and a daily.* entry would be a second home for one setting. The codec validates neither half of a key and a decoder MUST re-encode an entry whose period it does not recognise, which is what makes a fourth period free. Keys and values NFC-normalized; keys encoded in lexicographic order; the whole map omitted when empty, so a pre-myne#177 vault is byte-identical. Canonical key 'periodic_notes' — after paired_extensions, before reminder_horizon_days."
+            },
             "reminder_horizon_days": {
               "type": "integer",
               "minimum": 0,
