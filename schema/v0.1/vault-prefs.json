@@ -166,7 +166,7 @@
                 "ollama-cloud",
                 "openrouter"
               ],
-              "description": "WHICH provider the one-time consent was given for (myne#415, SYNC-22). A provider NAME, not a boolean, because consent is per provider: the consent screen names the recipient, so an approval for one cannot stand in for another. A request is permitted only when this equals the active ai_provider \u2014 a comparison, rather than an invariant every setter must remember to maintain. Omitted when consent has not been given (the default). It is a GATE, not a display flag: the request path checks it. Account-scoped \u2014 it syncs, so a newly enrolled device inherits it. Canonical key between ai_provider and ai_provider_key."
+              "description": "WHICH provider the one-time consent was given for (myne#415, SYNC-22). A provider NAME, not a boolean, because consent is per provider: the consent screen names the recipient, so an approval for one cannot stand in for another. A request is permitted only when this equals the active ai_provider \u2014 a comparison, rather than an invariant every setter must remember to maintain. Omitted when consent has not been given (the default). It is a GATE, not a display flag: the request path checks it. Device-local \u2014 it does NOT sync, so a newly enrolled device inherits the provider, the model and the key but not the approval, and must record its own before a request is permitted (myne-md/myne#456). It was account-scoped and synced until then; the sibling ai_provider_key deliberately still syncs, because rotating or revoking a credential must reach every device. Canonical key between ai_provider and ai_provider_key."
             },
             "ai_provider_key": {
               "type": "string",
