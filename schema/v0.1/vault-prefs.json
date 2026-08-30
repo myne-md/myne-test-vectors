@@ -366,6 +366,11 @@
               "type": "string",
               "description": "MYND-308 active workspace slot id. Option<String>; absent ≡ host-applied default workspace policy. Free string stored verbatim (NFC-normalized on encode). Canonical key 'active_workspace' — sorts FIRST, before auto_lock_seconds (ac < au)."
             },
+            "chat_history_budget": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Characters of visible chat history an agent run may be seeded with (myne-md/myne#617). Option<int>; bare decimal, omitted-when-unset, absent ≡ the host applies its own default. Device-local: a bound on how much THIS machine sends to a provider, so it never syncs. The bound is applied by the SETTER, not by the reader: unlike auto_lock_seconds, which resolves clamp() on every read and therefore holds whoever wrote the value, this ceiling holds while every writer clamps, which is a property of the call sites rather than of the format. An implementation writing this field must clamp it itself. A replay can restore nothing that was not already clamped, because the blob is AEAD-sealed and AAD-bound, so tampering is refused by the tag rather than bounded by the ceiling. Canonical key 'chat_history_budget' — after bar_items_order (b < c), before cli_enabled (ch < cl). That position is load-bearing: keys up to and including auto_lock_seconds are located by strip_prefix, so an unknown key among them blinds every field behind it in a client that does not know it, whereas the cursor-scanned region this one sits in is scanned forward and skips what it does not recognise."
+            },
             "editor_default_view_mode": {
               "type": "string",
               "description": "MYND-299 editor default view-mode preset (live|reading|source). Option<String> stored as a free enum string; absent ≡ host-applied default. Canonical key slot: after editor_content_width, before editor_focus_dim_inactive (editor_c < editor_d < editor_f)."
