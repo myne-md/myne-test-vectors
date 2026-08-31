@@ -35,6 +35,8 @@
         "input_ctx_time_utf8_hex",
         "input_ctx_datetime_utf8_hex",
         "input_ctx_weekday_utf8_hex",
+        "input_ctx_period_start_utf8_hex",
+        "input_ctx_period_end_utf8_hex",
         "expected_output_utf8_hex"
       ],
       "properties": {

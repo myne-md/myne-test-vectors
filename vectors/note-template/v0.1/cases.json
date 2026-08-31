@@ -6,7 +6,7 @@
   "cases": [
     {
       "vector_id": "note-template/v0.1/render-all-five-tokens",
-      "description": "All five registry tokens in one template, one pass. The ctx is a local instant near a UTC day boundary (01:00 local in a +03:00 offset = 22:00 the PREVIOUS day in UTC) — the engine emits the host-injected LOCAL day, proving no engine-side UTC conversion.",
+      "description": "The five v1 registry tokens in one template, one pass. The registry is SEVEN since myne-md/myne#177 and no case renders all of them: the two period tokens carry a period whose bounds are deliberately far from `{{date}}`, which is what the dedicated period case pins, so folding them in here would cost that contrast. The ctx is a local instant near a UTC day boundary (01:00 local in a +03:00 offset = 22:00 the PREVIOUS day in UTC) — the engine emits the host-injected LOCAL day, proving no engine-side UTC conversion.",
       "case_kind": "render",
       "input_template_utf8_hex": "23207b7b7469746c657d7d20e28094207b7b7765656b6461797d7d207b7b646174657d7d207b7b74696d657d7d20287b7b6461746574696d657d7d29",
       "input_ctx_title_utf8_hex": "4d79204e6f7465",
@@ -198,9 +198,17 @@
     },
     {
       "vector_id": "note-template/v0.1/token-registry-order",
-      "description": "supported_tokens() returns exactly the registered token names in registry order: the five v1 names followed by the two period tokens myne#177 appended, which land at the end so the v1 names keep their positions. The order is load-bearing for UI parity (the {{ autocomplete lists tokens in this order); the SET is load-bearing for render parity, since a port advertising a token it does not substitute (or vice versa) has split the single registry this category exists to pin.",
+      "description": "supported_tokens() returns exactly the registered token names in registry order: the five v1 names followed by the two period tokens myne#177 appended, which land at the end so the v1 names keep their positions. The order is load-bearing for UI parity (the {{ autocomplete lists tokens in this order); the SET is load-bearing for render parity, since a port advertising a token it does not substitute (or vice versa) has split the single registry this category exists to pin. The two period names are APPENDED rather than interleaved, so the five v1 names keep their positions and the v1 order remains a prefix of this one; a port that sorts the registry fails here.",
       "case_kind": "token_registry",
-      "expected_tokens": ["date", "time", "title", "datetime", "weekday", "period_start", "period_end"]
+      "expected_tokens": [
+        "date",
+        "time",
+        "title",
+        "datetime",
+        "weekday",
+        "period_start",
+        "period_end"
+      ]
     }
   ]
 }
