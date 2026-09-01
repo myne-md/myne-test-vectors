@@ -131,6 +131,41 @@
           "pattern": "^([0-9a-f]{2})+$",
           "description": "Optional. The verbatim inner plaintext that was sealed into input_blob_hex, when it differs from expected_plaintext_canonical_utf8_hex (forward-compat tolerance cases only). Informational — runners decrypt the blob; this field lets reviewers inspect the unknown-field payload without an AEAD implementation."
         },
+        "expected_consent_device_suffix": {
+          "const": "@device",
+          "description": "The literal suffix that makes an ai_provider_consent value DEVICE-SCOPED (myne-md/myne#633). A `const` rather than a free string: it is a wire constant, and a port that reads a different one from a future case would be reading a grammar this version does not have. Present only on the consent-scope case."
+        },
+        "expected_consent_predicate": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The two questions the remote-inference gate asks of a stored consent, answered for a device-scoped value, for the legacy bare wire name, and for a consent naming a DIFFERENT provider. Pinned as data rather than left to be re-derived from the suffix, because the second and third answers are the ones an implementation gets wrong: a legacy value must be recognisable (it is what a pre-#633 vault holds, so an implementation knows to ask again rather than fail silently) and a consent for another provider is neither scoped nor legacy, since the gate is an equality against the provider about to receive the text. Present only on the consent-scope case.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stored",
+              "provider_wire",
+              "expected_consent_is_device_scoped",
+              "expected_consent_is_legacy"
+            ],
+            "properties": {
+              "stored": {
+                "type": "string",
+                "description": "The ai_provider_consent value as it sits in vault.prefs."
+              },
+              "provider_wire": {
+                "type": "string",
+                "description": "The wire name of the provider about to receive the text."
+              },
+              "expected_consent_is_device_scoped": {
+                "type": "boolean"
+              },
+              "expected_consent_is_legacy": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
         "expected_prefs_view": {
           "type": "object",
           "additionalProperties": false,
@@ -158,23 +193,25 @@
                 "ollama-cloud",
                 "openrouter"
               ],
-              "description": "The REMOTE AI provider the user named (ai-remote-providers, myne#415, SYNC-15). Closed wire value; omitted when unset, and unset is the default and the UNREACHABLE state rather than a disabled one. The destination URL is NOT carried here \u2014 it is a compiled-in client constant, so a tampered blob cannot redirect traffic. Canonical key 'ai_provider' sorts after ai_excluded_folders, ahead of archive_disabled. A decoder MUST treat an unrecognized value as no provider rather than rejecting the blob; this enum pins the set a v0.1 client emits, not the set it must tolerate."
+              "description": "The REMOTE AI provider the user named (ai-remote-providers, myne#415, SYNC-15). Closed wire value; omitted when unset, and unset is the default and the UNREACHABLE state rather than a disabled one. The destination URL is NOT carried here — it is a compiled-in client constant, so a tampered blob cannot redirect traffic. Canonical key 'ai_provider' sorts after ai_excluded_folders, ahead of archive_disabled. A decoder MUST treat an unrecognized value as no provider rather than rejecting the blob; this enum pins the set a v0.1 client emits, not the set it must tolerate."
             },
             "ai_provider_consent": {
               "type": "string",
               "enum": [
                 "ollama-cloud",
-                "openrouter"
+                "openrouter",
+                "ollama-cloud@device",
+                "openrouter@device"
               ],
-              "description": "WHICH provider the one-time consent was given for (myne#415, SYNC-22). A provider NAME, not a boolean, because consent is per provider: the consent screen names the recipient, so an approval for one cannot stand in for another. A request is permitted only when this equals the active ai_provider \u2014 a comparison, rather than an invariant every setter must remember to maintain. Omitted when consent has not been given (the default). It is a GATE, not a display flag: the request path checks it. Device-local \u2014 it does NOT sync, so a newly enrolled device inherits the provider, the model and the key but not the approval, and must record its own before a request is permitted (myne-md/myne#456). It was account-scoped and synced until then; the sibling ai_provider_key deliberately still syncs, because rotating or revoking a credential must reach every device. TWO CONSEQUENCES an independent port has to implement and no vector pins: a device-local field is NEVER stamped in field_clocks (protocol.md \u00a79.5.2 ties the two together), so a conformant reader stops stamping this one and IGNORES a pre-existing stamp rather than treating it as an error, since a vault written before the reclassification may carry one. And the not-synced claim is true of a vault only once every client on the account has updated: shared fields get scalar-LWW, so during the rollout window an un-updated client still replicates this field across devices, which is a transition state rather than a defect. Canonical key between ai_provider and ai_provider_key."
+              "description": "WHICH provider the one-time consent was given for, and SINCE myne-md/myne#633 on which device (myne#415, SYNC-22). The value is the provider's wire name, optionally followed by the literal suffix `@device`. The four enum members are two provider names in two generations, and only the suffixed pair is accepted by the gate: a BARE name is the LEGACY form a vault written before #633 still holds, and it is enumerated so a conformant reader can RECOGNISE it (and ask for consent again) rather than fail on it. This enum was the bare pair alone until #633, which is a third place the superseded grammar lived; the vectors `encrypt-ai-consent-device-scoped` / `decrypt-ai-consent-device-scoped` pin the current one, and the latter carries the accept/legacy predicate for both generations plus for a consent naming a different provider.\n\nA provider NAME, not a boolean, because consent is per provider: the consent screen names the recipient, so an approval for one cannot stand in for another. A request is permitted only when the stored value is the ACTIVE ai_provider carrying the suffix: a comparison, rather than an invariant every setter must remember to maintain. Omitted when consent has not been given (the default). It is a GATE, not a display flag: the request path checks it. Device-local: it does NOT sync, so a newly enrolled device inherits the provider, the model and the key but not the approval, and must record its own before a request is permitted (myne-md/myne#456). The suffix is what makes that property legible in the value itself rather than only in the sync classification, which is why #633 added it: a vault synced from a machine that HAD consented used to arrive carrying a consent the receiving device had never given. It was account-scoped and synced until #456; the sibling ai_provider_key deliberately still syncs, because rotating or revoking a credential must reach every device. TWO CONSEQUENCES an independent port has to implement: a device-local field is NEVER stamped in field_clocks (protocol.md §9.5.2 ties the two together), so a conformant reader stops stamping this one and IGNORES a pre-existing stamp rather than treating it as an error, since a vault written before the reclassification may carry one. And the not-synced claim is true of a vault only once every client on the account has updated: shared fields get scalar-LWW, so during the rollout window an un-updated client still replicates this field across devices, which is a transition state rather than a defect. Canonical key between ai_provider and ai_provider_key."
             },
             "ai_provider_key": {
               "type": "string",
-              "description": "API key for the named remote provider (myne#415, SYNC-15). Present in the ENCRYPTED blob like any other vault content, and MUST NOT cross the host\u2192UI boundary in any implementation \u2014 the reference client marks it serde-skip and hands the UI a has-key boolean instead (protocol.md \u00a79.5.2). Omitted when unset. Canonical key 'ai_provider_key' sorts after ai_provider_consent, ahead of ai_provider_model."
+              "description": "API key for the named remote provider (myne#415, SYNC-15). Present in the ENCRYPTED blob like any other vault content, and MUST NOT cross the host→UI boundary in any implementation — the reference client marks it serde-skip and hands the UI a has-key boolean instead (protocol.md §9.5.2). Omitted when unset. Canonical key 'ai_provider_key' sorts after ai_provider_consent, ahead of ai_provider_model."
             },
             "ai_provider_model": {
               "type": "string",
-              "description": "WHICH model at the named provider answers (myne#415, SYNC-24). There is no default and an implementation MUST NOT substitute one \u2014 the value comes from the list the provider itself reports, because a client-pinned model tag rots faster than the release that pinned it and on a metered API a default nobody chose is a bill nobody chose. Absent, the remote arm has nothing to ask with and refuses; it never falls back. Unlike ai_provider_key beside it this value DOES cross the host\u2192UI boundary \u2014 a published model name is not a credential and the settings surface renders the current selection back. Omitted when unset. Canonical key 'ai_provider_model' sorts after ai_provider_key, ahead of archive_disabled."
+              "description": "WHICH model at the named provider answers (myne#415, SYNC-24). There is no default and an implementation MUST NOT substitute one — the value comes from the list the provider itself reports, because a client-pinned model tag rots faster than the release that pinned it and on a metered API a default nobody chose is a bill nobody chose. Absent, the remote arm has nothing to ask with and refuses; it never falls back. Unlike ai_provider_key beside it this value DOES cross the host→UI boundary — a published model name is not a credential and the settings surface renders the current selection back. Omitted when unset. Canonical key 'ai_provider_model' sorts after ai_provider_key, ahead of archive_disabled."
             },
             "deliberate_folders": {
               "type": "array",
@@ -369,7 +406,7 @@
             "chat_history_budget": {
               "type": "integer",
               "minimum": 0,
-              "description": "Characters of visible chat history an agent run may be seeded with (myne-md/myne#617, under the myne-md/myne#622 agent-mode epic; the branch and commit name the epic, the field names the issue that authorised it). Option<int>; bare decimal, omitted-when-unset, absent \u2261 the host applies its own default. Absent is a third state distinct from 0: 0 means seed nothing, which is the pre-#617 behaviour and a legitimate thing to want, so a decoder that maps a missing key to 0 is wrong. Device-local: a bound on how much THIS machine sends to a provider, so it never syncs. NON-LOAD-BEARING, and this schema deliberately carries NO maximum. The ceiling is applied by the host in the SETTER, not by the reader: unlike auto_lock_seconds, which resolves clamp() on every read and therefore holds whoever wrote the value, this one holds while every writer clamps, which is a property of the call sites rather than of the format. Writing the ceiling into this schema would put a second copy of a host constant in a second repository, where drift is silent, and would make this file assert a rule the FORMAT does not have. The normative statement of that classification, with its AS-low rating and the reasoning behind it, is docs/spec/protocol.md \u00a79.5.2; an implementation writing this field must clamp it itself. A replay can restore nothing that was not already clamped, because the blob is AEAD-sealed and AAD-bound, so tampering is refused by the tag rather than bounded by the ceiling. Canonical key chat_history_budget \u2014 after bar_items_order (b < c), before cli_enabled (ch < cl). That position is load-bearing: keys up to and including auto_lock_seconds are located by strip_prefix, so an unknown key among them blinds every field behind it in a client that does not know it, whereas the cursor-scanned region this one sits in is scanned forward and skips what it does not recognise. protocol.md \u00a79.5.2 schema-evolution paragraph carries that region boundary as a normative MUST. Pinned by encrypt-chat-history-budget and decrypt-chat-history-budget, which carry both canonical neighbours so the slot is pinned rather than only the value."
+              "description": "Characters of visible chat history an agent run may be seeded with (myne-md/myne#617, under the myne-md/myne#622 agent-mode epic; the branch and commit name the epic, the field names the issue that authorised it). Option<int>; bare decimal, omitted-when-unset, absent ≡ the host applies its own default. Absent is a third state distinct from 0: 0 means seed nothing, which is the pre-#617 behaviour and a legitimate thing to want, so a decoder that maps a missing key to 0 is wrong. Device-local: a bound on how much THIS machine sends to a provider, so it never syncs. NON-LOAD-BEARING, and this schema deliberately carries NO maximum. The ceiling is applied by the host in the SETTER, not by the reader: unlike auto_lock_seconds, which resolves clamp() on every read and therefore holds whoever wrote the value, this one holds while every writer clamps, which is a property of the call sites rather than of the format. Writing the ceiling into this schema would put a second copy of a host constant in a second repository, where drift is silent, and would make this file assert a rule the FORMAT does not have. The normative statement of that classification, with its AS-low rating and the reasoning behind it, is docs/spec/protocol.md §9.5.2; an implementation writing this field must clamp it itself. A replay can restore nothing that was not already clamped, because the blob is AEAD-sealed and AAD-bound, so tampering is refused by the tag rather than bounded by the ceiling. Canonical key chat_history_budget — after bar_items_order (b < c), before cli_enabled (ch < cl). That position is load-bearing: keys up to and including auto_lock_seconds are located by strip_prefix, so an unknown key among them blinds every field behind it in a client that does not know it, whereas the cursor-scanned region this one sits in is scanned forward and skips what it does not recognise. protocol.md §9.5.2 schema-evolution paragraph carries that region boundary as a normative MUST. Pinned by encrypt-chat-history-budget and decrypt-chat-history-budget, which carry both canonical neighbours so the slot is pinned rather than only the value."
             },
             "editor_default_view_mode": {
               "type": "string",
