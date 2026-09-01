@@ -902,6 +902,46 @@
       "input_prefs_nonce_hex": "e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3",
       "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
       "expected_prefs_blob_hex": "4d5950310100e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3000000d8a0fc8afdbf9302e10f8a4da09fe734743d3ced9c71d2a6aff4d9dbc88c28ca93f83f0fb6f72f4a35dd256066f73e9c66d4091f15932fdc58432dab3e8649cd245784cbc9a4fee7df21bd61d5243cf27d7d21cf9958aefebd4eda6edbad1ee4095aeeeb523f6cf5093bfbb944e50568081bf273651f2646691e9d4b56c2e55b20f072103ea75eadf372ad494a7281a1f92660e658477d5fe98adc91e8c6bd53693dd0696b6a9dd6b9f2b3941fb76073fca8d9de6ac94d51cbf878e65f6d99358d3bf63ab99b975944a71c996b627f1af94983259fb9848190"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/encrypt-periodic-notes",
+      "description": "myne#177 periodic-notes settings: a string map keyed <period>.<setting> holding the weekly equivalents of the three daily_* fields plus the two monthly ones. Pins FOUR things a port can get wrong independently. (1) The field's canonical position, and BOTH neighbours are in this blob rather than named in prose: paired_extensions (p) < periodic_notes (pe) < reminder_horizon_days (r). An earlier version of this case named those two neighbours and contained neither, so it pinned a value alone and could not have noticed a wrong slot. (2) The lexicographic key order INSIDE the map. Read that as a statement about the ENCODER rather than about this artefact: the shipped plaintext and view are both already sorted, so nothing here records an insertion order and no port can observe one. What the case actually holds is that these bytes are the sorted form, so an implementation that emits its own source order produces different bytes whenever that order differs. The generator feeds a deliberately unsorted literal, which is where the round trip is exercised, and that is a main-repo assertion a port cannot run. (3) An UNRECOGNISED period: quarterly.folder is a period no build in the reference tree knows, and it must be re-encoded verbatim, which is what makes a fourth period free without a format change. (4) NFC: weekly.folder is fed in DECOMPOSED form (o + U+0308) and these bytes carry the PRECOMPOSED U+00F6, so a port that skips the fold fails on the blob. Daily is NOT in this map by design and keeps its three top-level fields.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b227061697265645f657874656e73696f6e73223a5b7b22657874656e73696f6e5f6964223a22636c6970706572406d796e652e6d64222c227061697265645f6174223a313736353433323030302c227265766f6b6564223a66616c73652c22746f6b656e5f76616c7565223a223963316662376134227d5d2c22706572696f6469635f6e6f746573223a7b226d6f6e74686c792e666f6c646572223a224d6f6e74686c792f222c226d6f6e74686c792e666f726d6174223a22595959592d4d4d222c22717561727465726c792e666f6c646572223a22517561727465726c792f222c227765656b6c792e666f6c646572223a22576fcc886368656e746c6963682f222c227765656b6c792e666f726d6174223a22676767672d5b575d7777222c227765656b6c792e74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303039227d2c2272656d696e6465725f686f72697a6f6e5f64617973223a372c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "input_prefs_nonce_hex": "f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2",
+      "informational_prefs_key_hex": "5bcde07db935664508eaed288e84dc6819b11a1fa831e1aa6f024ff034cff4c4",
+      "expected_prefs_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2000001b5a5b9f72b6bd54d0eb080c115b370bdff7aa2875314a9ce54261e8c9f90e53c51d43e9e7fdbbe93a6f825770bc30bfff3f6193d46c306e0164f6baa5296715f2e57f3cac831d7816c0630c45973e43fa0fdd3669b437a162399d4f065c946ad12742582cc23546ffc210308199f8c6c269e077f43a631785f80b61b8c09da7bc33a34c68faecae4f0b680d56a43938255d5cf3314e948230d3c6012c65d1b1a45b005aaec5b5a4e927e1d6b33d619ef96c4fa1ef1ce579775a4d0941be5cbffd4eefe36780881b1313cb932ab4d25c00a0a2d8fad30d49b66ac816bdcc4c88f1a3ee0167d4a087619353d8ce0820372f7a5c385898319f6bb463f7f0ab6ef9311679dd02085a3328c0944a7098ec376a11b1754d148b21c18da7740606a028be430aa87598ef6d0b5a856d9f8a77bbeebde7cc40d730dc2a2694b2a9bae427886c4c46daf532c5b945a1d8b02a62c463c0f8df18f9e020ed97235b645bde3ebecb6005117f6cf04f31c699bdcbfa2c5f8922c4facb82cf24e4671a6edec0567cf445344b145db3bee01b5678f867b698519cee703bcc7fef7b5ca430534f4023512cbc530cacd865546edc02aec46caf51be46c593d"
+    },
+    {
+      "vector_id": "vault-prefs/v0.1/decrypt-periodic-notes",
+      "description": "Round trip with encrypt-periodic-notes: the blob decodes back to the same six entries, and a decoder that dropped or reordered a key fails here rather than silently losing a period's settings. TWO round-trip properties beyond that. quarterly.folder is a period NO build knows, and it must come back verbatim, because the format's forward-compat rule for this map is re-encode-what-you-do-not-recognise, which is the OPPOSITE of decrypt-unknown-field-tolerated one case over: an unknown TOP-LEVEL field is dropped from the re-encode, an unknown period key inside this map is not. And weekly.folder went in DECOMPOSED (o + U+0308) and comes back PRECOMPOSED (U+00F6), so the round trip is exact in bytes and idempotent in values without being the identity on a decomposed input; a port that skips the NFC fold produces different blob bytes rather than a comparison it might not make.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5950310100f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2000001b5a5b9f72b6bd54d0eb080c115b370bdff7aa2875314a9ce54261e8c9f90e53c51d43e9e7fdbbe93a6f825770bc30bfff3f6193d46c306e0164f6baa5296715f2e57f3cac831d7816c0630c45973e43fa0fdd3669b437a162399d4f065c946ad12742582cc23546ffc210308199f8c6c269e077f43a631785f80b61b8c09da7bc33a34c68faecae4f0b680d56a43938255d5cf3314e948230d3c6012c65d1b1a45b005aaec5b5a4e927e1d6b33d619ef96c4fa1ef1ce579775a4d0941be5cbffd4eefe36780881b1313cb932ab4d25c00a0a2d8fad30d49b66ac816bdcc4c88f1a3ee0167d4a087619353d8ce0820372f7a5c385898319f6bb463f7f0ab6ef9311679dd02085a3328c0944a7098ec376a11b1754d148b21c18da7740606a028be430aa87598ef6d0b5a856d9f8a77bbeebde7cc40d730dc2a2694b2a9bae427886c4c46daf532c5b945a1d8b02a62c463c0f8df18f9e020ed97235b645bde3ebecb6005117f6cf04f31c699bdcbfa2c5f8922c4facb82cf24e4671a6edec0567cf445344b145db3bee01b5678f867b698519cee703bcc7fef7b5ca430534f4023512cbc530cacd865546edc02aec46caf51be46c593d",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_plaintext_canonical_utf8_hex": "7b227061697265645f657874656e73696f6e73223a5b7b22657874656e73696f6e5f6964223a22636c6970706572406d796e652e6d64222c227061697265645f6174223a313736353433323030302c227265766f6b6564223a66616c73652c22746f6b656e5f76616c7565223a223963316662376134227d5d2c22706572696f6469635f6e6f746573223a7b226d6f6e74686c792e666f6c646572223a224d6f6e74686c792f222c226d6f6e74686c792e666f726d6174223a22595959592d4d4d222c22717561727465726c792e666f6c646572223a22517561727465726c792f222c227765656b6c792e666f6c646572223a2257c3b66368656e746c6963682f222c227765656b6c792e666f726d6174223a22676767672d5b575d7777222c227765656b6c792e74656d706c617465223a2230313930613030302d303030302d373030302d383030302d303030303030303030303039227d2c2272656d696e6465725f686f72697a6f6e5f64617973223a372c2273637265656e5f636170747572655f70726f74656374696f6e223a747275657d",
+      "expected_prefs_view": {
+        "screen_capture_protection": true,
+        "paired_extensions": [
+          {
+            "extension_id": "clipper@myne.md",
+            "paired_at": 1765432000,
+            "revoked": false,
+            "token_value": "9c1fb7a4"
+          }
+        ],
+        "periodic_notes": {
+          "monthly.folder": "Monthly/",
+          "monthly.format": "YYYY-MM",
+          "quarterly.folder": "Quarterly/",
+          "weekly.folder": "Wöchentlich/",
+          "weekly.format": "gggg-[W]ww",
+          "weekly.template": "0190a000-0000-7000-8000-000000000009"
+        },
+        "reminder_horizon_days": 7
+      }
     }
   ]
 }

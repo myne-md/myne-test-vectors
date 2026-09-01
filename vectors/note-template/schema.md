@@ -1,6 +1,6 @@
 # `note-template` vector schema
 
-Pins `protocol::template::render` + `protocol::template::supported_tokens` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) — the deterministic **note-template variable engine** (MYND-188): `{{token}}` substitution against a closed, case-sensitive 5-token registry.
+Pins `protocol::template::render` + `protocol::template::supported_tokens` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) — the deterministic **note-template variable engine** (MYND-188): `{{token}}` substitution against a closed, case-sensitive 7-token registry.
 
 **Reference implementation:** `protocol/src/template.rs::{render, supported_tokens, RenderContext}`.
 **Contract:** `design notes.md` 2026-06-07 "Note templates" (the deterministic-substitution / no-scripting commitment).
@@ -22,25 +22,25 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 
 - `vector_id` — stable `note-template/v0.1/<slug>` identifier.
 - `input_template_utf8_hex` — the template body as exact UTF-8 bytes (hex; empty allowed).
-- `input_ctx_{title,date,time,datetime,weekday}_utf8_hex` — the five `RenderContext` fields as exact UTF-8 bytes (title may be empty).
+- `input_ctx_{title,date,time,datetime,weekday,period_start,period_end}_utf8_hex` — the seven `RenderContext` fields as exact UTF-8 bytes (title may be empty). `period_start`/`period_end` are defined for EVERY period, daily included, so the two tokens never render empty.
 - `expected_output_utf8_hex` — the exact bytes `render` MUST produce.
 - `informational_template_utf8` / `informational_output_utf8` — optional human-readable mirrors; the reference runner cross-checks them byte-equal against the hex.
 
 `case_kind: "token_registry"`:
 
-- `expected_tokens` — the exact, **order-sensitive** return of `supported_tokens()` (v1: `date`, `time`, `title`, `datetime`, `weekday`).
+- `expected_tokens` — the exact, **order-sensitive** return of `supported_tokens()` (`date`, `time`, `title`, `datetime`, `weekday`, `period_start`, `period_end` — the two period tokens are APPENDED, so the five v1 names keep their positions and the v1 order stays a prefix of this one).
 
 ## How to consume
 
 A port runs each `render` case:
 
-1. Hex-decode the template and the five ctx fields; interpret as UTF-8.
+1. Hex-decode the template and the seven ctx fields; interpret as UTF-8.
 2. Invoke the port's `render` equivalent with that context.
 3. Assert the output **bytes** equal `expected_output_utf8_hex` — compare bytes, not parsed/normalized strings.
 
 For `token_registry`: assert the port's token list equals `expected_tokens` element-wise in order. The set must also be exactly what the port's renderer substitutes — a port advertising a token it does not substitute (or vice versa) has split the single registry this category exists to pin.
 
-## Cases (12)
+## Cases (13)
 
 Shared fixture context unless noted: title `My Note`, date `2026-06-07`, time `01:00`, datetime `2026-06-07 01:00`, weekday `Sunday`.
 
@@ -64,7 +64,7 @@ Shared fixture context unless noted: title `My Note`, date `2026-06-07`, time `0
 ## Invariants the vectors pin
 
 - **Determinism.** Output is a pure function of `(template, ctx)` — byte-identical across calls, machines, and implementations.
-- **Closed vocabulary, case-sensitive.** Exactly five lowercase v1 tokens substitute; everything else `{{…}}`-shaped passes through verbatim.
+- **Closed vocabulary, case-sensitive.** Exactly seven lowercase tokens substitute; everything else `{{…}}`-shaped passes through verbatim.
 - **Single eager pass.** Substituted values are never re-scanned; no escaping is applied to injected values (plain-markdown output).
 - **Byte transparency.** Multi-byte UTF-8 and NFD combining sequences survive untouched in both template text and injected values.
 - **Registry/accessor unity.** `supported_tokens()` and `render` share one registry — set and order pinned together.

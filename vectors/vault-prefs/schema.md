@@ -31,7 +31,7 @@ The encode side is **pure and deterministic** given the caller-supplied `prefs_n
 vectors/vault-prefs/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 52 KAT cases (encrypt + decrypt + failure-mode families, grown additively per feature — MYND-183/110/191/184/185/205/58 + the MYND-227 parse_fail family)
+    └── cases.json         ← array of 54 KAT cases (encrypt + decrypt + failure-mode families, grown additively per feature — MYND-183/110/191/184/185/205/58 + the MYND-227 parse_fail family)
 ```
 
 ## JSON shape
@@ -60,7 +60,7 @@ JSON natively supports UTF-8 strings via `\uXXXX` escapes, but escape behavior v
 
 ## Invariants the vectors pin
 
-For the 52 cases in `cases.json`:
+For the 54 cases in `cases.json`:
 
 - **Every field is pinned beside BOTH of its canonical neighbours, not alone.** `vault.prefs` is canonical JSON, so **key order is part of the bytes**: a port that emits a correct value in the wrong slot produces a blob the reference decoder rejects, and a case that pinned the value alone would not notice. The `encrypt-datetime-quartet` pair is the worked example — `auto_tag_enabled`, `date_format`, `time_format` and `timezone` each sit between their two neighbours (`auto_lock_seconds` < `auto_tag_enabled` < `bar_items_order`; `daily_template` < `date_format` < `deliberate_folders`; `theme` < `time_format` < `timezone` < `transcription_enabled`). Those four shipped with no cross-implementation vector at all until that pair landed, exercised only by `#[cfg(test)]` unit tests that no port can run.
 
@@ -99,9 +99,12 @@ cat /tmp/myne_vault_prefs_parse_fail_vectors.json
 # myne-md/myne#613 set-entry removal-clock cases (JSON array fragment):
 cargo test -p protocol --lib emit_set_removal_clock_prefs_vectors -- --ignored
 cat /tmp/myne_vault_prefs_set_removal_clock_vectors.json
+# myne#177 periodic-notes cases (separate per-feature generator, JSON objects to splice):
+cargo test -p protocol --lib emit_periodic_notes_prefs_vectors -- --ignored
+cat /tmp/myne_periodic_notes_prefs_cases.json
 ```
 
-The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector`, `emit_label_and_tolerance_prefs_vectors`, `emit_last_backup_at_prefs_vectors`, and `emit_prefs_parse_fail_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are append generators: **splice** the new blocks/objects into `cases.json` by hand; never regenerate-and-replace the whole file.
+The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector`, `emit_label_and_tolerance_prefs_vectors`, `emit_last_backup_at_prefs_vectors`, `emit_prefs_parse_fail_vectors` and `emit_periodic_notes_prefs_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are append generators: **splice** the new blocks/objects into `cases.json` by hand; never regenerate-and-replace the whole file.
 
 ## The set-entry removal shape (myne-md/myne#613)
 

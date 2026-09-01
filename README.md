@@ -14,7 +14,7 @@ This is a companion repo of the [Myne multi-repo project](https://github.com/myn
 
 What exists today:
 
-- **53 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json` — 726 cases across 56 files.
+- **53 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json` — 774 cases across 57 files.
 - **Two protocol versions.** 52 categories have a `v0.1/`; four have a `v0.2/` (`crdt-note-blob`, which is v0.2-only, plus the `vault-meta`, `vault-themes` and `aad-construction` sides of the next major).
 - A **canonical machine-readable contract** per version: the root schema `schema/<version>.json` dispatches per-category sub-schemas under `schema/<version>/` (one file per category) via `oneOf` keyed on the `schema` field. The two roots are separate documents because `protocol_version` is a `const` in each — see [Validating vectors](#validating-vectors).
 - **Git hooks** (`lefthook.yml`): JSON well-formedness and text hygiene on commit, plus the full `ajv` schema sweep on push.
