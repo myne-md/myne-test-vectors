@@ -96,12 +96,48 @@ cat /tmp/myne_vault_prefs_last_backup_vectors.txt
 cargo test -p protocol --lib emit_prefs_parse_fail_vectors -- --ignored
 cat /tmp/myne_vault_prefs_parse_fail_vectors.json
 
+# myne-md/myne#613 set-entry removal-clock cases (JSON array fragment):
+cargo test -p protocol --lib emit_set_removal_clock_prefs_vectors -- --ignored
+cat /tmp/myne_vault_prefs_set_removal_clock_vectors.json
 # myne#177 periodic-notes cases (separate per-feature generator, JSON objects to splice):
 cargo test -p protocol --lib emit_periodic_notes_prefs_vectors -- --ignored
 cat /tmp/myne_periodic_notes_prefs_cases.json
 ```
 
 The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector`, `emit_label_and_tolerance_prefs_vectors`, `emit_last_backup_at_prefs_vectors`, `emit_prefs_parse_fail_vectors` and `emit_periodic_notes_prefs_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are append generators: **splice** the new blocks/objects into `cases.json` by hand; never regenerate-and-replace the whole file.
+
+## The set-entry removal shape (myne-md/myne#613)
+
+Three cases pin a shape the rest of this suite does not reach, and it is worth
+stating separately because the encoding is what carries the meaning.
+
+A set-union field (`deliberate_folders`, `archived_folders`,
+`ai_excluded_folders`, `cli_excluded_folders`, `spell_languages`) now carries a
+**per-entry clock** in `field_clocks`, keyed `<field>/<entry>`. The entry key is
+the *folded* folder identity for the four folder sets and the *raw* code for
+`spell_languages`; the set itself keeps the raw display form. So a live entry
+appears twice in the plaintext, once in its set under its display casing and
+once as a clock key under its folded identity, and the two are not required to
+match byte for byte.
+
+**A removal is a clock with no matching set entry.** Because every set field is
+omit-when-empty, deleting the last entry removes the set key from the object
+entirely, and the orphan clock is the whole record that the entry was deleted
+rather than never held. That distinction is the entire point: without it a
+deletion is an absence, a peer that still holds the entry restores it on the
+next union, and the deletion undoes itself within two rounds. A consumer that
+"tidies up" an orphan clock key, or that refuses a `field_clocks` entry with no
+corresponding value, would silently reintroduce that bug.
+
+Two encoding properties the non-ASCII case pins, both of which a port can get
+wrong with nothing else noticing: non-ASCII is emitted as **raw UTF-8**, never
+`\u`-escaped, in the set entry and the clock key alike; and clock keys sort by
+**byte** order. A JSON writer that escapes non-ASCII by default produces a
+different plaintext, a different AEAD tag, and a blob the other side cannot
+decrypt.
+
+Merge semantics for these clocks are normative in `sync-protocol.md` §10.2, not
+here. This directory pins the bytes; that section pins what they mean.
 
 ## What this does NOT cover
 
