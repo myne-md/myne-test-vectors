@@ -95,9 +95,13 @@ cat /tmp/myne_vault_prefs_last_backup_vectors.txt
 # MYND-227 structural parse_fail cases (separate per-feature generator, JSON array fragment):
 cargo test -p protocol --lib emit_prefs_parse_fail_vectors -- --ignored
 cat /tmp/myne_vault_prefs_parse_fail_vectors.json
+
+# myne#177 periodic-notes cases (separate per-feature generator, JSON objects to splice):
+cargo test -p protocol --lib emit_periodic_notes_prefs_vectors -- --ignored
+cat /tmp/myne_periodic_notes_prefs_cases.json
 ```
 
-The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector`, `emit_label_and_tolerance_prefs_vectors`, `emit_last_backup_at_prefs_vectors`, and `emit_prefs_parse_fail_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are append generators: **splice** the new blocks/objects into `cases.json` by hand; never regenerate-and-replace the whole file.
+The regenerator tests live in `protocol/src/prefs.rs` (`emit_prefs_vectors_for_paste` for the original case set; `emit_decorations_prefs_vector`, `emit_label_and_tolerance_prefs_vectors`, `emit_last_backup_at_prefs_vectors`, `emit_prefs_parse_fail_vectors` and `emit_periodic_notes_prefs_vectors` for the later per-feature additions — the original generator stays stable as features land). All are `#[ignore]`-gated so they never run in default `cargo test` invocations. These are append generators: **splice** the new blocks/objects into `cases.json` by hand; never regenerate-and-replace the whole file.
 
 ## What this does NOT cover
 
