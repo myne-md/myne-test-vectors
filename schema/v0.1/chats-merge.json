@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-merge.json",
+  "title": "chats-merge — case shape (v0.1)",
+  "description": "Pins the conversation merge rules in myne-core (merge_chats_catalog + merge_chats_turns, myne-md/myne#675; sync-protocol.md §11.4 + §10.2.5). Pure logic over decoded plaintexts — no keys, no AEAD. Catalog entries are roster rows {created_at,deleted_at?,title,updated_at,version?} keyed by conversation-id hex; turn lists are turn-id string arrays. Three case kinds: 'catalog_merge' (two-sided join; the runner asserts BOTH argument orders, so commutativity is structural), 'catalog_merge_assoc' (three-sided join; the runner asserts (A+B)+C equals A+(B+C)), 'turns_merge' (two-sided join, both orders asserted). The remove-wins tombstone tie and the wholesale enrollment seed are catalog_merge cases. The Rust reference implementation lives at core/src/plugins/sync/conflict.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^chats-merge/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'chats-merge/v0.1/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["catalog_merge", "catalog_merge_assoc", "turns_merge"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "catalog_merge — pin a two-sided roster join",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_local",
+        "input_remote",
+        "expected_merged"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "catalog_merge" },
+        "input_local": {
+          "type": "object",
+          "description": "One side's roster: conversation-id hex -> roster row."
+        },
+        "input_remote": {
+          "type": "object",
+          "description": "The other side's roster."
+        },
+        "expected_merged": {
+          "type": "object",
+          "description": "The join both argument orders must produce: per-key higher version wins, equal-version ties resolve remove-wins (a tombstone outranks a live row), disjoint keys union."
+        }
+      }
+    },
+    {
+      "title": "catalog_merge_assoc — pin a three-sided roster join",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_a",
+        "input_b",
+        "input_c",
+        "expected_merged"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "catalog_merge_assoc" },
+        "input_a": { "type": "object" },
+        "input_b": { "type": "object" },
+        "input_c": { "type": "object" },
+        "expected_merged": {
+          "type": "object",
+          "description": "The join both groupings must produce: (A+B)+C equals A+(B+C)."
+        }
+      }
+    },
+    {
+      "title": "turns_merge — pin a two-sided turn-list join",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_local",
+        "input_remote",
+        "expected_merged"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "turns_merge" },
+        "input_local": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "One side's turn-id list (turn ids embed a client discriminator, e.g. <boot>-<seq>)."
+        },
+        "input_remote": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The other side's turn-id list."
+        },
+        "expected_merged": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The join both argument orders must produce: the common prefix verbatim once, then both divergent suffixes in turn-id order; an id on both sides contributes once."
+        }
+      }
+    }
+  ]
+}

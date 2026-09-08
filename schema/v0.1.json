@@ -69,7 +69,10 @@
         "task-query-grammar",
         "tls-exporter",
         "vault-label",
-        "embed-layout"
+        "embed-layout",
+        "chats-catalog",
+        "chats-blob",
+        "chats-merge"
       ]
     },
     "protocol_version": {
@@ -777,6 +780,45 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/embed-layout.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "chats-catalog"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-catalog.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "chats-blob"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-blob.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "chats-merge"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-merge.json"
           }
         }
       }
