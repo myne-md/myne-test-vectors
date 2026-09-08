@@ -18,7 +18,7 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["roundtrip", "parse_fail", "parse_fail_v0_1"]
+      "enum": ["roundtrip", "parse_fail", "parse_fail_v0_1", "membership_absent", "membership_present", "membership_tampered"]
     }
   },
   "oneOf": [
@@ -131,6 +131,65 @@
           "type": "string",
           "enum": ["invalid_vault_meta"],
           "description": "Rust reference: ProtocolError::InvalidVaultMeta, raised by the v0.1 parser."
+        }
+      }
+    },
+    {
+      "title": "membership_absent — an NTV5 meta with no membership field",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_membership"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "membership_absent" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{690}$",
+          "description": "A 345-byte NTV5 blob with reserved byte 0x00. parse_vault_meta_v0_2 must accept it and report membership: None (unmigrated)."
+        },
+        "expected_membership": {
+          "type": "string",
+          "const": "absent"
+        }
+      }
+    },
+    {
+      "title": "membership_present — an NTV5 meta with the membership field",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex", "expected_account_id_hex"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "membership_present" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{834}$",
+          "description": "A 417-byte NTV5 blob with reserved byte 0x01 and the 72-byte membership field appended. parse_vault_meta_v0_2 must accept it and unseal_membership must recover the account id."
+        },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "expected_account_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
+      }
+    },
+    {
+      "title": "membership_tampered — a flipped membership ciphertext byte must fail closed",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex", "tamper_offset", "expected_error"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "membership_tampered" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{834}$",
+          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+        },
+        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "tamper_offset": { "type": "integer", "const": 369 },
+        "expected_error": {
+          "type": "string",
+          "enum": ["aead_failure"]
         }
       }
     }
