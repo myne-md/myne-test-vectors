@@ -20,7 +20,9 @@
         "aad-construction",
         "crdt-note-blob",
         "vault-meta",
-        "vault-themes"
+        "vault-themes",
+        "chats-catalog",
+        "chats-blob"
       ]
     },
     "protocol_version": {
@@ -91,6 +93,32 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-themes.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "chats-catalog"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/chats-catalog.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "chats-blob"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/chats-blob.json"
           }
         }
       }

@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-blob.json",
+  "title": "chats-blob — case shape (v0.1)",
+  "description": "Pins one byte-level case for protocol::encode_chats_blob_raw + protocol::decode_chats_blob — the MYJ1 per-conversation chats-file codec (myne-md/myne#675). Each conversation file is sealed under the family chats_key = DeriveSubkey(root_key, SubkeyRole::ChatsKey), with conversation_id (16 B) + account_number_hash (16 B) bound via aad_chats_blob (the MYE1 per-entry archetype: one KEK serves every file). The inner plaintext is the client layer's canonical turn-list payload JSON ({title_derived_from, turns}); the codec treats it as opaque bytes. Four case kinds: 'encrypt' (encoder byte output, incl. the create-state payload and a frozen-proposal payload), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4, incl. the cross-conversation-id refusal the per-entry binding owes), 'parse_fail' (distinguishable pre-decryption structural reject, one per ChatsBlobError variant). The Rust reference implementation lives at protocol/src/chats_blob.rs (main myne repository); spec contract is docs/spec/protocol.md §9.24 + §3.4 + §5.2.",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^chats-blob/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'chats-blob/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt_ok", "decrypt_aead_fail", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the encoder's byte output",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_conversation_id_hex",
+        "input_plaintext_hex",
+        "input_blob_nonce_hex",
+        "expected_blob_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "encrypt" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte root_key (hex). The runner derives chats_key from this via the canonical derive_subkey helper (SubkeyRole::ChatsKey, role string 'chats-key') before calling the encoder."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash (hex). Bound into the 55-byte AAD via aad_chats_blob (role string 'chats-blob')."
+        },
+        "input_conversation_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte conversation id (hex). Bound into the AAD in the per-entry position, so a blob sealed for one conversation fails to verify as another."
+        },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Canonical turn-list payload JSON bytes (hex): {title_derived_from, turns}. The codec treats these bytes as opaque."
+        },
+        "input_blob_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce (hex). Production callers source from OS CSPRNG; vectors pin a constant."
+        },
+        "informational_chats_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte HKDF output (hex), pre-computed from root_key via derive_subkey(SubkeyRole::ChatsKey). Informational — verified implicitly via the expected_blob_hex assertion."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Full encoder output (34-byte header + ciphertext + 32-byte CTX tag), hex-encoded lowercase. Decoders compare byte-equal."
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok — pin the decoder's successful round-trip",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_conversation_id_hex",
+        "expected_plaintext_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_ok" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_conversation_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "Recovered turn-list payload bytes (hex). The decoder returns these for the sync layer to parse into turns."
+        }
+      }
+    },
+    {
+      "title": "decrypt_aead_fail — pin the non-distinguishing failure surface",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_conversation_id_hex",
+        "expected_kind"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "decrypt_aead_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_conversation_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_kind": {
+          "const": "aead_fail",
+          "description": "The decoder MUST report a non-distinguishing AEAD failure (Rust reference: ChatsBlobError::CannotDecrypt). Implementations MUST NOT distinguish cross-vault vs cross-conversation vs tampered ciphertext/tag vs wrong key beyond the single 'cannot decrypt' outcome (spec §6.4). Structurally distinguishable rejects are pinned separately under case_kind 'parse_fail'."
+        },
+        "informational_tamper_description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "title": "parse_fail — pin a distinguishable pre-decryption structural reject",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_conversation_id_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "A structurally malformed blob (hex), empty allowed. The decoder rejects it BEFORE attempting any decryption — magic / protocol_version / format / length checks all run before the AEAD stage (§9.24.1 magic-byte-before-decrypt discipline)."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_conversation_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "format_unsupported",
+            "header_too_short",
+            "ciphertext_truncated",
+            "ciphertext_len_overflow"
+          ],
+          "description": "The specific structural reject the decoder MUST surface (Rust reference: ChatsBlobError::{MagicMismatch, ProtocolVersionMismatch, FormatUnsupported, HeaderTooShort, CiphertextTruncated, CiphertextLenOverflow}). Unlike the AEAD failure surface (case_kind decrypt_aead_fail), these are pre-decryption and intentionally distinguishable."
+        }
+      }
+    }
+  ]
+}
