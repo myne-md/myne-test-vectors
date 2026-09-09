@@ -39,7 +39,9 @@
         "aad_quick_unlock_blob",
         "aad_note_content_encrypt",
         "aad_attachment_text_blob",
-        "aad_custom_themes_blob"
+        "aad_custom_themes_blob",
+        "aad_chats_catalog",
+        "aad_chats_blob"
       ],
       "description": "Which vault-scoped pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below. The two device-local, vault-agnostic builders (aad_capture_blob / aad_share_import_blob) are deliberately absent: they bind a per-entry capture_id / share_id under a keychain wrap_key rather than account_number_hash under a root_key-derived KEK, so they sit outside this family's vault-scoped enumeration. Their canonical bytes are pinned by in-crate unit tests plus the pending-capture / share-import encrypt cases."
     },
@@ -68,7 +70,7 @@
     "input_account_number_hash_hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{32}$",
-      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob / aad_ai_embeddings_blob / aad_personal_dictionary_blob / aad_quick_unlock_blob."
+      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob / aad_ai_embeddings_blob / aad_personal_dictionary_blob / aad_quick_unlock_blob / aad_chats_catalog / aad_chats_blob."
     },
     "input_provider_kind": {
       "type": "integer",
@@ -80,6 +82,11 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$",
       "description": "Present ONLY for aad_attachment_text_blob — the 32-byte content-addressed attachment_id appended after account_number_hash and bound into the AAD (§9.15.3)."
+    },
+    "input_conversation_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "Present ONLY for aad_chats_blob — the 16-byte conversation id appended after the role and bound into the AAD before account_number_hash (§9.24.3)."
     },
     "input_extractor_version": {
       "type": "integer",
@@ -118,6 +125,7 @@
               "content_type_length_be16",
               "content_type",
               "attachment_id",
+              "conversation_id",
               "extractor_version"
             ],
             "description": "Structural role of this segment."

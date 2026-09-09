@@ -300,6 +300,30 @@
       "input_role": "themes-sync-id",
       "informational_info_utf8_hex": "6d796e652e76302e31207468656d65732d73796e632d6964",
       "expected_subkey_hex": "0acbfb96564848865b4d841a380ad209e645e96f39178289ceb475d383c54708"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/chats-catalog-key",
+      "description": "KEK for the vault.chats conversations catalog (MYM1, §9.23). DISTINCT from the AAD role chats-catalog and from the per-file family KEK chats-key.",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_role": "chats-catalog-key",
+      "informational_info_utf8_hex": "6d796e652e76302e312063686174732d636174616c6f672d6b6579",
+      "expected_subkey_hex": "17acb4f3a5cdcb0602a27c08fc5cc7bd523437b9ee1b040d6d62ccdfcb5663e6"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/chats-catalog-sync-id",
+      "description": "Phase-2 sync blob-id of vault.chats (§3.4 + sync-protocol.md §10.2.5): the FIRST 16 BYTES of the 32-byte output are the id; an IDENTIFIER derivation like catalog-sync-id, NOT a KEK (the catalog KEK stays chats-catalog-key).",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_role": "chats-catalog-sync-id",
+      "informational_info_utf8_hex": "6d796e652e76302e312063686174732d636174616c6f672d73796e632d6964",
+      "expected_subkey_hex": "bd1f863833f4cf56363ac286a00e35270e9839c586fba25329d087edc1ce35ee"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/chats-key",
+      "description": "KEK for every per-conversation chats file (MYJ1, §9.24): one KEK serves the family, the per-entry conversation_id travels in the AAD (the MYE1 archetype). DISTINCT from the AAD role chats-blob and from the catalog KEK chats-catalog-key.",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_role": "chats-key",
+      "informational_info_utf8_hex": "6d796e652e76302e312063686174732d6b6579",
+      "expected_subkey_hex": "fcd777a2f2035d3eebc4c7971cb62953c74b970cc84521eb3032242939479741"
     }
   ]
 }

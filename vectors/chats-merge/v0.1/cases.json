@@ -1,0 +1,113 @@
+{
+  "schema": "chats-merge",
+  "protocol_version": "v0.1",
+  "spec_section": "sync-protocol.md §11.4 + §10.2.5",
+  "description": "Pins merge_chats_catalog + merge_chats_turns (myne-core, myne-md/myne#675): the conversation-roster join (per-key causal version with remove-wins tombstone ties) and the turn-list join (common prefix verbatim, both divergent suffixes in turn-id order). Pure logic over decoded plaintexts — no keys, no AEAD. The runner asserts every two-sided case in BOTH argument orders, so commutativity is structural rather than restated in the expected value.",
+  "cases": [
+    {
+      "vector_id": "chats-merge/v0.1/catalog-commutative-join",
+      "description": "Disjoint creates union; a concurrent rename resolves to the higher version.",
+      "case_kind": "catalog_merge",
+      "input_local": {
+        "a1": {"created_at": 100, "title": "A", "updated_at": 100, "version": 1},
+        "b1": {"created_at": 101, "title": "B", "updated_at": 101, "version": 1}
+      },
+      "input_remote": {
+        "b1": {"created_at": 101, "title": "B renamed", "updated_at": 200, "version": 2},
+        "c1": {"created_at": 102, "title": "C", "updated_at": 102, "version": 1}
+      },
+      "expected_merged": {
+        "a1": {"created_at": 100, "title": "A", "updated_at": 100, "version": 1},
+        "b1": {"created_at": 101, "title": "B renamed", "updated_at": 200, "version": 2},
+        "c1": {"created_at": 102, "title": "C", "updated_at": 102, "version": 1}
+      }
+    },
+    {
+      "vector_id": "chats-merge/v0.1/catalog-higher-version-wins",
+      "description": "Same key at different versions resolves to the higher version, whichever side holds it.",
+      "case_kind": "catalog_merge",
+      "input_local": {
+        "x": {"created_at": 100, "title": "old", "updated_at": 100, "version": 2}
+      },
+      "input_remote": {
+        "x": {"created_at": 100, "title": "new", "updated_at": 200, "version": 5}
+      },
+      "expected_merged": {
+        "x": {"created_at": 100, "title": "new", "updated_at": 200, "version": 5}
+      }
+    },
+    {
+      "vector_id": "chats-merge/v0.1/catalog-tombstone-wins-over-append",
+      "description": "A delete at version 3 beats a concurrent live edit at version 3: remove-wins on the version tie, and the appended turns are discarded with the row.",
+      "case_kind": "catalog_merge",
+      "input_local": {
+        "x": {"created_at": 100, "title": "X edited", "updated_at": 300, "version": 3}
+      },
+      "input_remote": {
+        "x": {"created_at": 100, "deleted_at": 290, "title": "X", "updated_at": 290, "version": 3}
+      },
+      "expected_merged": {
+        "x": {"created_at": 100, "deleted_at": 290, "title": "X", "updated_at": 290, "version": 3}
+      }
+    },
+    {
+      "vector_id": "chats-merge/v0.1/catalog-enrollment-seed-intact",
+      "description": "An enrolling device with an empty roster adopts the server roster wholesale, tombstone included, so a conversation deleted before the enrollment does not resurrect there.",
+      "case_kind": "catalog_merge",
+      "input_local": {},
+      "input_remote": {
+        "a1": {"created_at": 100, "title": "A", "updated_at": 100, "version": 1},
+        "d9": {"created_at": 90, "deleted_at": 150, "title": "Gone", "updated_at": 150, "version": 2}
+      },
+      "expected_merged": {
+        "a1": {"created_at": 100, "title": "A", "updated_at": 100, "version": 1},
+        "d9": {"created_at": 90, "deleted_at": 150, "title": "Gone", "updated_at": 150, "version": 2}
+      }
+    },
+    {
+      "vector_id": "chats-merge/v0.1/catalog-associative",
+      "description": "Three-way join is grouping-independent: (A+B)+C equals A+(B+C).",
+      "case_kind": "catalog_merge_assoc",
+      "input_a": {
+        "x": {"created_at": 100, "title": "x1", "updated_at": 100, "version": 1}
+      },
+      "input_b": {
+        "x": {"created_at": 100, "title": "x2", "updated_at": 200, "version": 2},
+        "y": {"created_at": 101, "title": "y1", "updated_at": 101, "version": 1}
+      },
+      "input_c": {
+        "y": {"created_at": 101, "title": "y2", "updated_at": 201, "version": 2},
+        "z": {"created_at": 102, "title": "z1", "updated_at": 102, "version": 1}
+      },
+      "expected_merged": {
+        "x": {"created_at": 100, "title": "x2", "updated_at": 200, "version": 2},
+        "y": {"created_at": 101, "title": "y2", "updated_at": 201, "version": 2},
+        "z": {"created_at": 102, "title": "z1", "updated_at": 102, "version": 1}
+      }
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turns-commutative-suffixes",
+      "description": "One turn appended on each of two devices: both survive, ordered by turn id, whichever side is local.",
+      "case_kind": "turns_merge",
+      "input_local": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "a1b2c3d4-0000000003"],
+      "input_remote": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "e5f6a7b8-0000000003"],
+      "expected_merged": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "a1b2c3d4-0000000003", "e5f6a7b8-0000000003"]
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turns-prefix-verbatim-plus-both-suffixes",
+      "description": "The common prefix is kept verbatim once; the longer divergent suffix keeps every turn in id order.",
+      "case_kind": "turns_merge",
+      "input_local": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "a1b2c3d4-0000000003"],
+      "input_remote": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "e5f6a7b8-0000000003", "e5f6a7b8-0000000004"],
+      "expected_merged": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002", "a1b2c3d4-0000000003", "e5f6a7b8-0000000003", "e5f6a7b8-0000000004"]
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turns-idempotent",
+      "description": "Merging a turn list with itself changes nothing.",
+      "case_kind": "turns_merge",
+      "input_local": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"],
+      "input_remote": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"],
+      "expected_merged": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"]
+    }
+  ]
+}
