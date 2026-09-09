@@ -21,6 +21,7 @@
         "crdt-note-blob",
         "vault-meta",
         "vault-themes",
+        "hkdf-sha256",
         "chats-catalog",
         "chats-blob"
       ]
@@ -93,6 +94,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-themes.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "hkdf-sha256"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/hkdf-sha256.json"
           }
         }
       }
