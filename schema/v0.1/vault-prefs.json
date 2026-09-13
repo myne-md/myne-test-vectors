@@ -477,6 +477,15 @@
               },
               "description": "Weekly and monthly periodic-notes settings (myne-md/myne#177). A FLAT string map keyed '<period>.<setting>', where <period> is a bare lowercase word (weekly, monthly) and <setting> is one of folder / format / template. Daily is NOT here: it keeps its three flat daily_* fields, and a daily.* entry would be a second home for one setting. The codec validates neither half of a key and a decoder MUST re-encode an entry whose period it does not recognise, which is what makes a fourth period free. Keys and values NFC-normalized; keys encoded in lexicographic order; the whole map omitted when empty, so a pre-myne#177 vault is byte-identical. Canonical key 'periodic_notes' — after paired_extensions, before reminder_horizon_days."
             },
+            "ribbon_items": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Left-ribbon pinned command ids (myne-md/myne#699). Option: present-but-empty is a deliberately emptied rail, absent is never-configured. Sequence: order preserved verbatim, deduped. Device-local for the merge. Canonical key ribbon_i sorts after reminders_enabled, before ribbon_visible."
+            },
+            "ribbon_visible": {
+              "type": "boolean",
+              "description": "Left-ribbon show/hide (myne-md/myne#699). Inverse-default bool: default true, emitted ONLY when false. Device-local for the merge. Canonical key ribbon_v sorts after ribbon_items, before right_panel_active_tab."
+            },
             "reminder_horizon_days": {
               "type": "integer",
               "minimum": 0,
