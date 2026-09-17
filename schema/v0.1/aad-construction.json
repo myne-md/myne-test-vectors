@@ -41,20 +41,37 @@
         "aad_attachment_text_blob",
         "aad_custom_themes_blob",
         "aad_chats_catalog",
-        "aad_chats_blob"
+        "aad_chats_blob",
+        "aad_agent_memory_catalog",
+        "aad_agent_memory_blob",
+        "aad_agent_personality_blob"
       ],
       "description": "Which vault-scoped pub aad_* builder this case pins. The harness dispatches on this value, supplying the builder's specific inputs from the input_* fields below. The two device-local, vault-agnostic builders (aad_capture_blob / aad_share_import_blob) are deliberately absent: they bind a per-entry capture_id / share_id under a keychain wrap_key rather than account_number_hash under a root_key-derived KEK, so they sit outside this family's vault-scoped enumeration. Their canonical bytes are pinned by in-crate unit tests plus the pending-capture / share-import encrypt cases."
     },
     "input_kdf_params": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["m_kib", "t", "p", "argon2_version_hex"],
+      "required": [
+        "m_kib",
+        "t",
+        "p",
+        "argon2_version_hex"
+      ],
       "description": "Present for aad_password_wrap / aad_recovery_wrap (the wrap AADs bind the canonical kdf_params block).",
       "properties": {
-        "m_kib": { "type": "integer" },
-        "t": { "type": "integer" },
-        "p": { "type": "integer" },
-        "argon2_version_hex": { "type": "string", "pattern": "^[0-9a-f]{2}$" }
+        "m_kib": {
+          "type": "integer"
+        },
+        "t": {
+          "type": "integer"
+        },
+        "p": {
+          "type": "integer"
+        },
+        "argon2_version_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$"
+        }
       }
     },
     "input_items_key_id_hex": {
@@ -106,10 +123,23 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["offset", "length", "label", "bytes_hex"],
+        "required": [
+          "offset",
+          "length",
+          "label",
+          "bytes_hex"
+        ],
         "properties": {
-          "offset": { "type": "integer", "minimum": 0, "description": "Byte offset of this segment within the full AAD." },
-          "length": { "type": "integer", "minimum": 1, "description": "Byte length of this segment; equals bytes_hex.length / 2." },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Byte offset of this segment within the full AAD."
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Byte length of this segment; equals bytes_hex.length / 2."
+          },
           "label": {
             "type": "string",
             "enum": [
@@ -126,13 +156,21 @@
               "content_type",
               "attachment_id",
               "conversation_id",
-              "extractor_version"
+              "extractor_version",
+              "memory_entry_id"
             ],
             "description": "Structural role of this segment."
           },
-          "bytes_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" }
+          "bytes_hex": {
+            "type": "string",
+            "pattern": "^([0-9a-f]{2})+$"
+          }
         }
       }
+    },
+    "input_memory_entry_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
     }
   }
 }

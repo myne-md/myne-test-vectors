@@ -30,6 +30,10 @@
         "aad_vault_items_key_wrap_v0_2",
         "aad_singleton_blob_v0_2",
         "aad_membership_blob",
+        "aad_membership_roster_blob",
+        "aad_person_wrap",
+        "aad_person_keypair",
+        "aad_vault_invite",
         "aad_agent_memory_blob_v0_2"
       ],
       "description": "The pub fn in protocol/src/aead.rs the case pins. A closed enum: a new v0.2 vault-scoped builder must be added here AND to the runner's match arm and `required` list in the same change, which is the drift the v0.1 family's hand-maintained lists once had."
@@ -120,6 +124,7 @@
               "kdf_params_canonical",
               "items_key_id",
               "account_number_hash",
+              "recipient_fingerprint",
               "memory_entry_id"
             ]
           },
@@ -129,6 +134,9 @@
           }
         }
       }
+    },
+    "input_recipient_fingerprint_hex": {
+      "type": "string"
     }
   },
   "allOf": [
@@ -302,6 +310,153 @@
             {
               "required": [
                 "input_items_key_id_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_membership_roster_blob"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label",
+          "input_account_number_hash_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_person_wrap"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label",
+          "input_account_number_hash_hex",
+          "input_recipient_fingerprint_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_person_keypair"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_account_number_hash_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_recipient_fingerprint_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_vault_invite"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_account_number_hash_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_recipient_fingerprint_hex"
               ]
             }
           ]
