@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-memory-merge.json",
+  "title": "agent-memory-merge \u2014 case shape (v0.1)",
+  "description": "Pins the agent-memory catalog merge rules in myne-core (myne-md/myne#697): the per-id causal join over records, remove-wins tombstones on equal-version ties, and three-way associativity. Pure logic over decoded plaintexts; no keys, no AEAD. Spec contract is docs/spec/sync-protocol.md \u00a710.2.6 + \u00a711.4.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^agent-memory-merge/v0\\.1/[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "catalog_merge",
+        "catalog_merge_assoc"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "catalog_merge",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_merged",
+        "input_local",
+        "input_remote",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "catalog_merge"
+        },
+        "expected_merged": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        },
+        "input_local": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        },
+        "input_remote": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "catalog_merge_assoc",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_merged",
+        "input_a",
+        "input_b",
+        "input_c",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "catalog_merge_assoc"
+        },
+        "expected_merged": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        },
+        "input_a": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        },
+        "input_b": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        },
+        "input_c": {
+          "type": "object",
+          "description": "A memory catalog map: entry-id hex (32 lowercase chars, no separators) to roster row, exactly as serde reads MemoryEntryRow.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "description": "One roster row, the MemoryEntryRow shape (myne-core). The entry TEXT is not here: it lives in the memories/<id> file, so a merge vector can only pin the roster (timestamps, tombstone, causal version).",
+            "unevaluatedProperties": false,
+            "required": [
+              "created_at",
+              "updated_at",
+              "version"
+            ],
+            "properties": {
+              "created_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deleted_at": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Tombstone marker. Present = the entry is deleted everywhere; remove-wins over a concurrent live edit."
+              },
+              "updated_at": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Causal merge counter, the sync race key (absent reads as 0)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

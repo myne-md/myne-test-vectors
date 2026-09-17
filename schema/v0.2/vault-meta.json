@@ -1,10 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta.json",
-  "title": "vault-meta — case shape (v0.2)",
-  "description": "Pins one byte-level case for protocol::serialize_vault_meta_v0_2 + protocol::parse_vault_meta_v0_2 — the NTV5 vault.meta of a migrated v0.2 vault (docs/spec/protocol.md §9.3 + §10.4.1 + §10.5). The layout is the MYV1 layout byte-for-byte, 345 bytes, with exactly two substitutions: magic NTV5 at [0..4] and protocol_version 0x02 at [4]. Everything after those five bytes — account_number_hash, the canonical KDF param block, both wrap salts and nonces, both enc_root_key copies, items_key_id, its nonce and enc_items_key — sits at the offsets §9.3 already pins. Three case kinds: 'roundtrip' (serialize + parse agree on the bytes), 'parse_fail' (the v0.2 parser refuses an MYV1 blob) and 'parse_fail_v0_1' (the v0.1 parser refuses an NTV5 blob). The two reject kinds are the load-bearing ones and they are deliberately a PAIR: §10.5's anti-downgrade property is bidirectional, and a round-trip case alone passes in an implementation that ignores the magic entirely. Reference implementation: protocol/src/vault_meta_v0_2.rs (main myne repository).",
+  "title": "vault-meta \u2014 case shape (v0.2)",
+  "description": "Pins one byte-level case for protocol::serialize_vault_meta_v0_2 + protocol::parse_vault_meta_v0_2 \u2014 the NTV5 vault.meta of a migrated v0.2 vault (docs/spec/protocol.md \u00a79.3 + \u00a710.4.1 + \u00a710.5). The layout is the MYV1 layout byte-for-byte, 345 bytes, with exactly two substitutions: magic NTV5 at [0..4] and protocol_version 0x02 at [4]. Everything after those five bytes \u2014 account_number_hash, the canonical KDF param block, both wrap salts and nonces, both enc_root_key copies, items_key_id, its nonce and enc_items_key \u2014 sits at the offsets \u00a79.3 already pins. Three case kinds: 'roundtrip' (serialize + parse agree on the bytes), 'parse_fail' (the v0.2 parser refuses an MYV1 blob) and 'parse_fail_v0_1' (the v0.1 parser refuses an NTV5 blob). The two reject kinds are the load-bearing ones and they are deliberately a PAIR: \u00a710.5's anti-downgrade property is bidirectional, and a round-trip case alone passes in an implementation that ignores the magic entirely. Reference implementation: protocol/src/vault_meta_v0_2.rs (main myne repository).",
   "type": "object",
-  "required": ["vector_id", "description", "case_kind"],
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
   "unevaluatedProperties": false,
   "properties": {
     "vector_id": {
@@ -18,12 +22,22 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["roundtrip", "parse_fail", "parse_fail_v0_1", "membership_absent", "membership_present", "membership_tampered"]
+      "enum": [
+        "roundtrip",
+        "parse_fail",
+        "parse_fail_v0_1",
+        "membership_absent",
+        "membership_present",
+        "membership_tampered",
+        "roster_present",
+        "roster_tampered",
+        "roster_over_cap"
+      ]
     }
   },
   "oneOf": [
     {
-      "title": "roundtrip — pin the v0.2 encoder's byte output and its parse",
+      "title": "roundtrip \u2014 pin the v0.2 encoder's byte output and its parse",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -43,9 +57,15 @@
         "expected_blob_hex"
       ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "roundtrip" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "roundtrip"
+        },
         "input_account_number_hash_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{32}$",
@@ -54,15 +74,26 @@
         "input_kdf_params": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["m_kib", "t", "p", "argon2_version_hex"],
+          "required": [
+            "m_kib",
+            "t",
+            "p",
+            "argon2_version_hex"
+          ],
           "properties": {
             "m_kib": {
               "type": "integer",
               "minimum": 8,
-              "description": "Argon2id memory cost in KiB. v0.2 has NOT allocated its own KDF yet, so a vector may legitimately carry either the canonical production block or a weak test block — the case pins the ENCODING of whatever params it names, at the offsets §9.3 fixes, not a v0.2 parameter choice."
+              "description": "Argon2id memory cost in KiB. v0.2 has NOT allocated its own KDF yet, so a vector may legitimately carry either the canonical production block or a weak test block \u2014 the case pins the ENCODING of whatever params it names, at the offsets \u00a79.3 fixes, not a v0.2 parameter choice."
             },
-            "t": { "type": "integer", "minimum": 1 },
-            "p": { "type": "integer", "minimum": 1 },
+            "t": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "p": {
+              "type": "integer",
+              "minimum": 1
+            },
             "argon2_version_hex": {
               "type": "string",
               "pattern": "^[0-9a-f]{2}$",
@@ -70,23 +101,44 @@
             }
           }
         },
-        "input_random_salt_password_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "input_random_salt_recovery_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "input_nonce_password_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_random_salt_password_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_random_salt_recovery_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_nonce_password_wrap_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$"
+        },
         "input_enc_root_key_password_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{128}$",
           "description": "64-byte wrapped root_key copy (32-byte ciphertext + 32-byte CTX tag), password side."
         },
-        "input_nonce_recovery_wrap_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_nonce_recovery_wrap_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$"
+        },
         "input_enc_root_key_recovery_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{128}$",
-          "description": "64-byte wrapped root_key copy, recovery side. Two independent copies of the SAME root_key is what makes recovery possible without the password (§3.1)."
+          "description": "64-byte wrapped root_key copy, recovery side. Two independent copies of the SAME root_key is what makes recovery possible without the password (\u00a73.1)."
         },
-        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "input_items_key_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
-        "input_enc_items_key_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "input_items_key_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_items_key_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$"
+        },
+        "input_enc_items_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$"
+        },
         "expected_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{690}$",
@@ -95,33 +147,59 @@
       }
     },
     {
-      "title": "parse_fail — the v0.2 parser must refuse a v0.1 blob",
+      "title": "parse_fail \u2014 the v0.2 parser must refuse a v0.1 blob",
       "additionalProperties": false,
-      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_error"],
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "parse_fail" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "parse_fail"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})*$",
-          "description": "A blob the v0.2 parser must reject — canonically the same 345 bytes with MYV1 + 0x01 restored at [0..5], so magic is the ONLY difference from the roundtrip case."
+          "description": "A blob the v0.2 parser must reject \u2014 canonically the same 345 bytes with MYV1 + 0x01 restored at [0..5], so magic is the ONLY difference from the roundtrip case."
         },
         "expected_error": {
           "type": "string",
-          "enum": ["invalid_vault_meta"],
-          "description": "Rust reference: ProtocolError::InvalidVaultMeta. vault.meta rejects are deliberately NOT differentiated by cause — the file is read before any credential exists, so a caller learns 'this is not a v0.2 vault.meta' and nothing finer."
+          "enum": [
+            "invalid_vault_meta"
+          ],
+          "description": "Rust reference: ProtocolError::InvalidVaultMeta. vault.meta rejects are deliberately NOT differentiated by cause \u2014 the file is read before any credential exists, so a caller learns 'this is not a v0.2 vault.meta' and nothing finer."
         }
       }
     },
     {
-      "title": "parse_fail_v0_1 — the v0.1 parser must refuse a v0.2 blob",
+      "title": "parse_fail_v0_1 \u2014 the v0.1 parser must refuse a v0.2 blob",
       "additionalProperties": false,
-      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_error"],
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_error"
+      ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "parse_fail_v0_1" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "parse_fail_v0_1"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})*$",
@@ -129,19 +207,33 @@
         },
         "expected_error": {
           "type": "string",
-          "enum": ["invalid_vault_meta"],
+          "enum": [
+            "invalid_vault_meta"
+          ],
           "description": "Rust reference: ProtocolError::InvalidVaultMeta, raised by the v0.1 parser."
         }
       }
     },
     {
-      "title": "membership_absent — an NTV5 meta with no membership field",
+      "title": "membership_absent \u2014 an NTV5 meta with no membership field",
       "additionalProperties": false,
-      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_membership"],
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_membership"
+      ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "membership_absent" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "membership_absent"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{690}$",
@@ -154,42 +246,230 @@
       }
     },
     {
-      "title": "membership_present — an NTV5 meta with the membership field",
+      "title": "membership_present \u2014 an NTV5 meta with the membership field",
       "additionalProperties": false,
-      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex", "expected_account_id_hex"],
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_account_id_hex"
+      ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "membership_present" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "membership_present"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{834}$",
           "description": "A 417-byte NTV5 blob with reserved byte 0x01 and the 72-byte membership field appended. parse_vault_meta_v0_2 must accept it and unseal_membership must recover the account id."
         },
-        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "expected_account_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_account_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        }
       }
     },
     {
-      "title": "membership_tampered — a flipped membership ciphertext byte must fail closed",
+      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
       "additionalProperties": false,
-      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "input_root_key_hex", "input_account_number_hash_hex", "tamper_offset", "expected_error"],
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "tamper_offset",
+        "expected_error"
+      ],
       "properties": {
-        "vector_id": { "type": "string" },
-        "description": { "type": "string" },
-        "case_kind": { "const": "membership_tampered" },
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "membership_tampered"
+        },
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{834}$",
           "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
         },
-        "input_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
-        "tamper_offset": { "type": "integer", "const": 369 },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "tamper_offset": {
+          "type": "integer",
+          "const": 369
+        },
         "expected_error": {
           "type": "string",
-          "enum": ["aead_failure"]
+          "enum": [
+            "aead_failure"
+          ]
+        }
+      }
+    },
+    {
+      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_roster_nonce_hex",
+        "expected_roster_plaintext_utf8",
+        "tamper_offset"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "roster_present"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{990}$",
+          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "tamper_offset": {
+          "type": "integer"
+        },
+        "input_roster_nonce_hex": {
+          "type": "string"
+        },
+        "expected_roster_plaintext_utf8": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "roster_tampered"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{990}$",
+          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "aead_failure"
+          ]
+        }
+      }
+    },
+    {
+      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "tamper_offset",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "roster_over_cap"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{990}$",
+          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "tamper_offset": {
+          "type": "integer"
+        },
+        "expected_error": {
+          "type": "string",
+          "enum": [
+            "aead_failure",
+            "invalid_vault_meta"
+          ]
         }
       }
     }

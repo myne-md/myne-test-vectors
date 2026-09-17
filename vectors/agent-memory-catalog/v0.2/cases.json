@@ -1,0 +1,28 @@
+{
+  "schema": "agent-memory-catalog",
+  "protocol_version": "v0.2",
+  "spec_section": "protocol.md \u00a79.25 + \u00a710.4.1",
+  "description": "Pins the migrated agent-memory catalog envelope (MYN5): the v0.2 seal (v0.2 KEK + v0.2 AAD) over the roster bytes, and the v0.1 expectation refusing MYN5.",
+  "cases": [
+    {
+      "vector_id": "agent-memory-catalog/v0.2/encrypt",
+      "description": "Populated roster sealed as MYN5 under the v0.2 AAD. The header version byte stays 0x01 (the envelope version, not the generation).",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_hex": "7b223031383461326233633464356536663730383139326133623463356436653766223a7b22637265617465645f6174223a313732353431373630303030302c22757064617465645f6174223a313732353431373630303030302c2276657273696f6e223a337d7d",
+      "expected_magic_ascii": "MYN5",
+      "expected_blob_hex": "4d594e350101888888888888888888888888888888888888888888888888000000881add787bfd98dccd7f16ef0102f3ebdd915210f9f1db4c096f7c08b4fe3500b55e287a6fbf49c4e246a7c87abd7a1eabfca9a389b81c2128ad8f1a865658ab4fddf8ff4bdf0bedb2150ff1ea1f337a6b4df49fd9ceae0cd77a80a3d7e2a26674eea40861a362306504d7ff7709afa384d5b3674fe37df7808c511922a929b0feac95839e72dec4c5",
+      "expected_version_byte_hex": "01"
+    },
+    {
+      "vector_id": "agent-memory-catalog/v0.2/rejects-v0-1-expectation",
+      "description": "The MYN5 blob refused under the v0.1 expectation (magic mismatch, before any decryption).",
+      "case_kind": "decode_fail_v0_1",
+      "input_blob_hex": "4d594e350101888888888888888888888888888888888888888888888888000000881add787bfd98dccd7f16ef0102f3ebdd915210f9f1db4c096f7c08b4fe3500b55e287a6fbf49c4e246a7c87abd7a1eabfca9a389b81c2128ad8f1a865658ab4fddf8ff4bdf0bedb2150ff1ea1f337a6b4df49fd9ceae0cd77a80a3d7e2a26674eea40861a362306504d7ff7709afa384d5b3674fe37df7808c511922a929b0feac95839e72dec4c5",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "expected_error": "magic_mismatch"
+    }
+  ]
+}

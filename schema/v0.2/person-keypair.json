@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-keypair.json",
+  "title": "person-keypair \u2014 case shape (v0.2)",
+  "description": "Pins protocol::derive_person_keypair_wrap_key_from_normalized under the v0.2 salt domain 'myne.v0.2 argon2id-person-keypair|' (the B2B identity substrate, decisions/protocol/0586). Vault-independent: the salt's account_number_hash slot carries the phrase-derived person_id_hash, not any vault account hash, so two people with the same phrase derive different wrap keys. Inputs are hex-encoded for cross-language portability.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_id",
+    "description",
+    "input_phrase_utf8_hex",
+    "input_salt_random_hex",
+    "input_person_id_hash_hex",
+    "input_kdf_params",
+    "expected_wrap_key_hex"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^person-keypair/v0\\.2/[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_phrase_utf8_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$",
+      "description": "UTF-8 bytes of the already-normalized recovery phrase (caller normalizes per \u00a73.4 before this call)."
+    },
+    "input_salt_random_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte per-person Argon2id salt entropy."
+    },
+    "input_person_id_hash_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "16-byte phrase-derived person id hash (SHA-256('myne.person-id|' || phrase)[:16]); occupies the account_number_hash salt slot."
+    },
+    "input_kdf_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "m_kib",
+        "t",
+        "p",
+        "argon2_version_hex"
+      ],
+      "properties": {
+        "m_kib": {
+          "type": "integer"
+        },
+        "t": {
+          "type": "integer"
+        },
+        "p": {
+          "type": "integer"
+        },
+        "argon2_version_hex": {
+          "type": "string"
+        }
+      }
+    },
+    "expected_wrap_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "32-byte derived person keypair wrap key."
+    }
+  }
+}

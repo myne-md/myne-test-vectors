@@ -70,6 +70,10 @@
         "tls-exporter",
         "vault-label",
         "embed-layout",
+        "agent-memory-catalog",
+        "agent-memory-blob",
+        "agent-personality",
+        "agent-memory-merge",
         "chats-catalog",
         "chats-blob",
         "chats-merge"
@@ -822,6 +826,62 @@
           }
         }
       }
+    },
+
+    {
+        "properties": {
+            "schema": {
+                "const": "agent-memory-catalog"
+            },
+            "cases": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-memory-catalog.json"
+                }
+            }
+        }
+    },
+
+    {
+        "properties": {
+            "schema": {
+                "const": "agent-memory-blob"
+            },
+            "cases": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-memory-blob.json"
+                }
+            }
+        }
+    },
+
+    {
+        "properties": {
+            "schema": {
+                "const": "agent-personality"
+            },
+            "cases": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-personality.json"
+                }
+            }
+        }
+    },
+
+    {
+        "properties": {
+            "schema": {
+                "const": "agent-memory-merge"
+            },
+            "cases": {
+                "type": "array",
+                "items": {
+                    "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-memory-merge.json"
+                }
+            }
+        }
     }
   ]
 }

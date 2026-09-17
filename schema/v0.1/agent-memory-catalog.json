@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/agent-memory-catalog.json",
+  "title": "agent-memory-catalog \u2014 case shape (v0.1)",
+  "description": "Pins one byte-level case for the MYN1 vault.agent-memory catalog codec (myne-md/myne#697). vault.agent-memory is a vault-level singleton blob sealed under agent_memory_catalog_key = DeriveSubkey(root_key, SubkeyRole::AgentMemoryCatalogKey), with account_number_hash bound via aad_agent_memory_catalog. The inner plaintext is the client layer's canonical memory-roster JSON (object mapping memory-id hex -> {created_at,deleted_at?,text,updated_at,version?} with id keys sorted and per-entry keys alphabetical); the codec treats it as opaque bytes. Spec contract is docs/spec/protocol.md \u00a79.25 + \u00a73.4 + \u00a75.2.",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^agent-memory-catalog/v0\\.1/[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "decrypt_aead_fail",
+        "decrypt_ok",
+        "encrypt",
+        "parse_fail"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "decrypt_aead_fail",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_kind",
+        "input_account_number_hash_hex",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "decrypt_aead_fail"
+        },
+        "expected_kind": {},
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        }
+      }
+    },
+    {
+      "title": "decrypt_ok",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_plaintext_canonical_utf8_hex",
+        "input_account_number_hash_hex",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "decrypt_ok"
+        },
+        "expected_plaintext_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        }
+      }
+    },
+    {
+      "title": "encrypt",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_catalog_blob_hex",
+        "informational_catalog_key_hex",
+        "input_account_number_hash_hex",
+        "input_catalog_nonce_hex",
+        "input_plaintext_canonical_utf8_hex",
+        "input_root_key_hex",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "encrypt"
+        },
+        "expected_catalog_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "informational_catalog_key_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_catalog_nonce_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_plaintext_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        }
+      }
+    },
+    {
+      "title": "parse_fail",
+      "additionalProperties": false,
+      "required": [
+        "case_kind",
+        "description",
+        "expected_error",
+        "expected_kind",
+        "input_account_number_hash_hex",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "vector_id"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "parse_fail"
+        },
+        "expected_kind": {},
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$"
+        },
+        "expected_error": {
+          "type": "string",
+          "description": "The AgentMemoryCatalogError variant this blob must be rejected with. Every structural reject is pinned by name so a port that returns the wrong variant (or accepts the blob) fails here rather than in a sibling case's shadow.",
+          "enum": [
+            "ciphertext_len_overflow",
+            "ciphertext_truncated",
+            "format_unsupported",
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch"
+          ]
+        }
+      }
+    }
+  ]
+}

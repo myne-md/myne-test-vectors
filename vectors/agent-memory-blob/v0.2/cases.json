@@ -1,0 +1,30 @@
+{
+  "schema": "agent-memory-blob",
+  "protocol_version": "v0.2",
+  "spec_section": "protocol.md \u00a79.26 + \u00a710.4.1",
+  "description": "Pins the migrated memory-entry envelope (MYX5): the v0.2 seal (v0.2 KEK + v0.2 per-entry AAD) over the entry bytes, and the v0.1 expectation refusing MYX5.",
+  "cases": [
+    {
+      "vector_id": "agent-memory-blob/v0.2/encrypt",
+      "description": "Entry plaintext sealed as MYX5 under the v0.2 per-entry AAD. The header version byte is 0x02 (the per-entry families carry the generation in the version byte, unlike the singletons).",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "0184a2b3c4d5e6f708192a3b4c5d6e7f",
+      "input_plaintext_hex": "7b2274657874223a225468652075736572207072656665727320636f6e6369736520616e73776572732e227d",
+      "expected_magic_ascii": "MYX5",
+      "expected_blob_hex": "4d59583502018888888888888888888888888888888888888888888888880000004c0f32038186db74abf223d05fa13c54520d6cf5f5e6a34ec724fcd0406f5d0877e3be45b64f444c1598ad3fc1fe881f2b9e830d7c6ebd28b0a0f109a24c13229e7f941a13e11a5730980b586e",
+      "expected_version_byte_hex": "02"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.2/rejects-v0-1-expectation",
+      "description": "The MYX5 blob refused under the v0.1 expectation (magic mismatch, before any decryption).",
+      "case_kind": "decode_fail_v0_1",
+      "input_blob_hex": "4d59583502018888888888888888888888888888888888888888888888880000004c0f32038186db74abf223d05fa13c54520d6cf5f5e6a34ec724fcd0406f5d0877e3be45b64f444c1598ad3fc1fe881f2b9e830d7c6ebd28b0a0f109a24c13229e7f941a13e11a5730980b586e",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "0184a2b3c4d5e6f708192a3b4c5d6e7f",
+      "expected_error": "magic_mismatch"
+    }
+  ]
+}

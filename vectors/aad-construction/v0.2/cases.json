@@ -98,6 +98,80 @@
         { "offset": 13, "length": 15, "label": "role_label", "bytes_hex": "6d656d626572736869702d626c6f62" },
         { "offset": 28, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
       ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_membership_roster_blob",
+      "description": "AAD bound into the AEAD seal of the membership field's B2B roster extension (NTV5 reserved byte 0x02, myne-md/myne#698). Mirrors aad_membership_blob with role 'membership-roster-blob' + account_number_hash, sealed under the SAME membership_key, so a roster copied from another vault fails AEAD instead of silently regrouping.",
+      "input_builder_name": "aad_membership_roster_blob",
+      "input_role_label": "membership-roster-blob",
+      "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "expected_aad_hex": "6d796e652e76302e327c0200166d656d626572736869702d726f737465722d626c6f62a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0016" },
+        { "offset": 13, "length": 22, "label": "role_label", "bytes_hex": "6d656d626572736869702d726f737465722d626c6f62" },
+        { "offset": 35, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
+      ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_person_wrap",
+      "description": "AAD bound into the AEAD seal of a per-recipient itemsKey wrap (myne-md/myne#698). Role 'person-wrap-items-key' + the 32-byte recipient fingerprint + the 16-byte account_number_hash, the vault binding every vault-scoped AAD follows.",
+      "input_builder_name": "aad_person_wrap",
+      "input_role_label": "person-wrap-items-key",
+      "input_recipient_fingerprint_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "expected_aad_hex": "6d796e652e76302e327c020015706572736f6e2d777261702d6974656d732d6b65795a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5aa3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0015" },
+        { "offset": 13, "length": 21, "label": "role_label", "bytes_hex": "706572736f6e2d777261702d6974656d732d6b6579" },
+        { "offset": 34, "length": 32, "label": "recipient_fingerprint", "bytes_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a" },
+        { "offset": 66, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
+      ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_person_keypair",
+      "description": "AAD bound into the AEAD seal of a person keypair envelope (myne-md/myne#698). Role 'person-keypair-blob' only: a fingerprint cannot be bound here because it is derived from the sealed material itself.",
+      "input_builder_name": "aad_person_keypair",
+      "input_role_label": "person-keypair-blob",
+      "expected_aad_hex": "6d796e652e76302e327c020013706572736f6e2d6b6579706169722d626c6f62",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0013" },
+        { "offset": 13, "length": 19, "label": "role_label", "bytes_hex": "706572736f6e2d6b6579706169722d626c6f62" }
+      ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_vault_invite",
+      "description": "AAD bound into the AEAD seal of an invite payload envelope (myne-md/myne#698). Role 'vault-invite-blob' only: the envelope is sync-wire-only and binds nothing else, because the vault binding the member needs arrives on the inner wrapped itemsKey whose own AAD carries account_number_hash.",
+      "input_builder_name": "aad_vault_invite",
+      "input_role_label": "vault-invite-blob",
+      "expected_aad_hex": "6d796e652e76302e327c0200117661756c742d696e766974652d626c6f62",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0011" },
+        { "offset": 13, "length": 17, "label": "role_label", "bytes_hex": "7661756c742d696e766974652d626c6f62" }
+      ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_agent_memory_blob_v0_2",
+      "description": "The v0.2 per-entry memory AAD (myne-md/myne#697): prefix + 0x02 + length-prefixed role 'agent-memory-blob' + 16-byte entry id + account hash. The entry id sits between the role and the hash, which is what makes a cross-entry substitution fail the AEAD tag. The §10.4.1 migration re-seals every memories/<id> file under exactly these bytes.",
+      "input_builder_name": "aad_agent_memory_blob_v0_2",
+      "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "input_memory_entry_id_hex": "c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7",
+      "expected_aad_hex": "6d796e652e76302e327c0200116167656e742d6d656d6f72792d626c6f62c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0011" },
+        { "offset": 13, "length": 17, "label": "role_label", "bytes_hex": "6167656e742d6d656d6f72792d626c6f62" },
+        { "offset": 30, "length": 16, "label": "memory_entry_id", "bytes_hex": "c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7" },
+        { "offset": 46, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
+      ]
     }
   ]
 }

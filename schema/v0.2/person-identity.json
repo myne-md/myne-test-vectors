@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-identity.json",
+  "title": "person-identity \u2014 case shape (v0.2)",
+  "description": "Pins the two deterministic person-path byte constructions (myne-md/myne#698): the canonical fingerprint and the hybrid-wrap combiner. Both are cross-implementation contracts: a port that frames either differently derives a different fingerprint (SAS never matches) or a different wrap key (no invite opens).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_kind",
+    "description"
+  ],
+  "properties": {
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "fingerprint",
+        "hybrid-wrap-key"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_kem_ek_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$"
+    },
+    "input_ed_pk_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "input_mldsa_vk_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$"
+    },
+    "expected_fingerprint_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "input_classical_ss_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "input_pq_ss_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "expected_hybrid_wrap_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "fingerprint"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "input_kem_ek_hex",
+          "input_ed_pk_hex",
+          "input_mldsa_vk_hex",
+          "expected_fingerprint_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_classical_ss_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_pq_ss_hex"
+              ]
+            },
+            {
+              "required": [
+                "expected_hybrid_wrap_key_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "case_kind": {
+            "const": "hybrid-wrap-key"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "input_classical_ss_hex",
+          "input_pq_ss_hex",
+          "expected_hybrid_wrap_key_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kem_ek_hex"
+              ]
+            },
+            {
+              "required": [
+                "expected_fingerprint_hex"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

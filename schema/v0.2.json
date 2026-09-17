@@ -23,7 +23,12 @@
         "vault-themes",
         "hkdf-sha256",
         "chats-catalog",
-        "chats-blob"
+        "chats-blob",
+        "person-keypair",
+        "person-identity",
+        "agent-memory-catalog",
+        "agent-memory-blob",
+        "agent-personality"
       ]
     },
     "protocol_version": {
@@ -133,6 +138,74 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/chats-blob.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "agent-memory-catalog"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/agent-memory-catalog.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "agent-memory-blob"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/agent-memory-blob.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "agent-personality"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/agent-personality.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-keypair"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-keypair.json"
+          }
+        }
+      },
+      "required": [
+        "schema"
+      ]
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-identity"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-identity.json"
           }
         }
       }

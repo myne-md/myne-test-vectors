@@ -1,0 +1,141 @@
+{
+ "schema": "agent-memory-merge",
+ "protocol_version": "v0.1",
+ "spec_section": "sync-protocol.md §10.2.6 + §11.4",
+ "description": "Memory-catalog merge rules (myne-md/myne#697). Pure logic over decoded plaintexts. Splice into vectors/agent-memory-merge/v0.1/cases.json.",
+ "cases": [
+  {
+   "vector_id": "agent-memory-merge/v0.1/catalog-commutative-join",
+   "description": "Disjoint creates union; a concurrent edit resolves to the higher version.",
+   "case_kind": "catalog_merge",
+   "input_local": {
+    "0184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 100,
+     "version": 1
+    },
+    "1184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 101,
+     "updated_at": 101,
+     "version": 1
+    }
+   },
+   "input_remote": {
+    "1184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 101,
+     "updated_at": 200,
+     "version": 2
+    },
+    "2184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 102,
+     "updated_at": 102,
+     "version": 1
+    }
+   },
+   "expected_merged": {
+    "0184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 100,
+     "version": 1
+    },
+    "1184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 101,
+     "updated_at": 200,
+     "version": 2
+    },
+    "2184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 102,
+     "updated_at": 102,
+     "version": 1
+    }
+   }
+  },
+  {
+   "vector_id": "agent-memory-merge/v0.1/catalog-tombstone-wins-over-edit",
+   "description": "An entry deleted on one device while edited on another resolves remove-wins (the concurrent edit is discarded).",
+   "case_kind": "catalog_merge",
+   "input_local": {
+    "5184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "deleted_at": 200,
+     "updated_at": 200,
+     "version": 3
+    }
+   },
+   "input_remote": {
+    "5184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 150,
+     "version": 3
+    }
+   },
+   "expected_merged": {
+    "5184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "deleted_at": 200,
+     "updated_at": 200,
+     "version": 3
+    }
+   }
+  },
+  {
+   "vector_id": "agent-memory-merge/v0.1/catalog-assoc-join",
+   "description": "Three-way associativity: (A+B)+C == A+(B+C).",
+   "case_kind": "catalog_merge_assoc",
+   "input_a": {
+    "3184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 100,
+     "version": 1
+    }
+   },
+   "input_b": {
+    "3184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 150,
+     "version": 2
+    }
+   },
+   "input_c": {
+    "3184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 200,
+     "version": 3
+    }
+   },
+   "expected_merged": {
+    "3184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 200,
+     "version": 3
+    }
+   }
+  },
+  {
+   "vector_id": "agent-memory-merge/v0.1/catalog-equal-version-tie",
+   "description": "Live-vs-live at an equal causal version: the total-order tie-break decides by greater updated_at (myne-core memory_entry_tie_break), so a port that merges by version alone diverges here.",
+   "case_kind": "catalog_merge",
+   "input_local": {
+    "4184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 150,
+     "version": 3
+    }
+   },
+   "input_remote": {
+    "4184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 200,
+     "version": 3
+    }
+   },
+   "expected_merged": {
+    "4184a2b3c4d5e6f708192a3b4c5d6e7f": {
+     "created_at": 100,
+     "updated_at": 200,
+     "version": 3
+    }
+   }
+  }
+ ]
+}
