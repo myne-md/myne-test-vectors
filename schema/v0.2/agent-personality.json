@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/agent-personality.json",
+  "title": "agent-personality — case shape (v0.2)",
+  "description": "Pins the migrated personality envelope (MYZ5, §10.4.1, myne-md/myne#697): the v0.2 seal (v0.2 KEK via derive_subkey_versioned + v0.2 AAD) over the directives bytes, and the v0.1 expectation refusing MYZ5. The header version byte stays 0x01 (the envelope version, not the generation), like the chats-catalog singleton family. Two case kinds: 'encrypt' (decode-verified fixture + magic/version pins) and 'decode_fail_v0_1' (the v0.1 expectation refuses MYZ5 at the magic check, before any decryption). The Rust reference implementation lives at protocol/src/agent_personality_blob.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^agent-personality/v0\\.2/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'agent-personality/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["encrypt", "decode_fail_v0_1"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "encrypt — pin the migrated envelope",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_plaintext_hex",
+        "expected_magic_ascii",
+        "expected_blob_hex",
+        "expected_version_byte_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "encrypt" },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_plaintext_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "expected_magic_ascii": {
+          "const": "MYZ5"
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "expected_version_byte_hex": {
+          "const": "01"
+        }
+      }
+    },
+    {
+      "title": "decode_fail_v0_1 — the v0.1 expectation refuses the next-major blob",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "decode_fail_v0_1" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$"
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_error": {
+          "const": "magic_mismatch"
+        }
+      }
+    }
+  ]
+}

@@ -98,6 +98,22 @@
         { "offset": 13, "length": 15, "label": "role_label", "bytes_hex": "6d656d626572736869702d626c6f62" },
         { "offset": 28, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
       ]
+    },
+    {
+      "vector_id": "aad-construction/v0.2/aad_agent_memory_blob_v0_2",
+      "description": "The v0.2 per-entry memory AAD (myne-md/myne#697): prefix + 0x02 + length-prefixed role 'agent-memory-blob' + 16-byte entry id + account hash. The entry id sits between the role and the hash, which is what makes a cross-entry substitution fail the AEAD tag. The §10.4.1 migration re-seals every memories/<id> file under exactly these bytes.",
+      "input_builder_name": "aad_agent_memory_blob_v0_2",
+      "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "input_memory_entry_id_hex": "c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7",
+      "expected_aad_hex": "6d796e652e76302e327c0200116167656e742d6d656d6f72792d626c6f62c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0011" },
+        { "offset": 13, "length": 17, "label": "role_label", "bytes_hex": "6167656e742d6d656d6f72792d626c6f62" },
+        { "offset": 30, "length": 16, "label": "memory_entry_id", "bytes_hex": "c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7" },
+        { "offset": 46, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
+      ]
     }
   ]
 }

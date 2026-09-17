@@ -1,0 +1,150 @@
+{
+  "schema": "agent-memory-blob",
+  "protocol_version": "v0.1",
+  "spec_section": "protocol.md \u00a79.26 + \u00a75.2 + \u00a73.4",
+  "description": "Pins the MYX1 per-entry agent-memory codec. Inner plaintext is the client layer's entry JSON ({text, source_conversation?}); the codec treats it as opaque bytes. One family KEK = DeriveSubkey(root,'agent-memory-key'); the per-entry AAD 'agent-memory-blob' binds memory_entry_id (16 B) + account_number_hash (16 B), 62 B total, the MYE1 archetype.",
+  "cases": [
+    {
+      "vector_id": "agent-memory-blob/v0.1/encrypt-empty-text",
+      "description": "An entry whose text is empty (the schema floor) sealed as MYX1.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_plaintext_canonical_utf8_hex": "7b2274657874223a22227d",
+      "input_blob_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_blob_key_hex": "685eef3a360dd5e9412ded7ffa22615fe8f7ab4594f0fc33b8f7fccd21e28d32",
+      "expected_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000002bca431489131d88efac2fbfd652161d2e0c431578e85101ba921a4ce004884edf8151ab4b0f6a29459a983a"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/encrypt-model-entry",
+      "description": "A model-written entry carrying its source_conversation link.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_plaintext_canonical_utf8_hex": "7b22736f757263655f636f6e766572736174696f6e223a223031383461326233633464356536663730383139326133623463356436653766222c2274657874223a225468652075736572207072656665727320636f6e6369736520616e737765727320776974682074686520636f6e636c7573696f6e2066697273742e227d",
+      "input_blob_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_blob_key_hex": "685eef3a360dd5e9412ded7ffa22615fe8f7ab4594f0fc33b8f7fccd21e28d32",
+      "expected_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/encrypt-user-authored",
+      "description": "A user-authored entry (edited in the memory UI): no source_conversation.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_plaintext_canonical_utf8_hex": "7b2274657874223a224d656574696e67206e6f74657320666f6c6c6f7720746865206167656e64612074656d706c6174652e227d",
+      "input_blob_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_blob_key_hex": "685eef3a360dd5e9412ded7ffa22615fe8f7ab4594f0fc33b8f7fccd21e28d32",
+      "expected_blob_hex": "4d595831010177777777777777777777777777777777777777777777777700000054ca431489131d88efac40a7f4ec6cb6a555f5f5e2e1f41cf307eeb03f6085694b6df04793f906fb06d81257f72a7a1b52f138506246596a8cd9808db5ca81ed63b89882df9d9fa7181e198a86dc028978545b39b8"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/decrypt-ok",
+      "description": "Round-trip: the reader opens the model-written MYX1 blob to the exact entry bytes.",
+      "case_kind": "decrypt_ok",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_plaintext_canonical_utf8_hex": "7b22736f757263655f636f6e766572736174696f6e223a223031383461326233633464356536663730383139326133623463356436653766222c2274657874223a225468652075736572207072656665727320636f6e6369736520616e737765727320776974682074686520636f6e636c7573696f6e2066697273742e227d"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/decrypt-fail-tamper",
+      "description": "Last ciphertext byte flipped: non-distinguishing CannotDecrypt per \u00a76.4.",
+      "case_kind": "decrypt_aead_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2ecc",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/decrypt-fail-cross-vault",
+      "description": "The entry blob under another vault's account_number_hash: non-distinguishing failure.",
+      "case_kind": "decrypt_aead_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "34343434343434343434343434343434",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/decrypt-fail-cross-entry",
+      "description": "The entry blob under another entry id: the per-entry binding (MYE1 archetype) refuses substitution at the AEAD layer.",
+      "case_kind": "decrypt_aead_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b",
+      "input_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "aead_fail"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-header-too-short",
+      "description": "10-byte body: HeaderTooShort before any allocation.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d595831010177777777",
+      "expected_kind": "parse_fail",
+      "expected_error": "header_too_short"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-magic-mismatch",
+      "description": "First byte not M: MagicMismatch.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "5859583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "parse_fail",
+      "expected_error": "magic_mismatch"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-protocol-version-mismatch",
+      "description": "Offset 4 not 0x01: reject before decryption.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583109017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "parse_fail",
+      "expected_error": "protocol_version_mismatch"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-format-unsupported",
+      "description": "Offset 5 not 0x01: FormatUnsupported.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583101097777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "parse_fail",
+      "expected_error": "format_unsupported"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-ciphertext-len-overflow",
+      "description": "ciphertext_len above the 256-KiB cap: CiphertextLenOverflow.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d595831010177777777777777777777777777777777777777777777777700050000ca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e33",
+      "expected_kind": "parse_fail",
+      "expected_error": "ciphertext_len_overflow"
+    },
+    {
+      "vector_id": "agent-memory-blob/v0.1/parse-fail-ciphertext-truncated",
+      "description": "One byte short of the declared length: CiphertextTruncated.",
+      "case_kind": "parse_fail",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_memory_entry_id_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+      "input_blob_hex": "4d59583101017777777777777777777777777777777777777777777777770000009fca4313831e1bc9b0d16eadffee60aab114eff3f9eaa506b758b3e46476977f106be442c1f95ef950c85e03a368774944a075477b3395bb59b33605b70bd5b5e2592814cca86376e795d4051b42c044faca5c0d6aec7b4c730cbca0ce8a0c47253ac593f44c60b65a944530dc74c71c4537b788d8dcd21fbd86949e60c02c0953f187f57dd50dae879a1799f720cc9015894d108a5f7ac0a187e05ecf7f2e",
+      "expected_kind": "parse_fail",
+      "expected_error": "ciphertext_truncated"
+    }
+  ]
+}
