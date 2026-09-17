@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-keypair.json",
   "title": "person-keypair \u2014 case shape (v0.2)",
-  "description": "Pins protocol::derive_person_keypair_wrap_key_from_normalized under the v0.2 salt domain 'myne.v0.2 argon2id-person-keypair|' (the B2B identity substrate, decisions/protocol/0586). Vault-independent: the salt's account_number_hash slot carries the phrase-derived person_id_hash, not any vault account hash, so two people with the same phrase derive different wrap keys. Inputs are hex-encoded for cross-language portability.",
+  "description": "Pins protocol::derive_person_keypair_wrap_key_from_normalized under the v0.2 salt domain 'myne.v0.2 argon2id-person-keypair|' (the B2B identity substrate, decisions/protocol/0592). Vault-independent: the salt's account_number_hash slot carries the phrase-derived person_id_hash, not any vault account hash, so two people with the same phrase derive different wrap keys. Inputs are hex-encoded for cross-language portability.",
   "type": "object",
   "additionalProperties": false,
   "required": [

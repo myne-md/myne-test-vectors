@@ -335,7 +335,7 @@
       }
     },
     {
-      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "title": "roster_present — an NTV5 meta with the B2B roster extension",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -361,7 +361,7 @@
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{990}$",
-          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+          "description": "An NTV5 vault.meta with the B2B roster extension (reserved byte 0x02): the 417-byte single-account field followed by the roster envelope (24-byte nonce, u32 BE ciphertext length, ciphertext)."
         },
         "input_root_key_hex": {
           "type": "string",
@@ -383,7 +383,7 @@
       }
     },
     {
-      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "title": "roster_tampered — a flipped roster ciphertext byte must fail closed",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -407,7 +407,7 @@
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{990}$",
-          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+          "description": "The roster-present blob with the middle roster ciphertext byte flipped. unseal_membership_roster must fail closed (AeadFailure), never a partial read."
         },
         "input_root_key_hex": {
           "type": "string",
@@ -426,7 +426,7 @@
       }
     },
     {
-      "title": "membership_tampered \u2014 a flipped membership ciphertext byte must fail closed",
+      "title": "roster_over_cap — a roster length past the 64 KiB cap must reject before any ciphertext read",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -451,7 +451,7 @@
         "input_blob_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{990}$",
-          "description": "The membership-present blob with the first ciphertext byte flipped. unseal_membership must fail closed (AeadFailure), never a partial read."
+          "description": "The roster-present blob with the roster u32 BE ciphertext-length field pushed past the 64 KiB cap. parse_vault_meta_v0_2 must reject the length before reading any ciphertext."
         },
         "input_root_key_hex": {
           "type": "string",
