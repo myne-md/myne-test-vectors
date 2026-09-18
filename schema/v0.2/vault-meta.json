@@ -31,7 +31,8 @@
         "membership_tampered",
         "roster_present",
         "roster_tampered",
-        "roster_over_cap"
+        "roster_over_cap",
+        "roster_role"
       ]
     }
   },
@@ -470,6 +471,50 @@
             "aead_failure",
             "invalid_vault_meta"
           ]
+        }
+      }
+    },
+    {
+      "title": "roster_role: an NTV5 meta with a real two-row roster carrying vault roles",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "input_roster_nonce_hex",
+        "expected_roster_plaintext_utf8"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "roster_role"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{27824}$",
+          "description": "An NTV5 vault.meta with a real two-row canonical roster (owner + member) carrying the vault role field, after the 72 single-account bytes."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_roster_nonce_hex": {
+          "type": "string"
+        },
+        "expected_roster_plaintext_utf8": {
+          "type": "string"
         }
       }
     }
