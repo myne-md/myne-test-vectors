@@ -28,7 +28,9 @@
         "person-identity",
         "agent-memory-catalog",
         "agent-memory-blob",
-        "agent-personality"
+        "agent-personality",
+        "person-member-key-store",
+        "person-profile"
       ]
     },
     "protocol_version": {
@@ -209,6 +211,38 @@
           }
         }
       }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-member-key-store"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-member-key-store.json"
+          }
+        }
+      },
+      "required": [
+        "schema"
+      ]
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-profile"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-profile.json"
+          }
+        }
+      },
+      "required": [
+        "schema"
+      ]
     }
   ]
 }
