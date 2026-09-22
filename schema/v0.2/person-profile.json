@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-profile.json",
+  "title": "person-profile \u2014 case shape (v0.2)",
+  "description": "Pins the MYY5 person-private AI profile codec (encode/decode_person_profile_blob_raw) over the AAD aad_person_profile_blob (role 'person-profile-blob', account_number_hash || profile_id, v0.2 prefix). The key is the person's phrase-derived profile KEK; the id and account hash are AAD-bound, so a blob moved to another person or vault fails to open (myne-md/myne#712, decisions/protocol/0594).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_kind", "description"],
+  "properties": {
+    "case_kind": { "type": "string", "enum": ["seal", "cross_vault_fail"] },
+    "description": { "type": "string", "minLength": 1 },
+    "input_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "input_profile_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+    "input_plaintext_utf8": { "type": "string", "minLength": 1 },
+    "expected_blob_hex": { "type": "string", "pattern": "^([0-9a-f]{2})+$" }
+  }
+}
