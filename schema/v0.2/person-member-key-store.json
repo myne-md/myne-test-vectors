@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-member-key-store.json",
   "title": "person-member-key-store \u2014 case shape (v0.2)",
-  "description": "Pins the B2B member-vault-key derivation (derive_person_vault_member_key: Argon2id over the normalized phrase under the salt domain 'myne.v0.2 argon2id-person-vault-member|' with the vault account_number_hash in the salt slot) and the device-local member-key-store AAD (aad_person_member_key_store: role 'person-member-key-store', vault_id || account_number_hash, v0.2 prefix). Both are cross-implementation contracts (myne-md/myne#711 task 25, decisions/protocol/0602).",
+  "description": "Pins the B2B member-vault-key derivation (derive_person_vault_member_key: Argon2id over the normalized phrase under the salt domain 'myne.v0.2 argon2id-person-vault-member|' with the vault account_number_hash in the salt slot) and the device-local member-key-store AAD (aad_person_member_key_store: role 'person-member-key-store', vault_id || account_number_hash, v0.2 prefix). Both are cross-implementation contracts (myne-md/myne#711 task 25, decisions/protocol/0606).",
   "type": "object",
   "additionalProperties": false,
   "required": [
