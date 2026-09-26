@@ -30,6 +30,7 @@
         "aad_vault_items_key_wrap_v0_2",
         "aad_singleton_blob_v0_2",
         "aad_membership_blob",
+        "aad_person_binding_blob",
         "aad_membership_roster_blob",
         "aad_person_wrap",
         "aad_person_keypair",
@@ -289,6 +290,38 @@
         "properties": {
           "input_builder_name": {
             "const": "aad_membership_blob"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_role_label",
+          "input_account_number_hash_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_person_binding_blob"
           }
         },
         "required": [

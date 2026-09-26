@@ -100,6 +100,21 @@
       ]
     },
     {
+      "vector_id": "aad-construction/v0.2/aad_person_binding_blob",
+      "description": "AAD bound into the AEAD seal of the vault person binding field (§9.3.1 extension, myne-md/myne#768). Mirrors aad_membership_blob in shape (role + account_number_hash) under the v0.2 domain, sealed under the SAME membership_key, so a person-binding field copied from another vault fails AEAD rather than silently re-labelling which person owns this vault.",
+      "input_builder_name": "aad_person_binding_blob",
+      "input_role_label": "person-binding-blob",
+      "input_account_number_hash_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "expected_aad_hex": "6d796e652e76302e327c020013706572736f6e2d62696e64696e672d626c6f62a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+      "informational_aad_segments": [
+        { "offset": 0, "length": 10, "label": "aad_prefix", "bytes_hex": "6d796e652e76302e327c" },
+        { "offset": 10, "length": 1, "label": "protocol_version", "bytes_hex": "02" },
+        { "offset": 11, "length": 2, "label": "role_length_be16", "bytes_hex": "0013" },
+        { "offset": 13, "length": 19, "label": "role_label", "bytes_hex": "706572736f6e2d62696e64696e672d626c6f62" },
+        { "offset": 32, "length": 16, "label": "account_number_hash", "bytes_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3" }
+      ]
+    },
+    {
       "vector_id": "aad-construction/v0.2/aad_membership_roster_blob",
       "description": "AAD bound into the AEAD seal of the membership field's B2B roster extension (NTV5 reserved byte 0x02, myne-md/myne#698). Mirrors aad_membership_blob with role 'membership-roster-blob' + account_number_hash, sealed under the SAME membership_key, so a roster copied from another vault fails AEAD instead of silently regrouping.",
       "input_builder_name": "aad_membership_roster_blob",

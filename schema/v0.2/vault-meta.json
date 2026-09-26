@@ -32,7 +32,10 @@
         "roster_present",
         "roster_tampered",
         "roster_over_cap",
-        "roster_role"
+        "roster_role",
+        "person_binding_present",
+        "person_binding_tampered",
+        "person_binding_absent"
       ]
     }
   },
@@ -336,7 +339,7 @@
       }
     },
     {
-      "title": "roster_present — an NTV5 meta with the B2B roster extension",
+      "title": "roster_present \u2014 an NTV5 meta with the B2B roster extension",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -384,7 +387,7 @@
       }
     },
     {
-      "title": "roster_tampered — a flipped roster ciphertext byte must fail closed",
+      "title": "roster_tampered \u2014 a flipped roster ciphertext byte must fail closed",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -427,7 +430,7 @@
       }
     },
     {
-      "title": "roster_over_cap — a roster length past the 64 KiB cap must reject before any ciphertext read",
+      "title": "roster_over_cap \u2014 a roster length past the 64 KiB cap must reject before any ciphertext read",
       "additionalProperties": false,
       "required": [
         "vector_id",
@@ -515,6 +518,149 @@
         },
         "expected_roster_plaintext_utf8": {
           "type": "string"
+        }
+      }
+    },
+    {
+      "title": "person_binding_present \u2014 a vault bound to a person identity",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "expected_person_id_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "person_binding_present"
+        },
+        "input_blob_hex": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{834}$"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{978}$"
+            }
+          ],
+          "description": "An NTV5 blob whose reserved byte carries the 0x10 binding bit: 417 bytes when the binding is alone (reserved 0x10), 489 when combined with the membership field (reserved 0x11). parse_vault_meta_v0_2 must accept it and unseal_person_binding must recover the person id hash."
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "expected_person_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        }
+      }
+    },
+    {
+      "title": "person_binding_tampered \u2014 a flipped binding ciphertext byte",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_root_key_hex",
+        "input_account_number_hash_hex",
+        "tamper_offset",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "person_binding_tampered"
+        },
+        "input_blob_hex": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{834}$"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{978}$"
+            }
+          ]
+        },
+        "input_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "tamper_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_error": {
+          "const": "aead_failure"
+        }
+      }
+    },
+    {
+      "title": "person_binding_absent \u2014 a pre-feature vault reads as unbound",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_person_binding"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "const": "person_binding_absent"
+        },
+        "input_blob_hex": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{690}$"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{834}$"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{978}$"
+            }
+          ],
+          "description": "An NTV5 blob with no binding (reserved byte lacks 0x10). parse_vault_meta_v0_2 must accept it and report person_binding: None."
+        },
+        "expected_person_binding": {
+          "const": "absent"
         }
       }
     }
