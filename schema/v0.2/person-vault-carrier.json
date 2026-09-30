@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-vault-carrier.json",
+  "title": "person-vault-carrier: case shape (v0.2)",
+  "description": "Pins the device-local vault-bound person-identity carrier AAD (aad_person_vault_carrier: role 'person-vault-carrier-blob', binding vault_id || person_id under the v0.2 AAD prefix). The carrier's KEK is DeriveSubkey_v0_2(root_key, 'person-vault-carrier'), pinned by the hkdf-sha256/v0.2 family; this family pins the AAD framing. Cross-implementation contract (myne-md/myne#792, decisions/protocol/0622).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_kind",
+    "description"
+  ],
+  "properties": {
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "aad-construction"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_vault_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "input_person_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "expected_aad_hex": {
+      "type": "string",
+      "pattern": "^6d796e652e76302e327c02([0-9a-f]{2})+$"
+    }
+  }
+}

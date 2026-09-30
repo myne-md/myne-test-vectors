@@ -1,0 +1,15 @@
+{
+  "schema": "person-vault-carrier",
+  "protocol_version": "v0.2",
+  "spec_section": "protocol.md section 5.2 + 3.4",
+  "description": "Pins the device-local vault-bound person-identity carrier AAD (aad_person_vault_carrier: role 'person-vault-carrier-blob', binding vault_id || person_id under the v0.2 AAD prefix). The carrier's KEK is DeriveSubkey_v0_2(root_key, 'person-vault-carrier'), pinned by the hkdf-sha256/v0.2 family; this family pins the AAD framing. A port that binds a different id order or role string opens nothing. myne-md/myne#792, decisions/protocol/0622.",
+  "cases": [
+    {
+      "case_kind": "aad-construction",
+      "description": "AAD for the carrier: the v0.2 prefix || protocol byte || length-prefixed role 'person-vault-carrier-blob' || vault_id || person_id. The vault_id binding stops a carrier mislaid under another vault name from opening; the person_id binding stops a carrier sealed for a different person from being accepted. 70 bytes.",
+      "input_vault_id_hex": "11111111111111111111111111111111",
+      "input_person_id_hex": "22222222222222222222222222222222",
+      "expected_aad_hex": "6d796e652e76302e327c020019706572736f6e2d7661756c742d636172726965722d626c6f621111111111111111111111111111111122222222222222222222222222222222"
+    }
+  ]
+}
