@@ -2,7 +2,7 @@
   "schema": "chats-catalog",
   "protocol_version": "v0.1",
   "spec_section": "protocol.md §9.23 + §5.2 + §3.4",
-  "description": "Pins protocol::encode_chats_catalog_blob_raw + decode_chats_catalog_blob (MYM1) + aad_chats_catalog. Inner plaintext is the client layer's canonical roster JSON: object mapping conversation-id hex -> {created_at,deleted_at?,title,updated_at,version?} with id keys sorted and per-entry keys alphabetical (version 0 omitted, deleted_at tombstones only); empty roster = {}. KEK = DeriveSubkey(root,'chats-catalog-key'). Reference impl: protocol/src/chats_catalog_blob.rs.",
+  "description": "Pins protocol::encode_chats_catalog_blob_raw + decode_chats_catalog_blob (MYM1) + aad_chats_catalog. Inner plaintext is the client layer's canonical roster JSON: object mapping conversation-id hex -> {created_at,deleted_at?,note_id?,title,updated_at,version?} with id keys sorted and per-entry keys alphabetical (version 0 omitted, deleted_at tombstones only, note_id on note-anchored rows only); empty roster = {}. KEK = DeriveSubkey(root,'chats-catalog-key'). Reference impl: protocol/src/chats_catalog_blob.rs.",
   "cases": [
     {
       "vector_id": "chats-catalog/v0.1/encrypt-empty",
@@ -36,6 +36,17 @@
       "input_catalog_nonce_hex": "777777777777777777777777777777777777777777777777",
       "informational_catalog_key_hex": "17acb4f3a5cdcb0602a27c08fc5cc7bd523437b9ee1b040d6d62ccdfcb5663e6",
       "expected_catalog_blob_hex": "4d594d3101017777777777777777777777777777777777777777777777770000013cc739ef02893bcdb0037e76da9abe92eb9a41afce23fca8d1b7ca4eda18498d3c6234dbeeac98a50f7eabc81751d2b790a3512bb46e38861131fb1d0f3cd8199bfe6063eee34c6b7aaf22506a20ec0b7f07021c059a923c2a27c56564948a59d570d2696e0a760c785169d50fa6ff56c6a187dcfd66a65235571ee0702f3a38ad3b23a2c3f486bf2f345e2b37a4fb55161612303d72f33a62cc64e7d13f300096d32750f4aaf663ed2da18492ae947d8560436e465bf69eb2319419f8358060b23f33d354b02d2db002b71503ea2fd44ea41b9ae204890b310f8f98e5c06ed833e9b948606d2141c17f9ad0f0c1a5d64dac6d01c368efb0129951164a0a4c15b5f23f3e45d0e63c49420b68075be085f1d687ef88eb6a537e3ab8a102df420cc5c4b5111fbaff0f11d078ab13be163ff9f5af8fe82b95e97b22be22ab"
+    },
+    {
+      "vector_id": "chats-catalog/v0.1/encrypt-note-anchored",
+      "description": "One conversation carrying note_id (myne-md/myne#771); pins its lexicographic position between deleted_at and title (created_at<note_id<title<updated_at<version).",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b223031383461326233633464356536663730383139326133623463356436653766223a7b22637265617465645f6174223a313732353431373630303030302c226e6f74655f6964223a2239663261623363346435653666373038313932613362346335643665376630222c227469746c65223a22416e63686f72656420746f2061206e6f7465222c22757064617465645f6174223a313732353431373630303030302c2276657273696f6e223a317d7d",
+      "input_catalog_nonce_hex": "777777777777777777777777777777777777777777777777",
+      "informational_catalog_key_hex": "17acb4f3a5cdcb0602a27c08fc5cc7bd523437b9ee1b040d6d62ccdfcb5663e6",
+      "expected_catalog_blob_hex": "4d594d310101777777777777777777777777777777777777777777777777000000d1c739ef02893bcdb0037e76da9abe92eb9a41afce23fca8d1b7ca4eda18498d3c6234dbeeac98a50f7eabc81751d2b790a3512bb46e38861131fb1d0f3cd8199bfe7a65eeea762024af50173f36fe077814164115c7d77e2d68902e77819a4d9676877e3e0a1f083b1563c614b6be0b83fad4cef774d70c7a1d07f767387323ac3978b1d0b7d0e83c20483f75a2a942471678347f36fe3b6dcf68e1813b6404c5d67356bdbfe636bd64b3c99ffecb2d8c78ed6f34e49ee9ac7ef6d741e4ff321c20eb61200c55bc37314e3580ada42ddd36"
     },
     {
       "vector_id": "chats-catalog/v0.1/decrypt-ok",

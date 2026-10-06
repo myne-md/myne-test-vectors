@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/chats-catalog.json",
   "title": "chats-catalog — case shape (v0.1)",
-  "description": "Pins one byte-level case for protocol::encode_chats_catalog_blob_raw + protocol::decode_chats_catalog_blob — the MYM1 vault.chats conversations-catalog codec (myne-md/myne#675). vault.chats is a vault-level singleton blob sealed under chats_catalog_key = DeriveSubkey(root_key, SubkeyRole::ChatsCatalogKey), with account_number_hash bound via aad_chats_catalog. The inner plaintext is the client layer's canonical roster JSON (object mapping conversation-id hex -> {created_at,deleted_at?,title,updated_at,version?} with id keys sorted and per-entry keys alphabetical); the codec treats it as opaque bytes. Four case kinds: 'encrypt' (encoder byte output, incl. empty {} and the tombstoned enrollment-seed roster), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4), 'parse_fail' (distinguishable pre-decryption structural reject, one per ChatsCatalogError variant). The Rust reference implementation lives at protocol/src/chats_catalog_blob.rs (main myne repository); spec contract is docs/spec/protocol.md §9.23 + §3.4 + §5.2.",
+  "description": "Pins one byte-level case for protocol::encode_chats_catalog_blob_raw + protocol::decode_chats_catalog_blob — the MYM1 vault.chats conversations-catalog codec (myne-md/myne#675). vault.chats is a vault-level singleton blob sealed under chats_catalog_key = DeriveSubkey(root_key, SubkeyRole::ChatsCatalogKey), with account_number_hash bound via aad_chats_catalog. The inner plaintext is the client layer's canonical roster JSON (object mapping conversation-id hex -> {created_at,deleted_at?,note_id?,title,updated_at,version?} with id keys sorted and per-entry keys alphabetical); the codec treats it as opaque bytes. Four case kinds: 'encrypt' (encoder byte output, incl. empty {} and the tombstoned enrollment-seed roster), 'decrypt_ok' (round-trip success), 'decrypt_aead_fail' (non-distinguishing AEAD failure per spec §6.4), 'parse_fail' (distinguishable pre-decryption structural reject, one per ChatsCatalogError variant). The Rust reference implementation lives at protocol/src/chats_catalog_blob.rs (main myne repository); spec contract is docs/spec/protocol.md §9.23 + §3.4 + §5.2.",
   "type": "object",
   "required": ["vector_id", "description", "case_kind"],
   "unevaluatedProperties": false,
@@ -52,7 +52,7 @@
         "input_plaintext_canonical_utf8_hex": {
           "type": "string",
           "pattern": "^([0-9a-f]{2})*$",
-          "description": "Canonical roster JSON bytes (hex): object mapping conversation-id hex to {created_at,deleted_at?,title,updated_at,version?}, id keys sorted, per-entry keys alphabetical. Empty roster = {} = 7b7d."
+          "description": "Canonical roster JSON bytes (hex): object mapping conversation-id hex to {created_at,deleted_at?,note_id?,title,updated_at,version?}, id keys sorted, per-entry keys alphabetical. Empty roster = {} = 7b7d."
         },
         "input_catalog_nonce_hex": {
           "type": "string",
