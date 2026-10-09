@@ -344,6 +344,10 @@
               "minimum": 0,
               "description": "Unix epoch seconds of the vault's last backup export (MYND-58, vault-backup-restore epic). Absent ≡ never backed up; bare-decimal u64 (floats FORBIDDEN per spec §9.5.2); sorts label < last_backup_at < screen_capture_protection."
             },
+            "meeting_ai_prompt": {
+              "type": "string",
+              "description": "The meeting AI prompt (meeting-ai). An optional free-text string, NFC-normalized, omitted-when-unset; it replaces the meeting AI pass's reduce instruction verbatim. Canonical key 'meeting_ai_prompt', between last_backup_at (l) and new_note_location (n); the slot is load-bearing because the decoder scans this region forward. Non-load-bearing. Pinned by encrypt-meeting-ai-prompt and decrypt-meeting-ai-prompt, which carry both canonical neighbours so the slot is pinned rather than only the value."
+            },
             "paired_extensions": {
               "type": "array",
               "items": {
