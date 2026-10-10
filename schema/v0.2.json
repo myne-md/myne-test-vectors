@@ -31,7 +31,8 @@
         "agent-personality",
         "person-member-key-store",
         "person-vault-carrier",
-        "person-profile"
+        "person-profile",
+        "person-member-unlock-store"
       ]
     },
     "protocol_version": {
@@ -254,6 +255,22 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-profile.json"
+          }
+        }
+      },
+      "required": [
+        "schema"
+      ]
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-member-unlock-store"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-member-unlock-store.json"
           }
         }
       },

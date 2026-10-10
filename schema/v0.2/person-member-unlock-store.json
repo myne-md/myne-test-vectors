@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-member-unlock-store.json",
+  "title": "person-member-unlock-store \u2014 case shape (v0.2)",
+  "description": "Pins the B2B member vault-unlock password KEK derivation (derive_person_vault_member_unlock_key: Argon2id over the password under the salt domain 'myne.v0.2 argon2id-person-vault-member-unlock|' with a per-device random salt and the vault account_number_hash in the domain scope) and the device-local vault.member-unlock AAD (aad_person_member_unlock_store: role 'person-member-unlock-store', vault_id || account_number_hash, v0.2 prefix). Both are cross-implementation contracts (decisions/protocol/0653).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_kind",
+    "description"
+  ],
+  "properties": {
+    "case_kind": {
+      "type": "string",
+      "enum": [
+        "member-unlock-derivation",
+        "member-unlock-store-aad"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_password": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_salt_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "input_account_number_hash_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "input_vault_id_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "expected_member_unlock_key_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "expected_aad_hex": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{2})+$"
+    }
+  }
+}
