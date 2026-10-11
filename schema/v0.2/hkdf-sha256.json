@@ -29,8 +29,8 @@
     },
     "input_role": {
       "type": "string",
-      "enum": ["membership-key", "person-vault-carrier"],
-      "description": "Registered role string (spec §3.4). 'membership-key' is the KEK for the sealed vault membership field (vault.meta §9.3.1, the account/vault split, decisions.md 2026-09-07): DISTINCT from the AAD role 'membership-blob' used by aad_membership_blob. 'person-vault-carrier' is the KEK for the device-local vault-bound person-identity carrier (<app_config_dir>/person-vault-carriers/<vault_id_hex>.json, myne-md/myne#792): DISTINCT from the AAD role 'person-vault-carrier-blob' used by aad_person_vault_carrier. Any future v0.2-prefix role extends this enum in lockstep with the spec registry, additive only, immutable for existing variants."
+      "enum": ["membership-key", "person-vault-carrier", "awareness-room-id", "awareness-key"],
+      "description": "Registered role string (spec §3.4). 'membership-key' is the KEK for the sealed vault membership field (vault.meta §9.3.1, the account/vault split, decisions.md 2026-09-07): DISTINCT from the AAD role 'membership-blob' used by aad_membership_blob. 'person-vault-carrier' is the KEK for the device-local vault-bound person-identity carrier (<app_config_dir>/person-vault-carriers/<vault_id_hex>.json, myne-md/myne#792): DISTINCT from the AAD role 'person-vault-carrier-blob' used by aad_person_vault_carrier. 'awareness-room-id' and 'awareness-key' are the two live-collaboration awareness roles (live-collab, decisions/sync/0655): 'awareness-room-id' derives an identifier (the per-note room id), DISTINCT from the AAD role 'awareness-frame' used by aad_awareness_frame; 'awareness-key' is the frame KEK. Any future v0.2-prefix role extends this enum in lockstep with the spec registry, additive only, immutable for existing variants."
     },
     "informational_info_utf8_hex": {
       "type": "string",

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/awareness-frame.json",
+  "title": "awareness-frame — case shape (v0.2)",
+  "description": "Pins the magic-less, sync-wire-only live-collaboration awareness frame (protocol/src/awareness_frame.rs; protocol.md §5.2/§10.7; decisions/sync/0655; epic live-collab). A frame is a cleartext header room_id(16) || nonce(24) || version(1 = 0x01), then an XChaCha20-Poly1305 + CTX seal over a canonical-JSON payload, with AAD aad_awareness_frame (role 'awareness-frame' || account_number_hash || optional 8-byte big-endian group_key_epoch for NTV6). Two case kinds: 'frame' (seal and open) and 'assertion_message' (the presence-assertion class prefix and message assembly).",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "kind",
+        "room_key_hex",
+        "room_id_hex",
+        "nonce_hex",
+        "account_number_hash_hex",
+        "payload",
+        "expected_frame_hex",
+        "open_room_id_hex",
+        "tamper_last_byte",
+        "expect_open_ok"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^awareness-frame/v0\\.2/[a-z0-9-]+$",
+          "description": "Stable identifier of the form 'awareness-frame/v0.2/<slug>'. Immutable once shipped."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "frame"
+        },
+        "room_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte awareness frame KEK (SubkeyRole::AwarenessKey / GroupRole::AwarenessKey)."
+        },
+        "room_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte per-note awareness room id (the cleartext routing key)."
+        },
+        "nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20 nonce, in the cleartext header."
+        },
+        "account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash bound into the AAD."
+        },
+        "group_key_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional NTV6 group-key epoch, appended to the AAD after the account hash. Absent for an NTV5 vault."
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frame_type", "note_id_hex", "actor_id_hex", "seq"],
+          "properties": {
+            "frame_type": { "enum": ["join", "presence"] },
+            "note_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+            "actor_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+            "seq": { "type": "integer", "minimum": 0 },
+            "cursor": { "type": "integer", "minimum": 0 },
+            "selection": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "integer", "minimum": 0 }
+            },
+            "label": { "type": "string" },
+            "change_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$" },
+            "ts": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "expected_frame_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The full sealed frame bytes (header || ciphertext || CTX tag), hex. Byte-exact."
+        },
+        "open_room_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The room id used for the OPEN call (equal to room_id_hex for a round trip; a different value pins the wrong-room refusal)."
+        },
+        "open_group_key_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional epoch used for the OPEN call (a different value pins the stale-epoch refusal)."
+        },
+        "tamper_last_byte": {
+          "type": "boolean",
+          "description": "When true the runner flips the last CTX-tag byte before opening, pinning the tampered-tag refusal."
+        },
+        "expect_open_ok": {
+          "type": "boolean",
+          "description": "True when the open must succeed and return the pinned payload; false when it must fail closed (one non-distinguishing CannotDecrypt)."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "kind",
+        "actor_id_hex",
+        "person_id_hex",
+        "expected_message_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^awareness-frame/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "assertion_message"
+        },
+        "actor_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte Automerge device actor id bound by the assertion."
+        },
+        "person_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte person id (the person fingerprint) bound by the assertion."
+        },
+        "expected_message_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The exact signed message bytes: 'myne.awareness-presence v1|' || actor_id || person_id, hex. The class prefix inside it is what makes a head signature unverifiable as an assertion."
+        }
+      }
+    }
+  ]
+}
