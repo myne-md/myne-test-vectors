@@ -36,7 +36,8 @@
         "aad_person_keypair",
         "aad_vault_invite",
         "aad_agent_memory_blob_v0_2",
-        "aad_awareness_frame"
+        "aad_awareness_frame",
+        "aad_member_names_blob"
       ],
       "description": "The pub fn in protocol/src/aead.rs the case pins. A closed enum: a new v0.2 vault-scoped builder must be added here AND to the runner's match arm and `required` list in the same change, which is the drift the v0.1 family's hand-maintained lists once had."
     },
@@ -517,6 +518,53 @@
       "then": {
         "required": [
           "input_account_number_hash_hex"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "input_kdf_params"
+              ]
+            },
+            {
+              "required": [
+                "input_items_key_id_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_role_label"
+              ]
+            },
+            {
+              "required": [
+                "input_memory_entry_id_hex"
+              ]
+            },
+            {
+              "required": [
+                "input_recipient_fingerprint_hex"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "input_builder_name": {
+            "const": "aad_member_names_blob"
+          }
+        },
+        "required": [
+          "input_builder_name"
+        ]
+      },
+      "then": {
+        "required": [
+          "input_account_number_hash_hex",
+          "input_group_key_epoch"
         ],
         "not": {
           "anyOf": [

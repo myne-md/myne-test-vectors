@@ -1,0 +1,382 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/member-names.json",
+  "title": "member-names — case shape (v0.2)",
+  "description": "Pins the vault.member-names vault singleton for an independent implementation (MYO5, protocol/src/member_names_blob.rs; docs/spec/protocol.md §9.29 with §3.4 and §5.2; decisions/protocol/0666 and 0667; myne-md/myne#851). One group-sealed blob per shared vault holding a versioned, optionally tombstoned map of person_id_hash -> { name, version, tombstone, signature_hex }. Layout: magic MYO5 (4) || protocol_version 0x01 (1) || format_version 0x01 (1) || nonce (24) || ciphertext_len big-endian u32 (4) || ciphertext + 32-byte CTX tag — i.e. the §9.2 envelope with its magic and AAD role swapped, no new SubkeyRole. The family is NTV6-only: no v0.1 form exists, there is no SubkeyRole counterpart for either of the two GROUP-tier roles below, and a pre-B2B reader must reject the magic. Seven case kinds: 'encrypt' (byte output plus the header facts the format fixes), 'decrypt_fail' (the non-distinguishing AEAD failure per §6.4, one input wrong per case), 'parse_fail' (the pre-AEAD header refusals, plus the two inner-map refusals), 'encode_fail' (the write-side guards), 'signed_bytes' (the EXACT bytes a row's hybrid signature covers — signatures themselves are NOT pinned, see the note in that branch), 'verify' (the acceptance rules, pinned as outcomes against real signatures), and 'group_subkey' (the two GROUP-tier derivations the family is keyed by).",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_member_names_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "input_nonce_hex",
+        "input_map",
+        "expected_blob_hex",
+        "expected_magic_ascii",
+        "expected_protocol_version_byte_hex",
+        "expected_format_version_byte_hex",
+        "informational_header_len",
+        "informational_nonce_offset"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$",
+          "description": "Stable identifier of the form 'member-names/v0.2/<slug>'. Immutable once shipped."
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "encrypt" },
+        "input_member_names_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte member-names KEK — GroupRole::MemberNamesKey applied to the vault group key. Never derived from root_key: this family has no owner-only form."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash bound into the AAD."
+        },
+        "input_group_key_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "8-byte big-endian group_key_epoch appended to the AAD after the account hash. REQUIRED, not optional: a post-rotation blob must fail rather than be read under a key that no longer applies. Zero is refused before any decryption."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce, written at offset 6 in the clear."
+        },
+        "input_map": {
+          "$ref": "#/$defs/member_names_map",
+          "description": "The inner map, as the canonical JSON object it is sealed as. Byte order is fixed by the canonical rule (keys ascending, no whitespace), so the plaintext the encoder must produce from this object is determinate."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The full sealed blob (header || ciphertext || CTX tag), hex. Byte-exact."
+        },
+        "expected_magic_ascii": {
+          "const": "MYO5",
+          "description": "The four ASCII bytes at offset 0. A pre-B2B reader rejects on this byte string alone."
+        },
+        "expected_protocol_version_byte_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$",
+          "description": "Offset 4. The shared singleton-family byte, 0x01 for every §9 vault singleton; the generation domain-separates on magic + AAD prefix + KEK rather than on this byte."
+        },
+        "expected_format_version_byte_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$",
+          "description": "Offset 5. Names the inner-map schema separately from the envelope, so a future revision of the map bumps this and an older decoder refuses cleanly instead of half-parsing."
+        },
+        "informational_header_len": {
+          "const": 34,
+          "description": "The fixed header length: magic 4 + protocol_version 1 + format_version 1 + nonce 24 + ciphertext_len 4."
+        },
+        "informational_nonce_offset": {
+          "const": 6,
+          "description": "Where the 24-byte nonce starts. Restated as data rather than left to the prose because a port that reads the nonce elsewhere still compiles and still fails, non-distinguishingly."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_member_names_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "decrypt_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The blob to open. Every case in this kind is the SAME good blob with exactly one of {ciphertext, account hash, epoch, key} wrong, so a reader that checks only one of the four passes three of them."
+        },
+        "input_member_names_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_group_key_epoch": { "type": "integer", "minimum": 0 },
+        "expected_error": {
+          "enum": ["cannot_decrypt", "epoch_zero"],
+          "description": "'cannot_decrypt' is the single non-distinguishing answer for a wrong key, a tampered byte and a stale epoch alike (§6.4): the AEAD must not say which input was wrong. 'epoch_zero' is the one refusal that is NOT an AEAD failure, because the epoch-zero guard runs before the key is used."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_member_names_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "A blob whose failure is decided by the header, before the AEAD runs, OR by the inner map, after it ran. The two map cases carry a well-formed header and a real seal, so a port that only validates the header passes six of eight."
+        },
+        "input_member_names_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_group_key_epoch": { "type": "integer", "minimum": 0 },
+        "expected_error": {
+          "enum": [
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "format_unsupported",
+            "ciphertext_len_overflow",
+            "ciphertext_truncated",
+            "plaintext_parse_failed",
+            "not_canonical"
+          ],
+          "description": "The first six are the shared §9.2 envelope's names, verbatim, so one failure maps to one name across every family. 'plaintext_parse_failed' is the siblings' word (vault-prefs, attachments-catalog) for 'the decrypted plaintext did not parse'. 'not_canonical' is this family's own: the plaintext parses but is not the canonical encoding of what it parsed to, which is a separate contract because a member-writable blob has to agree byte-for-byte across implementations before the merge rule can mean anything."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_member_names_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "input_nonce_hex",
+        "input_map",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "encode_fail" },
+        "input_member_names_key_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_account_number_hash_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_group_key_epoch": { "type": "integer", "minimum": 0 },
+        "input_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_map": { "$ref": "#/$defs/member_names_map" },
+        "expected_error_two": {
+          "enum": ["epoch_zero", "plaintext_parse_failed"]
+        },
+        "expected_error": {
+          "enum": ["epoch_zero", "plaintext_parse_failed"],
+          "description": "The write-side guards, asserted before any bytes are produced. 'epoch_zero' fires before the map is even inspected, so its subject is the empty map: the point is that the guard precedes the content. 'plaintext_parse_failed' covers a name over the 64-byte cap and a tombstone carrying a name — both are 'the map I was handed is not a valid map', and both must fail the WRITE rather than be written and then refused on the next read."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_person_id_hex",
+        "input_version",
+        "input_tombstone",
+        "input_name_utf8",
+        "informational_name_len_bytes",
+        "expected_prefix_ascii",
+        "expected_message_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "signed_bytes" },
+        "input_person_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte person_id_hash of the person the row NAMES — the one whose key must verify it, which is what stops a member writing another member's row."
+        },
+        "input_version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "8-byte big-endian, part of the signed message: a name cannot be replayed at a higher version."
+        },
+        "input_tombstone": {
+          "type": "boolean",
+          "description": "One byte, 0x00 or 0x01, part of the signed message: a removal cannot be un-signed back into a live row."
+        },
+        "input_name_utf8": {
+          "type": "string",
+          "description": "The name, run to the END of the message with no length prefix and no terminator. Empty for a tombstone. Multibyte and cap-boundary cases are separate vectors because both are where an off-by-one hides."
+        },
+        "informational_name_len_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "UTF-8 byte length, NOT character count. The cap is 64 BYTES."
+        },
+        "expected_prefix_ascii": {
+          "const": "myne.member-name v1|",
+          "description": "The registered message-class prefix the whole message is minted under (§5.2), so a name signature can never be replayed as a roster, an invite, a key transition or an awareness assertion, nor the reverse."
+        },
+        "expected_message_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "prefix || person_id (16) || version (8 BE) || tombstone (1) || name bytes to the end — the exact bytes the hybrid signature covers. The SIGNATURE is deliberately not pinned: ML-DSA-65's half is randomized, so a pinned signature would only be reproducible by a port that also reproduced our RNG stream. Pin the message and the verification OUTCOME instead."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "verifier",
+        "input_person_id_hex",
+        "input_signer_kem_ek_hex",
+        "input_signer_ed_pk_hex",
+        "input_signer_mldsa_vk_hex",
+        "input_entry",
+        "informational_signed_bytes_hex",
+        "expected_verified"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "verify" },
+        "verifier": {
+          "enum": ["person", "owner"],
+          "description": "'person' is verify_member_name: the row is checked against the public half of the person the row NAMES. 'owner' is verify_member_removal: the vault owner may additionally sign a TOMBSTONE, which is how a removed member's row is cleared. Only these two authorities exist, and the distinction is load-bearing rather than cosmetic — an owner's key verifies the bytes the owner signed, so a case naming the wrong authority would pass for the wrong reason, which is why each refusal below is paired with the acceptance it must not be confused with."
+        },
+        "input_person_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_signer_kem_ek_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2368}$",
+          "description": "1184-byte ML-KEM encapsulation key — the third part of the verifying party's public half. Published even though verification itself reads only the Ed25519 and ML-DSA halves, so that a port builds the SAME struct the roster carries instead of inventing a placeholder for a field the real code path fills from the roster. Its presence also makes the case's public half complete enough to re-derive the SAS fingerprint from, which is a second way to catch a swapped identity."
+        },
+        "input_signer_ed_pk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte Ed25519 public key of the verifying party."
+        },
+        "input_signer_mldsa_vk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{3904}$",
+          "description": "1952-byte ML-DSA-65 verification key of the verifying party. Both halves must verify; a reader that checks only Ed25519 accepts a signature whose post-quantum half is absent."
+        },
+        "input_entry": {
+          "$ref": "#/$defs/member_name_entry",
+          "description": "The row under test, carrying the signature bytes produced by the REAL signer. Verification is one-way interop: a port must ACCEPT these, and must refuse the pinned mutations."
+        },
+        "informational_signed_bytes_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The message the entry's signature covers, repeated here so a port can diff its own assembly against ours without reconstructing it."
+        },
+        "expected_verified": {
+          "type": "boolean",
+          "description": "True when verification must succeed. False for every refusal — a wrong signer, a mutated row, a row whose person_id was swapped, and (the pair that makes the authority split checkable) an owner signature presented where only a person signature is accepted."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_group_key_hex",
+        "input_role",
+        "expected_subkey_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^member-names/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "case_kind": { "const": "group_subkey" },
+        "input_group_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The 32-byte vault group key (NTV6). NOT the owner's root_key: this family is member-writable, so its keys hang off the group tier."
+        },
+        "input_role": {
+          "enum": ["member-names-key", "member-names-sync-id"],
+          "description": "The two GROUP-tier roles the family registers in §3.4. Pinned here, family-locally, rather than in hkdf-sha256: that category's runner and its input_role enum are both keyed on derive_subkey_v0_2(root_key, SubkeyRole), and neither of these has a SubkeyRole counterpart — they are member-plane keys with no owner-only form, which is exactly why a pre-B2B vault cannot have this blob at all."
+        },
+        "expected_subkey_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "HKDF-SHA-256 over the group key under the role's registered context string. Byte-exact, and distinct from the group key it was derived from."
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "member_names_map": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[0-9a-f]{32}$",
+        "description": "person_id_hash, lowercase hex. Any other key is a malformed map, not a new field."
+      },
+      "additionalProperties": { "$ref": "#/$defs/member_name_entry" },
+      "description": "person_id_hash -> row. A TOMBSTONE ROW IS KEPT, not deleted: dropping it would let a stale copy re-introduce the name on the next merge. The live view filters tombstones out. Canonical bytes means keys ascending and no whitespace, so this object has exactly one valid encoding."
+    },
+    "member_name_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "tombstone", "signature_hex"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "UTF-8 display name, at most 64 BYTES and non-empty on a live row. Empty on a tombstone."
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The merge key. Higher wins; at EQUAL version a tombstone beats a live entry, so a concurrent rename cannot resurrect a removal. This tie-break is a contract because the merge is cross-implementation."
+        },
+        "tombstone": { "type": "boolean" },
+        "signature_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{6746}$",
+          "description": "Ed25519 (64 bytes) || ML-DSA-65 (3309 bytes) = 3373 bytes, hex, lowercase — 6746 characters. A TOMBSTONE CARRIES THE SAME LENGTH: it is signed by the member it removes, or by the vault owner, so a port that accepts a short or absent signature on a removal accepts an unauthenticated delete."
+        }
+      }
+    }
+  }
+}

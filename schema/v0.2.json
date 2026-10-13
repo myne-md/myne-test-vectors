@@ -33,7 +33,8 @@
         "person-vault-carrier",
         "person-profile",
         "person-member-unlock-store",
-        "awareness-frame"
+        "awareness-frame",
+        "member-names"
       ]
     },
     "protocol_version": {
@@ -288,6 +289,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/awareness-frame.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "member-names"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/member-names.json"
           }
         }
       }
