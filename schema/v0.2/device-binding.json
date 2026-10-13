@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/device-binding.json",
+  "title": "device-binding - case shape (v0.2)",
+  "description": "Pins the vault.device-bindings vault singleton for an independent implementation (MYU5, protocol/src/device_binding_blob.rs; docs/spec/protocol.md §9.30 with §3.4 and §5.2; decisions/protocol/0669; the member-devices feature). One group-sealed blob per shared vault holding a versioned, optionally tombstoned map of device_id -> { person_fingerprint, version, tombstone, signature_hex }. Layout: magic MYU5 (4) || protocol_version 0x01 (1) || format_version 0x01 (1) || nonce (24) || ciphertext_len big-endian u32 (4) || ciphertext + 32-byte CTX tag - i.e. the §9.2 envelope with its magic and AAD role swapped, no new SubkeyRole. The family is NTV6-only: no v0.1 form exists, there is no SubkeyRole counterpart for the one GROUP-tier role below, and a pre-B2B reader must reject the magic. EIGHT case kinds, one more than any sibling family: 'encrypt' (byte output plus the header facts the format fixes), 'decrypt_fail' (the non-distinguishing AEAD failure per §6.4, one input wrong per case, plus the epoch-zero guard), 'parse_fail' (the pre-AEAD header refusals, plus the two inner-map refusals), 'encode_fail' (the write-side guards), 'merge' (the per-device tie-break AND the refusal no sibling has), 'signed_bytes' (the EXACT bytes a row's hybrid signature covers - signatures themselves are NOT pinned, see the note in that branch), 'verify' (the acceptance rules, pinned as outcomes against real signatures), and 'group_subkey' (the GROUP-tier derivation the family is keyed by).",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_device_binding_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "input_nonce_hex",
+        "input_map",
+        "expected_blob_hex",
+        "expected_magic_ascii",
+        "expected_protocol_version_byte_hex",
+        "expected_format_version_byte_hex",
+        "informational_header_len",
+        "informational_nonce_offset"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$",
+          "description": "Stable identifier of the form 'device-binding/v0.2/<slug>'. Immutable once shipped."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "encrypt"
+        },
+        "input_device_binding_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte device-binding KEK - GroupRole::DeviceBindingKey applied to the vault group key. Never derived from root_key: this family has no owner-only form."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte account_number_hash bound into the AAD."
+        },
+        "input_group_key_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "8-byte big-endian group_key_epoch appended to the AAD after the account hash. REQUIRED, not optional: a post-rotation blob must fail rather than be read under a key that no longer applies. The minimum is 1 HERE because zero is refused before any encryption runs, so no `encrypt` case can legitimately carry it; the `decrypt_fail` and `encode_fail` branches keep `minimum: 0`, which is where the two `epoch_zero` cases belong."
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte XChaCha20-Poly1305 nonce, written at offset 6 in the clear."
+        },
+        "input_map": {
+          "$ref": "#/$defs/device_bindings_map",
+          "description": "The inner map, as the canonical JSON object it is sealed as. Byte order is fixed by the canonical rule (keys ascending, no whitespace), so the plaintext the encoder must produce from this object is determinate."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The full sealed blob (header || ciphertext || CTX tag), hex. Byte-exact."
+        },
+        "expected_magic_ascii": {
+          "const": "MYU5",
+          "description": "The four ASCII bytes at offset 0. A pre-B2B reader rejects on this byte string alone."
+        },
+        "expected_protocol_version_byte_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$",
+          "description": "Offset 4. The shared singleton-family byte, 0x01 for every §9 vault singleton; the generation domain-separates on magic + AAD prefix + KEK rather than on this byte."
+        },
+        "expected_format_version_byte_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}$",
+          "description": "Offset 5. Names the inner-map schema separately from the envelope, so a future revision of the map bumps this and an older decoder refuses cleanly instead of half-parsing."
+        },
+        "informational_header_len": {
+          "const": 34,
+          "description": "The fixed header length: magic 4 + protocol_version 1 + format_version 1 + nonce 24 + ciphertext_len 4."
+        },
+        "informational_nonce_offset": {
+          "const": 6,
+          "description": "Where the 24-byte nonce starts. Restated as data rather than left to the prose because a port that reads the nonce elsewhere still compiles and still fails, non-distinguishingly."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_device_binding_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "decrypt_fail"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The blob to open. Every case in this kind is the SAME good blob with exactly one of {ciphertext, account hash, epoch, key} wrong, so a reader that checks only one of the four passes three of them."
+        },
+        "input_device_binding_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_group_key_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_error": {
+          "enum": [
+            "cannot_decrypt",
+            "epoch_zero"
+          ],
+          "description": "'cannot_decrypt' is the single non-distinguishing answer for a wrong key, a tampered byte and a stale epoch alike (§6.4): the AEAD must not say which input was wrong. 'epoch_zero' is the one refusal that is NOT an AEAD failure, because the epoch-zero guard runs before the key is used."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_device_binding_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "parse_fail"
+        },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "A blob whose failure is decided by the header, before the AEAD runs, OR by the inner map, after it ran. The two map cases carry a well-formed header and a real seal, so a port that only validates the header passes six of eight."
+        },
+        "input_device_binding_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_group_key_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_error": {
+          "enum": [
+            "header_too_short",
+            "magic_mismatch",
+            "protocol_version_mismatch",
+            "format_unsupported",
+            "ciphertext_len_overflow",
+            "ciphertext_truncated",
+            "plaintext_parse_failed",
+            "not_canonical"
+          ],
+          "description": "The first six are the shared §9.2 envelope's names, verbatim, so one failure maps to one name across every family. 'plaintext_parse_failed' is the siblings' word (vault-prefs, attachments-catalog, member-names) for 'the decrypted plaintext did not parse'. 'not_canonical' is this family's own: the plaintext parses but is not the canonical encoding of what it parsed to, which is a separate contract because a member-writable blob has to agree byte-for-byte across implementations before the merge rule can mean anything."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_device_binding_key_hex",
+        "input_account_number_hash_hex",
+        "input_group_key_epoch",
+        "input_nonce_hex",
+        "input_map",
+        "expected_error"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "encode_fail"
+        },
+        "input_device_binding_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_group_key_epoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "input_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$"
+        },
+        "input_map": {
+          "type": "object",
+          "description": "Deliberately UNCONSTRAINED, unlike the same field on the `encrypt` branch. The write-side guards are the subject here, and a guard cannot be expressed by a case form a validator refuses to accept: `encode-fail-fingerprint-wrong-shape` hands the writer a row whose `person_fingerprint` is not 64 hex characters, which is exactly the input `$defs/device_binding_entry` forbids. The rule the row must violate is stated on that definition and enforced by the WRITE, not by this schema."
+        },
+        "expected_error": {
+          "enum": [
+            "epoch_zero",
+            "plaintext_parse_failed"
+          ],
+          "description": "The write-side guards, asserted before any bytes are produced. 'epoch_zero' fires before the map is even inspected, so its subject is the empty map: the point is that the guard precedes the content. 'plaintext_parse_failed' covers a row whose person_fingerprint is not 64 lowercase hex characters - 'the map I was handed is not a valid map', which must fail the WRITE rather than be written and then refused on the next read."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_map_a",
+        "input_map_b"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "merge"
+        },
+        "input_map_a": {
+          "$ref": "#/$defs/device_bindings_map",
+          "description": "One copy of the map, first argument of merge_device_bindings. Every pair here is also merged in the REVERSE order by the generator and by the runner, because order independence is the property the merge exists for."
+        },
+        "input_map_b": {
+          "$ref": "#/$defs/device_bindings_map",
+          "description": "The other copy, second argument. See the branch's oneOf: a case carries EITHER expected_merged_map (the merge resolved it) OR expected_error (the merge refused it), never both and never neither."
+        },
+        "expected_merged_map": {
+          "$ref": "#/$defs/device_bindings_map",
+          "description": "The merged map, for the arms the merge can decide: a strictly higher version wins, and at equal version a tombstone beats a live entry."
+        },
+        "expected_error": {
+          "const": "conflicting_binding",
+          "description": "The one refusal no sibling family has. Two copies carrying the SAME device_id bound to two DIFFERENT people at the SAME version have no winner - every remaining field is either equal or the thing under dispute - so resolving it would make merge(a, b) and merge(b, a) disagree and the two peers would re-push at each other forever. The merge refuses outright, symmetrically, and a fresh claim at a strictly higher version is the repair."
+        }
+      },
+      "oneOf": [
+        {
+          "title": "A resolved merge pins the map",
+          "required": [
+            "expected_merged_map"
+          ],
+          "not": {
+            "required": [
+              "expected_error"
+            ]
+          }
+        },
+        {
+          "title": "A refused merge pins the error, not a map",
+          "required": [
+            "expected_error"
+          ],
+          "not": {
+            "required": [
+              "expected_merged_map"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_device_id_hex",
+        "input_person_fingerprint_hex",
+        "input_version",
+        "input_tombstone",
+        "expected_prefix_ascii",
+        "informational_message_len_bytes",
+        "expected_message_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "signed_bytes"
+        },
+        "input_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte device id - the map KEY, and the second field of the signed message. Signing the device is what stops one member's signature from being replayed under another device."
+        },
+        "input_person_fingerprint_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte person fingerprint of the person the row CLAIMS, fed to the message as RAW bytes rather than as this hex. A live claim passes the signer's own fingerprint; an owner's removal passes the REMOVED member's, which is why the two are separate arguments to sign_device_binding."
+        },
+        "input_version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "8-byte big-endian, part of the signed message: the merge's winner cannot be chosen by an unauthenticated counter bump."
+        },
+        "input_tombstone": {
+          "type": "boolean",
+          "description": "One byte, 0x00 or 0x01, part of the signed message: a removal cannot be un-signed back into a live row, and a live row cannot be turned into a removal, by anyone who cannot sign."
+        },
+        "expected_prefix_ascii": {
+          "const": "myne.device-binding v1|",
+          "description": "The registered message-class prefix the whole message is minted under (§5.2), so a binding signature can never be replayed as a member name, a roster, an invite, a key transition or an awareness assertion, nor the reverse."
+        },
+        "informational_message_len_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The fixed message length: prefix (23) + device_id (16) + person_fingerprint (32) + version (8) + tombstone (1) = 80 bytes. Fixed widths, so the signed message has exactly one encoding. Unlike member-names, the fingerprint is present on a TOMBSTONE too, so the length does not vary with the tombstone flag."
+        },
+        "expected_message_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "prefix || device_id (16) || person_fingerprint (32) || version (8 BE) || tombstone (1) - the exact bytes the hybrid signature covers. The SIGNATURE is deliberately not pinned: ML-DSA-65's half is randomized, so a pinned signature would only be reproducible by a port that also reproduced our RNG stream. Pin the message and the verification OUTCOME instead."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "verifier",
+        "input_device_id_hex",
+        "input_signer_kem_ek_hex",
+        "input_signer_ed_pk_hex",
+        "input_signer_mldsa_vk_hex",
+        "input_entry",
+        "informational_signed_bytes_hex",
+        "expected_verified"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "verify"
+        },
+        "verifier": {
+          "enum": [
+            "person",
+            "owner"
+          ],
+          "description": "'person' is verify_device_binding: the row is checked against the public half of the person the row CLAIMS, and the claimed fingerprint must additionally EQUAL that key's own fingerprint. That second check is not decoration here the way it is in member-names: the map key is the DEVICE and the claimed person lives inside the row, so without it a member could sign a message carrying a co-member's fingerprint and have it verify against their own key. 'owner' is verify_device_binding_removal: the vault owner may additionally sign a TOMBSTONE, which is how a removed member's devices stop being bound. Only these two authorities exist, and each refusal below is paired with the acceptance it must not be confused with."
+        },
+        "input_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_signer_kem_ek_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2368}$",
+          "description": "1184-byte ML-KEM encapsulation key - the third part of the verifying party's public half. Published even though verification itself reads only the Ed25519 and ML-DSA halves, so that a port builds the SAME struct the roster carries instead of inventing a placeholder for a field the real code path fills from the roster. Its presence also makes the case's public half complete enough to re-derive the SAS fingerprint from, which is a second way to catch a swapped identity."
+        },
+        "input_signer_ed_pk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte Ed25519 public key of the verifying party."
+        },
+        "input_signer_mldsa_vk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{3904}$",
+          "description": "1952-byte ML-DSA-65 verification key of the verifying party. Both halves must verify; a reader that checks only Ed25519 accepts a signature whose post-quantum half is absent."
+        },
+        "input_entry": {
+          "$ref": "#/$defs/device_binding_entry",
+          "description": "The row under test, carrying the signature bytes produced by the REAL signer. Verification is one-way interop: a port must ACCEPT these, and must refuse the pinned mutations."
+        },
+        "informational_signed_bytes_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "The message the entry's signature covers, repeated here so a port can diff its own assembly against ours without reconstructing it."
+        },
+        "expected_verified": {
+          "type": "boolean",
+          "description": "True when verification must succeed. False for every refusal - a wrong signer, a mutated row (version, fingerprint or tombstone), a row checked under a different device id, and (the pair that makes the authority split checkable) an owner-signed tombstone presented where only the named person's signature is accepted, and an owner signature over a live row."
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_group_key_hex",
+        "input_role",
+        "expected_subkey_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string",
+          "pattern": "^device-binding/v0\\.2/[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_kind": {
+          "const": "group_subkey"
+        },
+        "input_group_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The 32-byte vault group key (NTV6). NOT the owner's root_key: this family is member-writable, so its key hangs off the group tier."
+        },
+        "input_role": {
+          "enum": [
+            "device-binding-key",
+            "device-binding-sync-id"
+          ],
+          "description": "The GROUP-tier role this case derives. TWO are registered in §3.4 and both are pinned here, family-locally, rather than in hkdf-sha256: that category's runner and its input_role enum are both keyed on derive_subkey_v0_2(root_key, SubkeyRole), and neither role has a SubkeyRole counterpart - they are member-plane keys with no owner-only form, which is exactly why a pre-B2B vault cannot have this blob at all."
+        },
+        "expected_subkey_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "HKDF-SHA-256 over the group key under the role's registered context string. Byte-exact, and distinct from the group key it was derived from."
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "device_bindings_map": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[0-9a-f]{32}$",
+        "description": "device_id, lowercase hex. Any other key is a malformed map, not a new field. NOTE the key is the DEVICE, not the person: a device that moves between people keeps its key and gets a new row, which is what makes a re-bind an ordinary write."
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/device_binding_entry"
+      },
+      "description": "device_id -> row. A TOMBSTONE ROW IS KEPT, not deleted: dropping it would let a stale copy re-introduce the binding on the next merge, and its person_fingerprint is kept too so the removal still names the binding it records. The live view (live_device_bindings) filters tombstones out. Canonical bytes means keys ascending and no whitespace, so this object has exactly one valid encoding."
+    },
+    "device_binding_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "person_fingerprint",
+        "version",
+        "tombstone",
+        "signature_hex"
+      ],
+      "properties": {
+        "person_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte person fingerprint, lowercase hex. Never empty, even on a tombstone - unlike the member-names tombstone, which carries no name. A removal has to name the binding it removes, and the merge can only detect a same-version tie between two DIFFERENT people while both fingerprints are present."
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The merge key. Higher wins; at EQUAL version a tombstone beats a live entry, so a concurrent re-claim cannot resurrect a removed device. A device bound to two DIFFERENT people at an EQUAL version has no winner and is refused. This tie-break is a contract because the merge is cross-implementation."
+        },
+        "tombstone": {
+          "type": "boolean"
+        },
+        "signature_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{6746}$",
+          "description": "Ed25519 (64 bytes) || ML-DSA-65 (3309 bytes) = 3373 bytes, hex, lowercase - 6746 characters. A TOMBSTONE CARRIES THE SAME LENGTH: it is signed by the person the row names, or by the vault owner, so a port that accepts a short or absent signature on a removal accepts an unauthenticated device deletion."
+        }
+      }
+    }
+  }
+}

@@ -39,7 +39,7 @@ A port runs each case as: decode `input_root_key_hex` (32 bytes), map `input_rol
 
 ## Invariants the vectors pin
 
-For the 40 cases in `cases.json` (the runner iterates `SubkeyRole::ALL`, so this count follows the registry rather than pinning it):
+For the 48 cases in `cases.json` (the runner iterates `SubkeyRole::ALL`, so this count follows the registry rather than pinning it):
 
 - **HKDF prefix is exactly `"myne.v0.1 "`.** Trailing space is load-bearing. Drift here surfaces as a mismatch across every vector.
 - **Role-string registry is exact.** The six registered strings only — case-sensitive, no whitespace, no separator. The `informational_info_utf8_hex` field documents the exact info-parameter assemblies (23 B `itemsKey-wrap`, 19 B `prefs-key`, 26 B `search-index-key`, 33 B `attachments-catalog-key`, 29 B `attachments-id-hmac`, 27 B `session-state-key`, each including the 10-byte prefix).
@@ -56,7 +56,18 @@ cargo test -p protocol --lib emit_subkey_vectors_for_paste -- --ignored
 cp /tmp/myne_hkdf_sha256_vectors.json vectors/hkdf-sha256/v0.1/cases.json
 ```
 
-The regenerator test lives in `protocol/src/subkey.rs::tests::emit_subkey_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations. Unlike the paste-format generators for `vault-prefs` / `vault_meta_rewrite`, this one emits ready-to-copy JSON because the 10-vector matrix is awkward to assemble by hand.
+The regenerator test lives in `protocol/src/subkey.rs::tests::emit_subkey_vectors_for_paste`. It is `#[ignore]`-gated so it never runs in default `cargo test` invocations. Unlike the paste-format generators for `vault-prefs` / `vault_meta_rewrite`, this one emits ready-to-copy JSON for the whole file, because assembling a 48-case matrix by hand is how the appends below went missing in the first place.
+
+**This is a WHOLE-FILE generator, and that is the hazard.** The command above replaces `cases.json` in one act. It is NOT append-safe the way `vault-prefs` is, and the file has in fact been extended by appending one feature's roles at a time rather than by re-emitting all of it:
+
+- the **all-zero** root pairs, covering the roles that predate the alpha root;
+- the **alpha** pseudorandom root, whose pairs cover the sync-family and Phase-2 roles;
+- a third root, exercised by `vault-head-mac` and `server-auth`;
+- the **`chats-*` appends** (`chats-catalog-key`, `chats-catalog-sync-id`, `chats-key`; myne-md/myne#675) and the **`agent-*` appends** (`agent-memory-catalog-key`, `agent-memory-catalog-sync-id`, `agent-memory-key`, `agent-personality-key`, `agent-personality-sync-id`; myne-md/myne#697), all eight derived from one input: `[0x42; 32]`, a literal byte pattern rather than a `pseudorandom_root(...)` seed. **Their `vector_id` slugs carry no root prefix**, unlike every earlier case, which is what makes them identifiable as the appended set.
+
+The first three landed with the emitter; the two appends did not. For two releases the documented regeneration command produced a **40-case** document against a **48-case** file, and pasting its output would have deleted eight live roles' vectors. That was invisible from either side alone: the emitter type-checked and ran clean, and the companion's `ajv` sweep validates a 40-case file as happily as a 48-case one. The only thing that made it loud is the runner's coverage pin over `SubkeyRole::ALL` in the main repo's `protocol/tests/vectors.rs`, which names the missing role instead of reporting a pass.
+
+**So the obligation is on the contributor, not on a hand-splice.** A landing that registers a new `SubkeyRole` must extend this emitter's array in the same change; the count in `let cases: [Case<'_>; N]` is a compile-time floor, but nothing mechanical ties that number to the registry. Check it by running the emitter and diffing **by id, not by length**: paste its stdout over the file, then confirm the case count and the id set are unchanged from the committed file. If the diff drops an id, the emitter lost a case and the fixture must not be overwritten.
 
 ## What this does NOT cover
 

@@ -34,7 +34,8 @@
         "person-profile",
         "person-member-unlock-store",
         "awareness-frame",
-        "member-names"
+        "member-names",
+        "device-binding"
       ]
     },
     "protocol_version": {
@@ -302,6 +303,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/member-names.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "device-binding"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/device-binding.json"
           }
         }
       }
