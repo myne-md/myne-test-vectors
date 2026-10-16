@@ -6,7 +6,7 @@
 
 Language-agnostic JSON test vectors that pin the [Myne](https://github.com/myne-md/myne) cryptographic protocol at the byte level — v0.1 in full, plus the parts of the next major (v0.2) that are already frozen. Any independent implementation — Rust, Go, Swift, Kotlin, JavaScript, or anything else — must produce bit-identical outputs from these inputs. A reviewer verifying a port should not have to read the reference Rust implementation; running their own language's test runner against this repository is enough.
 
-This is a companion repo of the [Myne multi-repo project](https://github.com/myne-md). The normative protocol lives in the main repo's specs — start with [`docs/spec/protocol.md`](https://github.com/myne-md/myne/blob/main/docs/spec/protocol.md), [`docs/spec/account-number.md`](https://github.com/myne-md/myne/blob/main/docs/spec/account-number.md), and the cross-implementation magic-byte and identifier tables. These vectors are the executable projection of that spec: every magic prefix, every AEAD AAD framing, every subkey role, and every coercion rule encoded as inputs and expected outputs.
+This is a companion repo of the [Myne multi-repo project](https://github.com/myne-md). The normative protocol lives in the main repo's specs — start with [`docs/spec/protocol.md`](https://github.com/myne-md/myne/blob/develop/docs/spec/protocol.md), [`docs/spec/account-number.md`](https://github.com/myne-md/myne/blob/develop/docs/spec/account-number.md), and the cross-implementation magic-byte and identifier tables. These vectors are the executable projection of that spec: every magic prefix, every AEAD AAD framing, every subkey role, and every coercion rule encoded as inputs and expected outputs.
 
 ## Status
 
@@ -14,8 +14,8 @@ This is a companion repo of the [Myne multi-repo project](https://github.com/myn
 
 What exists today:
 
-- **66 vector categories**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json` — 911 cases across 75 files.
-- **Two protocol versions.** 60 categories have a `v0.1/`; 15 have a `v0.2/` (nine carry both sides). `crdt-note-blob` is v0.2-only, alongside the `vault-meta` / `vault-themes` / `hkdf-sha256` / `aad-construction` next-major sides and the `chats-catalog` / `chats-blob` / `agent-memory-*` / `person-*` families.
+- **One directory per vector category**, each under `vectors/<category>/` with a domain-semantic `schema.md` and at least one JSON-Schema-validated `<version>/cases.json`.
+- **Two protocol versions.** Some categories carry a `v0.1/` side, some a `v0.2/` side, and some both. The `v0.2`-only categories are the ones with no v0.1 form at all: `crdt-note-blob` and `awareness-frame`, the B2B identity families (`person-identity`, `person-keypair`, `person-member-key-store`, `person-member-unlock-store`, `person-profile`, `person-vault-carrier`), and the group-tier families `member-names` and `device-binding`.
 - A **canonical machine-readable contract** per version: the root schema `schema/<version>.json` dispatches per-category sub-schemas under `schema/<version>/` (one file per category) via `oneOf` keyed on the `schema` field. The two roots are separate documents because `protocol_version` is a `const` in each — see [Validating vectors](#validating-vectors).
 - **Git hooks** (`lefthook.yml`): JSON well-formedness and text hygiene on commit, plus the full `ajv` schema sweep on push.
 - **CI** (`.woodpecker.yml`): the same per-category `ajv` sweep on every push, pull request and manual run.
@@ -23,9 +23,9 @@ What exists today:
 What is deferred:
 
 - **Vectors for the rest of v0.2.** The next major is partly allocated — the `NC05` note type, the `NTV5` / `MYT5` envelopes, the `"myne.v0.2|"` AAD prefix, the `"myne.v0.2 "` HKDF context prefix and the `0x02` version byte are frozen and vectored; its KDF and remaining blob families are not allocated yet, so they are not vectored either.
-- **Public availability, and with it the byte-level CI gate.** This repository is private for now, along with the rest of the pre-alpha project. The schema sweep above runs on every push; the *byte-level* conformance run against the reference implementation lives in the main repo and is currently commented out of CI, because cloning a private companion needs a secret and a CI config naming a secret it cannot see fails to compile at all. So the byte-level half gates on developer machines (`cargo test -p protocol --test vectors`, with this repo checked out beside the main one) and nowhere else. Until that changes, treat the paragraph at the top as the contract this repository is built to honour rather than one an outside reader can exercise today.
+- **Public availability, and with it the byte-level CI gate.** This repository is private for now, along with the rest of the pre-alpha project. The schema sweep above runs on every push, and so does the *byte-level* conformance run: the main repo's `vector-verification` CI step checks this repository out beside it and runs the Rust runners with `MYNE_VECTORS_REQUIRED=1`, which turns a missing fixture into a failure rather than a green run that verified nothing. That step is gated on a `vectors_token` secret, so it runs on `push` and on a manual trigger and prints `skipping` on a pull request. The local equivalent is `cargo test -p protocol --test vectors` with this repository checked out beside the main one.
 
-Every v0.1 blob family in the [`protocol.md` §10.3 magic-allocation table](https://github.com/myne-md/myne/blob/main/docs/spec/protocol.md) has a category, every `SubkeyRole` variant has an `hkdf-sha256` case, and every vault-scoped `aad_*` builder — v0.1 and v0.2 alike — has an `aad-construction` decomposition. Those three registries are enforced from the runner side (`SubkeyRole::ALL` and the builder lists are iterated, not restated), so a new role or family fails the suite instead of quietly shipping unvectored.
+Every v0.1 blob family in the [`protocol.md` §10.3 magic-allocation table](https://github.com/myne-md/myne/blob/develop/docs/spec/protocol.md) has a category, every `SubkeyRole` variant has an `hkdf-sha256` case, and every vault-scoped `aad_*` builder — v0.1 and v0.2 alike — has an `aad-construction` decomposition. Those three registries are enforced from the runner side (`SubkeyRole::ALL` and the builder lists are iterated, not restated), so a new role or family fails the suite instead of quietly shipping unvectored.
 
 ## How it works
 
@@ -48,10 +48,10 @@ myne-test-vectors/
 ├── schema/
 │   ├── v0.1.json              ← v0.1 root schema (top-level shape + oneOf dispatch on `schema`)
 │   ├── v0.1/
-│   │   └── <category>.json    ← one per-category case schema (60 files)
+│   │   └── <category>.json    ← one per-category case schema
 │   ├── v0.2.json              ← v0.2 root schema — a separate document, not an extension
 │   └── v0.2/
-│       └── <category>.json    ← one per-category case schema (15 files)
+│       └── <category>.json    ← one per-category case schema
 ├── vectors/
 │   └── <category>/
 │       ├── schema.md          ← domain-semantic description of the category
@@ -64,7 +64,7 @@ myne-test-vectors/
 
 Adding a new category requires landing its sub-schema under `schema/<version>/` and extending both the `schema` enum and the `oneOf` branches in that version's root schema in lockstep, then adding the `vectors/<category>/` files and a runner in the main repo.
 
-**The invariant to check after any landing**, per version: category directories = sub-schema files = root-schema `enum` entries = root-schema `oneOf` branches. Today that is 60 for v0.1 and 15 for v0.2. All four numbers move together or the landing is incomplete.
+**The invariant to check after any landing**, per version: category directories = sub-schema files = root-schema `enum` entries = root-schema `oneOf` branches. All four move together or the landing is incomplete.
 
 ### Field conventions
 
