@@ -64,7 +64,7 @@ This category has a second version directory, and it is not a copy of the first.
 `aad_vault_items_key_wrap_v0_2` and the generic `aad_singleton_blob_v0_2`. Every
 one of them opens with the 10-byte prefix `"myne.v0.2|"` and the `0x02`
 `protocol_version` byte, both listed as **major-version-event constants** in the
-main repo's root `CLAUDE.md`. Those 11 bytes are the whole of the §10.5
+main repo's root `AGENTS.md`. Those 11 bytes are the whole of the §10.5
 anti-downgrade separation: the same role under the two majors yields different
 AAD, which is why role strings are safely reused across versions.
 

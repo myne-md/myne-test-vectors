@@ -53,7 +53,7 @@ For the 18 cases in `cases.json`:
 - **Primitive AEAD byte output at empty-AAD and content-AAD scopes.** The 2 `encrypt` cases cover (a) bare-primitive bytes with no AAD, (b) realistic AAD shape (58-byte `aad_note_content_encrypt` output) — same primitive, different AAD context.
 - **Round-trip property.** `decrypt-ok-medium` proves the decoder recovers the canonical plaintext from the medium encrypt case's sealed bytes.
 - **Non-distinguishing AEAD failure surface — two distinct tamper vectors.** `decrypt-tag-tamper` flips one byte of the 32-byte CTX commitment tag; `decrypt-aad-tamper` passes a swapped AAD (the `aad_prefs_blob` bytes instead of the `aad_note_content_encrypt` bytes the encoder used). Both surface `Err(ProtocolError::AeadFailure)` — ports MUST collapse cross-vault, wrong-AAD, tampered-ciphertext, and tampered-tag to the same non-distinguishing variant.
-- **The `items_key` / `item_key` naming-discipline hazard is pinned.** The `aad-vault-items-key-wrap` (singleton itemsKey, no per-note UUID) and `aad-note-item-key-wrap` (per-note item_key, with note_uuid) cases sit adjacent in `cases.json` — a side-by-side byte diff documents the one-character name difference + corresponding AAD shape difference. Per `protocol/CLAUDE.md` AAD-helper naming discipline rule.
+- **The `items_key` / `item_key` naming-discipline hazard is pinned.** The `aad-vault-items-key-wrap` (singleton itemsKey, no per-note UUID) and `aad-note-item-key-wrap` (per-note item_key, with note_uuid) cases sit adjacent in `cases.json` — a side-by-side byte diff documents the one-character name difference + corresponding AAD shape difference. Per `protocol/AGENTS.md` AAD-helper naming discipline rule.
 
 ## Regeneration
 

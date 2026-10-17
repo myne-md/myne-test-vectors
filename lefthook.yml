@@ -75,7 +75,7 @@ pre-commit:
 # failed, and the gate's own message ("INVALID against schema: <file>") named
 # the vector files rather than the command that could not run. A gate that
 # cannot pass is a gate that gets bypassed. `.woodpecker.yml` has always used
-# the glob and says why; keep the two in step (README.md + CLAUDE.md carry the
+# the glob and says why; keep the two in step (README.md + AGENTS.md carry the
 # same command for humans).
 #
 # EVERY VERSION DIRECTORY, EACH AGAINST ITS OWN ROOT SCHEMA. The loop used to

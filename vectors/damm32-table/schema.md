@@ -36,7 +36,7 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 
 - **The 1024-byte table is byte-identical across implementations.** Orientation (`table[interim][symbol]`, row-major), polynomial (37), and Crockford index order are all load-bearing — a transposed table or wrong polynomial produces a different table and a different account-identity space.
 - **Checksum direction is a left fold from interim 0.** `checksum-single-step` pins `table[0][1] = 2`; `checksum-baseline-19` pins indices `0..18 → 26` (the account-number baseline whose check char is `T`); `checksum-all-high-19` is a far-from-baseline stress case.
-- **Changing this table is a major-version event.** It would reject already-distributed account numbers and break cross-impl validity agreement (root `CLAUDE.md` load-bearing registry).
+- **Changing this table is a major-version event.** It would reject already-distributed account numbers and break cross-impl validity agreement (root `AGENTS.md` load-bearing registry).
 
 ## Relationship to `account-number`
 
