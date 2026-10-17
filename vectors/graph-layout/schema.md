@@ -29,7 +29,7 @@ Offset  Size  Field                        Notes
 
 - `graph_layout_key = DeriveSubkey(root_key, SubkeyRole::GraphLayoutKey)` — HKDF
   context `"myne.v0.1 graph-layout-key"` (§3.4). `root_key`-derived, itemsKey-
-  independent (like prefs/search/indices/embeddings/workspace).
+  independent (like prefs/search/indices/workspace).
 - AAD `aad_graph_layout_blob(account_number_hash)` — prefix `"myne.v0.1|"` ∥
   `0x01` ∥ u16_be(17) ∥ `"graph-layout-blob"` ∥ `account_number_hash(16)`, total
   **46 bytes**. The HKDF role `graph-layout-key` is **DISTINCT** from the AAD

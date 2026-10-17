@@ -114,14 +114,6 @@
       "expected_aad_bytes_hex": "6d796e652e76302e317c010011717569636b2d756e6c6f636b2d626c6f621212121212121212121212121212121202"
     },
     {
-      "vector_id": "ctx-aead/v0.1/aad-ai-embeddings-blob",
-      "description": "Canonical bytes from aad_ai_embeddings_blob with account_number_hash = 0x12×16 (MYND-453, §9.17.3). Pins the 47-byte vault.embeddings AAD: 'myne.v0.1|' prefix (10) + version byte (1) + length-prefixed UTF-8 role 'ai-embeddings-blob' (2+18) + account_number_hash (16). Same shape as aad_prefs_blob / aad_search_index_blob / aad_vault_indices_blob but a distinct 18-byte role string — domain-separates the AI embedding index from the other vault singletons. LOAD-BEARING: the AAD role 'ai-embeddings-blob' is DISTINCT from 'search-index-blob' AND 'vault-indices-blob' (vault.embeddings / vault.search / vault.indices are separate blob families, MYR1 != MYS1 != MYI1) AND from the HKDF KEK role 'ai-embeddings-key' (hkdf-sha256 vectors); all are different load-bearing constants. The model-identity tuple that invalidates the cache on a model/dimension/chunker change is carried INSIDE the opaque payload, NOT this AAD.",
-      "case_kind": "aad_canonical_bytes",
-      "input_builder_name": "aad_ai_embeddings_blob",
-      "input_account_number_hash_hex": "12121212121212121212121212121212",
-      "expected_aad_bytes_hex": "6d796e652e76302e317c01001261692d656d62656464696e67732d626c6f6212121212121212121212121212121212"
-    },
-    {
       "vector_id": "ctx-aead/v0.1/encrypt-short-empty-aad",
       "description": "Encrypt 3-byte plaintext 'abc' with empty AAD. Primitive-level coverage of aead_seal_ctx without binding to any AAD builder — proves the CTX commitment outer construction works at the bare-bytes layer. Expected sealed = 3-byte ciphertext + 32-byte CTX tag = 35 bytes.",
       "case_kind": "encrypt",

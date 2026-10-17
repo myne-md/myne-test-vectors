@@ -39,7 +39,6 @@
         "backup-container",
         "property-coercion",
         "vault-indices",
-        "embeddings",
         "markdown-comment",
         "vault-dictionary",
         "vault-quickunlock",
@@ -394,19 +393,6 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-indices.json"
-          }
-        }
-      }
-    },
-    {
-      "properties": {
-        "schema": {
-          "const": "embeddings"
-        },
-        "cases": {
-          "type": "array",
-          "items": {
-            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/embeddings.json"
           }
         }
       }

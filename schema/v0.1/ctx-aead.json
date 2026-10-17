@@ -139,11 +139,10 @@
             "aad_workspace_blob",
             "aad_graph_layout_blob",
             "aad_vault_indices_blob",
-            "aad_ai_embeddings_blob",
             "aad_personal_dictionary_blob",
             "aad_quick_unlock_blob"
           ],
-          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6), aad_workspace_blob (MYND-254, §9.7), aad_vault_indices_blob (MYND-271, §9.8), aad_ai_embeddings_blob (MYND-453, §9.17) and aad_personal_dictionary_blob (MYND-266, §9.13) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob', 'workspace-blob', 'vault-indices-blob', 'ai-embeddings-blob' and 'personal-dictionary-blob' respectively. aad_quick_unlock_blob (MYND-329, §9.14.3) additionally takes input_provider_kind, appended as a trailing byte after account_number_hash."
+          "description": "Which pub aad_* builder function this case pins. Each builder takes distinct parameters; runner dispatches per name. aad_search_index_blob (MYND-29, §9.6), aad_workspace_blob (MYND-254, §9.7), aad_vault_indices_blob (MYND-271, §9.8) and aad_personal_dictionary_blob (MYND-266, §9.13) use input_account_number_hash_hex like aad_prefs_blob, with role strings 'search-index-blob', 'workspace-blob', 'vault-indices-blob' and 'personal-dictionary-blob' respectively. aad_quick_unlock_blob (MYND-329, §9.14.3) additionally takes input_provider_kind, appended as a trailing byte after account_number_hash."
         },
         "input_kdf_params": {
           "type": "object",
@@ -170,7 +169,7 @@
         "input_account_number_hash_hex": {
           "type": "string",
           "pattern": "^[0-9a-f]{32}$",
-          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob | aad_vault_indices_blob | aad_ai_embeddings_blob | aad_personal_dictionary_blob | aad_quick_unlock_blob."
+          "description": "Required for builder_name = aad_prefs_blob | aad_search_index_blob | aad_workspace_blob | aad_vault_indices_blob | aad_personal_dictionary_blob | aad_quick_unlock_blob."
         },
         "input_provider_kind": {
           "type": "integer",

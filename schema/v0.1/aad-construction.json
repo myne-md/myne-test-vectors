@@ -34,7 +34,6 @@
         "aad_workspace_blob",
         "aad_graph_layout_blob",
         "aad_vault_indices_blob",
-        "aad_ai_embeddings_blob",
         "aad_personal_dictionary_blob",
         "aad_quick_unlock_blob",
         "aad_note_content_encrypt",
@@ -87,7 +86,7 @@
     "input_account_number_hash_hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{32}$",
-      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob / aad_ai_embeddings_blob / aad_personal_dictionary_blob / aad_quick_unlock_blob / aad_chats_catalog / aad_chats_blob."
+      "description": "Present for aad_prefs_blob / aad_search_index_blob / aad_workspace_blob / aad_vault_indices_blob / aad_personal_dictionary_blob / aad_quick_unlock_blob / aad_chats_catalog / aad_chats_blob."
     },
     "input_provider_kind": {
       "type": "integer",
