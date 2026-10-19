@@ -37,6 +37,7 @@
         "attachments-id-hmac",
         "session-state-key",
         "personal-dictionary-key",
+        "personal-dictionary-sync-id",
         "vault-indices-key",
         "vault-head-mac",
         "server-auth",

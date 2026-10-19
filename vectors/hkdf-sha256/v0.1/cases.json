@@ -205,7 +205,7 @@
     },
     {
       "vector_id": "hkdf-sha256/v0.1/prn-alpha-prefs-sync-id",
-      "description": "Pseudorandom alpha root with the PrefsSyncId role. The informational_info_utf8_hex field carries the canonical 23-byte HKDF info bytes ('myne.v0.1 prefs-sync-id') so independent implementers can verify the twelfth registered role's info assembly without re-parsing the spec. Domain-separation pair with the alpha prefs-key vector (same input_root_key_hex, byte-different outputs): the prefs blob-id derivation and the prefs KEK must never coincide — and with the alpha catalog-sync-id vector, the two singleton sync-id lineages must never coincide either.",
+      "description": "Pseudorandom alpha root with the PrefsSyncId role. The informational_info_utf8_hex field carries the canonical 23-byte HKDF info bytes ('myne.v0.1 prefs-sync-id') so independent implementers can verify the twelfth registered role's info assembly without re-parsing the spec. Domain-separation pair with the alpha prefs-key vector (same input_root_key_hex, byte-different outputs): the prefs blob-id derivation and the prefs KEK must never coincide, and with the alpha catalog-sync-id vector, the two singleton sync-id lineages must never coincide either.",
       "input_root_key_hex": "9cca1f28fd8b11da8c5176417bef96cec450d524491a43518cad3d8b3a0ca8e5",
       "input_role": "prefs-sync-id",
       "informational_info_utf8_hex": "6d796e652e76302e312070726566732d73796e632d6964",
@@ -220,7 +220,7 @@
     },
     {
       "vector_id": "hkdf-sha256/v0.1/prn-alpha-graph-layout-key",
-      "description": "Pseudorandom alpha root with the GraphLayoutKey role. The informational_info_utf8_hex field carries the canonical 26-byte HKDF info bytes ('myne.v0.1 graph-layout-key') so independent implementers can verify the thirteenth registered role's info assembly without re-parsing the spec. NOTE: the HKDF role string 'graph-layout-key' is DISTINCT from the AAD role string 'graph-layout-blob' (aad_graph_layout_blob), AND distinct from its rebuildable-cache siblings search-index-key / vault-indices-key — vault.graph (layout), vault.search (BM25) and vault.indices (metadata) are separate blob families, one KEK each.",
+      "description": "Pseudorandom alpha root with the GraphLayoutKey role. The informational_info_utf8_hex field carries the canonical 26-byte HKDF info bytes ('myne.v0.1 graph-layout-key') so independent implementers can verify the thirteenth registered role's info assembly without re-parsing the spec. NOTE: the HKDF role string 'graph-layout-key' is DISTINCT from the AAD role string 'graph-layout-blob' (aad_graph_layout_blob), AND distinct from its rebuildable-cache siblings search-index-key / vault-indices-key — vault.graph (layout), vault.search (BM25), vault.indices (metadata) are separate blob families, one KEK each.",
       "input_root_key_hex": "9cca1f28fd8b11da8c5176417bef96cec450d524491a43518cad3d8b3a0ca8e5",
       "input_role": "graph-layout-key",
       "informational_info_utf8_hex": "6d796e652e76302e312067726170682d6c61796f75742d6b6579",
@@ -280,11 +280,26 @@
     },
     {
       "vector_id": "hkdf-sha256/v0.1/prn-alpha-themes-sync-id",
-      "description": "Pseudorandom alpha root with the ThemesSyncId role. The informational_info_utf8_hex field carries the canonical 24-byte HKDF info bytes ('myne.v0.1 themes-sync-id') so independent implementers can verify this role's info assembly without re-parsing the spec. Domain-separation pair with the alpha custom-themes-key vector (same input_root_key_hex, byte-different outputs): the themes blob-id derivation and the themes KEK must never coincide — and with the alpha catalog-sync-id / prefs-sync-id vectors, the three singleton sync-id lineages must never coincide either.",
+      "description": "Pseudorandom alpha root with the ThemesSyncId role. The informational_info_utf8_hex field carries the canonical 24-byte HKDF info bytes ('myne.v0.1 themes-sync-id') so independent implementers can verify this role's info assembly without re-parsing the spec. Domain-separation pair with the alpha custom-themes-key vector (same input_root_key_hex, byte-different outputs): the themes blob-id derivation and the themes KEK must never coincide, and with the alpha catalog-sync-id / prefs-sync-id vectors, the three singleton sync-id lineages must never coincide either.",
       "input_root_key_hex": "9cca1f28fd8b11da8c5176417bef96cec450d524491a43518cad3d8b3a0ca8e5",
       "input_role": "themes-sync-id",
       "informational_info_utf8_hex": "6d796e652e76302e31207468656d65732d73796e632d6964",
       "expected_subkey_hex": "0acbfb96564848865b4d841a380ad209e645e96f39178289ceb475d383c54708"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/zero-root-personal-dictionary-sync-id",
+      "description": "All-zero root_key with the PersonalDictSyncId role (myne-md/myne#640, §3.4; sync-protocol.md §10.2.1). Derives the reserved sync-plane blob-id of vault.dictionary: the FIRST 16 BYTES of this 32-byte output are the id; role string 'personal-dictionary-sync-id' (27 ASCII bytes). An identifier derivation like prefs-sync-id / themes-sync-id, NOT a KEK; the dictionary KEK stays personal-dictionary-key. Pairs with the other zero-root vectors under the same trivial root.",
+      "input_root_key_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "input_role": "personal-dictionary-sync-id",
+      "expected_subkey_hex": "0c9a3267f3955ddac464cc572e83c3216a78e94ad0d805fe0c327c8eda1f3cb3"
+    },
+    {
+      "vector_id": "hkdf-sha256/v0.1/prn-alpha-personal-dictionary-sync-id",
+      "description": "Pseudorandom alpha root with the PersonalDictSyncId role. The informational_info_utf8_hex field carries the canonical 37-byte HKDF info bytes ('myne.v0.1 personal-dictionary-sync-id') so independent implementers can verify this role's info assembly without re-parsing the spec. Domain-separation pair with the alpha personal-dictionary-key vector (same input_root_key_hex, byte-different outputs): the dictionary blob-id derivation and the dictionary KEK must never coincide, and with the alpha catalog-sync-id / prefs-sync-id / themes-sync-id vectors, the four singleton sync-id lineages must never coincide either.",
+      "input_root_key_hex": "9cca1f28fd8b11da8c5176417bef96cec450d524491a43518cad3d8b3a0ca8e5",
+      "input_role": "personal-dictionary-sync-id",
+      "informational_info_utf8_hex": "6d796e652e76302e3120706572736f6e616c2d64696374696f6e6172792d73796e632d6964",
+      "expected_subkey_hex": "e458a038925a39902656ef7c05cfb3bd7a3322f6077bca15e84b79bf9656f63e"
     },
     {
       "vector_id": "hkdf-sha256/v0.1/chats-catalog-key",
@@ -352,3 +367,4 @@
     }
   ]
 }
+

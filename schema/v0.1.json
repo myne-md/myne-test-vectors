@@ -41,6 +41,7 @@
         "vault-indices",
         "markdown-comment",
         "vault-dictionary",
+        "dictionary-merge",
         "vault-quickunlock",
         "pending-capture",
         "attachment-text",
@@ -419,6 +420,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/vault-dictionary.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "dictionary-merge"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/dictionary-merge.json"
           }
         }
       }

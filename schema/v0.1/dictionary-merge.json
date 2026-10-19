@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/dictionary-merge.json",
+  "title": "dictionary-merge — case shape (v0.1)",
+  "description": "Pins one case of the canonical 0x02 vault.dictionary inner payload merge in myne-core (merge_personal_dictionaries, myne-md/myne#640; sync-protocol.md §10.2.1 + protocol.md §9.13.2). Pure logic over decoded plaintexts, no keys and no AEAD. All three byte fields are CANONICAL encoded payloads (NFC + sorted + deduplicated word sets (case folding is the LOOKUP layer's job, never the codec), sorted clock map), so a port whose merge is right and whose encoder is not still fails. The single-sided decision is the same function the vault.prefs set fields use (prefs_merge::single_sided_clock_rule, myne-md/myne#613) rather than a second copy. The Rust reference implementation lives at core/src/plugins/sync/dictionary_payload.rs and protocol/src/dictionary_blob.rs (main myne repository).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind",
+    "input_local_hex",
+    "input_remote_hex",
+    "expected_merged_hex"
+  ],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "description": "Stable case identifier, unique within the category; the name a failing runner reports."
+    },
+    "description": {
+      "type": "string",
+      "description": "What this case pins, including which clock direction it decides."
+    },
+    "case_kind": {
+      "const": "merge",
+      "description": "The single case kind this category carries. The runner asserts both argument orders, so commutativity is structural rather than a second case."
+    },
+    "input_local_hex": {
+      "type": "string",
+      "description": "Hex of one side's canonical 0x02 payload."
+    },
+    "input_remote_hex": {
+      "type": "string",
+      "description": "Hex of the other side's canonical 0x02 payload."
+    },
+    "expected_merged_hex": {
+      "type": "string",
+      "description": "Hex of the canonical 0x02 payload the merge must produce."
+    }
+  }
+}

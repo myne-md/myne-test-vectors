@@ -1,0 +1,48 @@
+{
+  "schema": "dictionary-merge",
+  "protocol_version": "v0.1",
+  "spec_section": "sync-protocol.md §10.2.1 + protocol.md §9.13.2",
+  "description": "Pins the canonical 0x02 vault.dictionary payload (postcard) and the §10.2.1 union-with-per-word-removal-clocks merge (myne-md/myne#640). input_*_hex and expected_merged_hex are the CANONICAL encoded payloads (NFC + sorted + deduped word sets, sorted clock map). A port that drops a tombstone whose word is in neither input, or that keeps a single-sided entry whose absent-side clock is strictly greater, MUST fail these cases by name.",
+  "cases": [
+    {
+      "vector_id": "dictionary-merge/v0.1/merge-add-one-round",
+      "description": "A added 'vodozemac' at clock 100; B is empty. The union keeps the word and carries its clock.",
+      "case_kind": "merge",
+      "input_local_hex": "0109766f646f7a656d6163000118706572736f6e616c5f776f7264732f766f646f7a656d616364",
+      "input_remote_hex": "000000",
+      "expected_merged_hex": "0109766f646f7a656d6163000118706572736f6e616c5f776f7264732f766f646f7a656d616364"
+    },
+    {
+      "vector_id": "dictionary-merge/v0.1/merge-removal-converges",
+      "description": "A removed 'myne' at clock 300 (tombstone, word absent); B still holds it at clock 0. The absent side's clock is strictly greater, so the word is DROPPED and the tombstone is retained.",
+      "case_kind": "merge",
+      "input_local_hex": "00000113706572736f6e616c5f776f7264732f6d796e65ac02",
+      "input_remote_hex": "01046d796e65000113706572736f6e616c5f776f7264732f6d796e6500",
+      "expected_merged_hex": "00000113706572736f6e616c5f776f7264732f6d796e65ac02"
+    },
+    {
+      "vector_id": "dictionary-merge/v0.1/merge-retained-tombstone-beats-third-device",
+      "description": "A holds only the 'myne' tombstone at 300; a third device holds 'myne' live at 100. The tombstone wins, the word is DROPPED, and the clock is retained even though neither input lists the word.",
+      "case_kind": "merge",
+      "input_local_hex": "00000113706572736f6e616c5f776f7264732f6d796e65ac02",
+      "input_remote_hex": "01046d796e65000113706572736f6e616c5f776f7264732f6d796e6564",
+      "expected_merged_hex": "00000113706572736f6e616c5f776f7264732f6d796e65ac02"
+    },
+    {
+      "vector_id": "dictionary-merge/v0.1/merge-readd-beats-own-tombstone",
+      "description": "A tombstoned 'myne' at 100; B re-added it at 200. The newer add wins and the word is present.",
+      "case_kind": "merge",
+      "input_local_hex": "00000113706572736f6e616c5f776f7264732f6d796e6564",
+      "input_remote_hex": "01046d796e65000113706572736f6e616c5f776f7264732f6d796e65c801",
+      "expected_merged_hex": "01046d796e65000113706572736f6e616c5f776f7264732f6d796e65c801"
+    },
+    {
+      "vector_id": "dictionary-merge/v0.1/merge-equal-clock-keeps-the-entry",
+      "description": "A holds 'tie' at clock 50; B removed it at clock 50. Equal clocks KEEP the entry: an entry that survives one extra round can be deleted again, while one dropped by a collision cannot be recovered.",
+      "case_kind": "merge",
+      "input_local_hex": "0103746965000112706572736f6e616c5f776f7264732f74696532",
+      "input_remote_hex": "00000112706572736f6e616c5f776f7264732f74696532",
+      "expected_merged_hex": "0103746965000112706572736f6e616c5f776f7264732f74696532"
+    }
+  ]
+}
