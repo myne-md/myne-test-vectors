@@ -108,6 +108,38 @@
       "input_local": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"],
       "input_remote": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"],
       "expected_merged": ["a1b2c3d4-0000000001", "a1b2c3d4-0000000002"]
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turn-content-undecided-plus-applied",
+      "description": "One side decided applied, the other undecided: the decision wins in both argument orders.",
+      "case_kind": "turns_merge_content",
+      "input_local": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1"}},
+      "input_remote": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}},
+      "expected_merged": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}}
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turn-content-undecided-plus-rejected",
+      "description": "The same for rejected; the direction the decision arrived cannot matter, or the undecided copy overwrites it on every pull.",
+      "case_kind": "turns_merge_content",
+      "input_local": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1"}},
+      "input_remote": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "rejected"}},
+      "expected_merged": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "rejected"}}
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turn-content-two-disagreeing-decisions",
+      "description": "Two decisions that disagree resolve by a fixed order on the VALUE (applied before rejected), so both devices converge instead of each keeping its own.",
+      "case_kind": "turns_merge_content",
+      "input_local": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "rejected"}},
+      "input_remote": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}},
+      "expected_merged": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}}
+    },
+    {
+      "vector_id": "chats-merge/v0.1/turn-content-unknown-outcome-is-undecided",
+      "description": "A value outside the closed set is undecided rather than a decision: both readers strip it, so letting it win would churn. The decided side wins.",
+      "case_kind": "turns_merge_content",
+      "input_local": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "deferred-by-a-future-client"}},
+      "input_remote": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}},
+      "expected_merged": {"id": "t1", "role": "assistant", "text": "done", "agentSummary": {"runId": "r1", "outcome": "applied"}}
     }
   ]
 }

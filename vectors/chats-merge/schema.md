@@ -17,7 +17,7 @@ Pins the conversation merge rules in `myne-core` — `merge_chats_catalog` + `me
 vectors/chats-merge/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 8 logic cases (catalog + turns)
+    └── cases.json         ← array of 12 logic cases (catalog + turns + turn content)
 ```
 
 ## JSON shape
@@ -27,3 +27,4 @@ The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.js
 - **`catalog_merge`** — a two-sided roster join: `input_local` + `input_remote` rosters (conversation-id hex → `{created_at, deleted_at?, title, updated_at, version?}`), `expected_merged`. The runner asserts the join in BOTH argument orders, so commutativity is structural rather than restated in the expected value. Cases: the commutative join, higher-version-wins, tombstone-wins-over-append, enrollment-seed-intact.
 - **`catalog_merge_assoc`** — a three-sided roster join: `input_a` + `input_b` + `input_c`, `expected_merged`. The runner asserts `(A+B)+C` equals `A+(B+C)` equals the expected value.
 - **`turns_merge`** — a two-sided turn-id join: `input_local` + `input_remote` id arrays, `expected_merged`. Both argument orders asserted. Cases: commutative suffixes, prefix-verbatim-plus-both-suffixes, idempotent.
+- **`turns_merge_content`** — two copies of ONE turn id, reconciled field by field: `input_local` + `input_remote` turn objects, `expected_merged`. Both argument orders asserted. The only field that can differ is the monotone decision marker `agentSummary.outcome`, whose decided set is closed (`applied`, `rejected`): an unknown value counts as undecided, the decided copy wins, two disagreeing decisions resolve by a fixed order on the value (`applied` before `rejected`), and the marker is grafted onto the local turn so a field only one side carries is preserved. Cases: undecided+applied, undecided+rejected, two-disagreeing, unknown-value. (myne-md/myne#894)
