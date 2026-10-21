@@ -2,7 +2,7 @@
   "schema": "attachments-catalog",
   "protocol_version": "v0.1",
   "spec_section": "protocol.md §9.10 + §5.2 + §3.4",
-  "description": "Pins protocol::encode_attachments_catalog_raw + decode_attachments_catalog (MYC1) + aad_attachments_catalog. Inner plaintext is canonical JSON: object mapping lowercase-hex attachment-id -> {content_type,created_at,filename,size} with keys in lexicographic order; empty catalog = {}. KEK = DeriveSubkey(root,'attachments-catalog-key'). Reference impl: protocol/src/attachments_catalog.rs.",
+  "description": "Pins protocol::encode_attachments_catalog_raw + decode_attachments_catalog (MYC1) + aad_attachments_catalog. Inner plaintext is canonical JSON: object mapping lowercase-hex attachment-id -> {content_type,created_at,filename,scope (only when \"chat\"),size} with keys in lexicographic order; empty catalog = {}. KEK = DeriveSubkey(root,'attachments-catalog-key'). Reference impl: protocol/src/attachments_catalog.rs.",
   "cases": [
     {
       "vector_id": "attachments-catalog/v0.1/encrypt-empty",
@@ -159,6 +159,27 @@
       "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "expected_plaintext_canonical_utf8_hex": "7b2261613131223a7b22636f6e74656e745f74797065223a22222c22637265617465645f6174223a313730303030303030302c2264656c657465645f6174223a313730303030303930302c2266696c656e616d65223a22222c2273697a65223a302c2276657273696f6e223a317d2c2262623232223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303530302c2266696c656e616d65223a2272656e616d65642e706466222c2273697a65223a39383736352c22757064617465645f6174223a313730303030303830307d7d"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/encrypt-chat-scope",
+      "description": "A chat-scoped entry pins the canonical slot of the optional `scope` field: \"scope\":\"chat\" between `filename` and `size` (myne-md/myne#913, §9.10.2). The file's bytes, KEK and envelope are a library attachment's; the field only says which surface lists the row. `library` is never emitted, so a library row is byte-identical to the pre-#913 shape (`encrypt-populated`).",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b2263633333223a7b22636f6e74656e745f74797065223a22696d6167652f706e67222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a227061737465642e706e67222c2273636f7065223a2263686174222c2273697a65223a31323334357d7d",
+      "input_catalog_nonce_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "informational_catalog_key_hex": "7166331f75468f64efbd7989b270412089ded4667519066ce8c34bdf730aff0b",
+      "expected_catalog_blob_hex": "4d5943310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000000915fa39aa93e3c877a35a37d42482d5fbd003e04d05fe819f0b8dd5ca4470f3cea206df998c3904fefc731f0a81bae51ac98d14bd88f1805ca128a2b04d02b1469e5dca0e1c3d4142793b38fd69a84a3ed3f9616734ba4aaddee86399f97357322ac414b3c9c3c0db806422cbfa28a6adc5eb0e5c7382f67e746d0ffbe2e10fd93a0e65f24c8a6deddf37a4072c3bcb1db0c"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-unknown-scope-tolerated",
+      "description": "Forward-compat (§9.10.2): a sealed plaintext carrying a scope value this version does not know (`note`) MUST decode as `library` rather than fail the catalog, and a canonical re-encode drops the key. expected_plaintext_canonical_utf8_hex is that re-encode, NOT the sealed bytes; informational_sealed_plaintext_utf8_hex carries the sealed plaintext verbatim.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5943310100cccccccccccccccccccccccccccccccccccccccccccccccc0000008dbeb2daf1f70b0d1110b1077062d71beaf87a9a33cbf624e73c505e6a3c743c9ad211f7d73345339fe293bae9410a2e26fa0cb713e83fe7ba489ef7f2d340e094445d60372b75e9a1d44256dfb398524e9734fabc9a61d72ada73e4399fd59dc263eb7c70c9b3dd77b3fa26ea76ff533f35d56fe27410ff436498883909bbe9b581f78bdad0775a96097bc0b760",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "informational_sealed_plaintext_utf8_hex": "7b2264643434223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273636f7065223a226e6f7465222c2273697a65223a34327d7d",
+      "expected_plaintext_canonical_utf8_hex": "7b2264643434223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273697a65223a34327d7d"
     }
   ]
 }
