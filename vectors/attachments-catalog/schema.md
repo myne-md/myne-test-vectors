@@ -7,11 +7,11 @@ Pins the byte mapping of `protocol::encode_attachments_catalog_raw` + `protocol:
 
 ## Canonical-JSON inner plaintext (like `vault-prefs`, unlike `vault-search`)
 
-The inner plaintext is **canonical JSON**: an object mapping lowercase-hex `attachment_id` → `{content_type, created_at, filename, size}`. Canonical form fixed by the reference implementation:
+The inner plaintext is **canonical JSON**: an object mapping lowercase-hex `attachment_id` → `{content_type, created_at, filename, scope, size}`. Canonical form fixed by the reference implementation:
 
-- Top-level keys (attachment-ids) in lexicographic order; per-entry keys in the fixed order `content_type` < `created_at` < `filename` < `size`.
+- Top-level keys (attachment-ids) in lexicographic order; per-entry keys in the fixed order `content_type` < `created_at` < `filename` < `scope` < `size` (plus the other optional fields the sync wave added: `deleted_at`, `updated_at`, `version`). `scope` is optional and emitted only for the value `"chat"` (myne-md/myne#913): its ABSENCE means the attachment library, so every pre-#913 catalog encodes byte-identically.
 - No insignificant whitespace; string fields NFC-normalized; empty catalog = `{}` (2 bytes, `7b7d`).
-- **Forward-compat (§ 9.10.2):** a decoder MUST tolerate unknown additive per-entry fields (skip them, recover the known fields) — pinned by the `decrypt-unknown-field-tolerated` case.
+- **Forward-compat (§ 9.10.2):** a decoder MUST tolerate unknown additive per-entry fields (skip them, recover the known fields) — pinned by the `decrypt-unknown-field-tolerated` case. For `scope` the tolerance is stated for its VALUE as well: a value this version does not know (a later word, or a non-string) decodes as `library` rather than failing the catalog, pinned by `decrypt-unknown-scope-tolerated` and `decrypt-non-string-scope-tolerated`.
 
 The catalog is **reconstructible metadata** (display names for the library view): under `read_or_empty` semantics (§ 9.10.4) a missing or undecryptable `vault.attachments` collapses to the empty catalog rather than failing the unlock — lower-severity than note blobs, but the byte mapping is still a cross-implementation contract.
 
@@ -45,15 +45,15 @@ Encode is pure and deterministic given the caller-supplied nonce (`_raw` convent
 vectors/attachments-catalog/
 ├── schema.md              ← this file
 └── v0.1/
-    └── cases.json         ← array of 16 KAT cases (encrypt + decrypt + AEAD-fail + AAD + forward-compat tolerance)
+    └── cases.json         ← array of 19 KAT cases (encrypt + decrypt + AEAD-fail + AAD + forward-compat tolerance, incl. the two `scope` cases)
 ```
 
 ## JSON shape
 
 The machine-readable contract lives at [`schema/v0.1.json`](../../schema/v0.1.json) (top-level shape) and [`schema/v0.1/attachments-catalog.json`](../../schema/v0.1/attachments-catalog.json) (per-case shape with a 5-way `case_kind` discriminator). The sub-schema is authoritative — this document covers only the domain-specific semantics.
 
-- **`encrypt`** (`encrypt-empty`, `encrypt-populated`) — pins the encoder's byte output over the canonical JSON, including the empty `{}` catalog. Inputs: `input_root_key_hex` (the runner derives `catalog_key`), `input_account_number_hash_hex`, `input_plaintext_canonical_utf8_hex`, `input_catalog_nonce_hex`; optional `informational_catalog_key_hex`. Output: `expected_catalog_blob_hex`.
-- **`decrypt_ok`** (`decrypt-ok`, `decrypt-unknown-field-tolerated`) — pins the decoder's success path. `expected_plaintext_canonical_utf8_hex` is the **canonical re-encode of the decoded catalog**: for ordinary round-trips it equals the sealed plaintext; for the tolerance case the sealed plaintext (carried verbatim in `informational_sealed_plaintext_utf8_hex`) contains an unknown additive field (`future_flag`, in sorted position between `filename` and `size`) that the decoder MUST ignore — comparison is structural.
+- **`encrypt`** (`encrypt-empty`, `encrypt-populated`, `encrypt-tombstone-and-updated-at`, `encrypt-chat-scope`) — pins the encoder's byte output over the canonical JSON, including the empty `{}` catalog and the `scope` slot between `filename` and `size`. Inputs: `input_root_key_hex` (the runner derives `catalog_key`), `input_account_number_hash_hex`, `input_plaintext_canonical_utf8_hex`, `input_catalog_nonce_hex`; optional `informational_catalog_key_hex`. Output: `expected_catalog_blob_hex`.
+- **`decrypt_ok`** (`decrypt-ok`, `decrypt-unknown-field-tolerated`, `decrypt-unknown-scope-tolerated`, `decrypt-ok-tombstone-and-updated-at`) — pins the decoder's success path. `expected_plaintext_canonical_utf8_hex` is the **canonical re-encode of the decoded catalog**: for ordinary round-trips it equals the sealed plaintext; for the tolerance case the sealed plaintext (carried verbatim in `informational_sealed_plaintext_utf8_hex`) contains an unknown additive field (`future_flag`, in sorted position between `filename` and `size`) that the decoder MUST ignore — comparison is structural.
 - **`decrypt_aead_fail`** (`decrypt-fail-tamper`, `decrypt-fail-cross-vault`) — non-distinguishing failure surface (`expected_kind: "aead_fail"`).
 - **`aad_construction`** (`aad-construction`) — the 48-byte `aad_attachments_catalog` canonical bytes.
 - **`parse_fail`** (`parse-fail-*`, MYND-227) — the **distinguishable** reject surface, one case per `CatalogBlobError` variant reachable from a decode: the six pre-AEAD structural rejects (`header_too_short`, `magic_mismatch`, `protocol_version_mismatch`, `reserved_byte_nonzero`, `ciphertext_len_overflow`, `ciphertext_truncated`) plus the post-AEAD `plaintext_parse_failed` (a validly-sealed blob whose inner plaintext is not a canonical JSON object). `expected_error` names the variant. The cases carry the REAL `root_key` deliberately: header bytes are not AAD-bound, so a port that skips a structural check decrypts the tampered blob successfully and returns Ok — which the runner catches. Callers then fall back to the empty catalog per § 9.10.4 — the distinguishability is an observability contract.

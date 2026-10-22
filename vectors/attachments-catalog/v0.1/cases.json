@@ -180,6 +180,16 @@
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "informational_sealed_plaintext_utf8_hex": "7b2264643434223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273636f7065223a226e6f7465222c2273697a65223a34327d7d",
       "expected_plaintext_canonical_utf8_hex": "7b2264643434223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273697a65223a34327d7d"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/decrypt-non-string-scope-tolerated",
+      "description": "Forward-compat (§9.10.2): the tolerance is stated for a scope VALUE this version does not know, not only for a string it does not know. A sealed non-string value MUST decode as `library` rather than fail the catalog (the first implementation used `parse_string()?`, which would have collapsed the WHOLE catalog to {}). expected_plaintext_canonical_utf8_hex is the re-encode without the key; informational_sealed_plaintext_utf8_hex carries the sealed bytes.",
+      "case_kind": "decrypt_ok",
+      "input_blob_hex": "4d5943310100cececececececececececececececececececececececece000000885df972c060cdd952bf74a5587eb5b43ad9ccf072aacd662bd1847618451a4c79d68f04dd36d9647ca0ed3358502d4f34921fe416639b320efbbb39534a7a9c33bc98029c1eccf3409a64b8fffc7f76518dbe167d4d1a5620ba7d84a2ea754b4fdf76ce40d62bf9d8f1ef3def84152c9217e889f168f45814e793d7ef5eb611859e2292a355574ed7",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "informational_sealed_plaintext_utf8_hex": "7b2265653535223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273636f7065223a322c2273697a65223a34327d7d",
+      "expected_plaintext_canonical_utf8_hex": "7b2265653535223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273697a65223a34327d7d"
     }
   ]
 }
