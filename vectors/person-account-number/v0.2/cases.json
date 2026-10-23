@@ -1,0 +1,55 @@
+{
+  "schema": "person-account-number",
+  "protocol_version": "v0.2",
+  "spec_section": "protocol.md §3.1 + account-number.md §3.1",
+  "description": "Pins the person-derived account number: the leading 95 bits of the big-endian 16-byte person id, encoded five bits at a time most-significant-first through the Crockford alphabet, plus the frozen Damm-32 check character over the 19 indices. The alphabet, the check character, the display grouping and the account_number_hash rule are unchanged from account-number.md §2 to §6; only the bit source differs from a generated number. `input_person_id_hex` is the normative input, `input_phrase` is informational so a port can pin the phrase-to-id hop too.",
+  "cases": [
+    {
+      "vector_id": "person-account-number/v0.2/derive-known-phrase",
+      "description": "The phrase the person-keypair family already pins. The top 95 bits of its person id, five bits at a time most-significant-first, plus the Damm-32 check digit.",
+      "case_kind": "derive",
+      "input_phrase_utf8_hex": "6162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e206162616e646f6e2061626f7574",
+      "input_person_id_hex": "f0ec05d82051c0ae190ef714c5137d03",
+      "expected_canonical_ascii": "Y3P0BP10A70AW68EYWAZ",
+      "expected_display_ascii": "MY-Y3P0-BP10-A70A-W68E-YWAZ",
+      "expected_account_number_hash_hex": "d5a058ffbe51543bf86497f17b72cb50"
+    },
+    {
+      "vector_id": "person-account-number/v0.2/derive-second-phrase",
+      "description": "A different phrase, so the family cannot pass by ignoring its input.",
+      "case_kind": "derive",
+      "input_phrase_utf8_hex": "6c6567616c2077696e6e6572207468616e6b20796561722077617665207361757361676520776f7274682075736566756c206c6567616c2077696e6e6572207468616e6b2079656c6c6f77",
+      "input_person_id_hex": "d2b15f9f5ebc7f713c3f6042f7cafa9f",
+      "expected_canonical_ascii": "TARNZ7TYQHZQ2F1ZC11D",
+      "expected_display_ascii": "MY-TARN-Z7TY-QHZQ-2F1Z-C11D",
+      "expected_account_number_hash_hex": "b22f4c0ebeacccdf0f2b069f3311644c"
+    },
+    {
+      "vector_id": "person-account-number/v0.2/derive-all-zero-id",
+      "description": "All-zero person id: the canonical body is twenty `0` characters (the Damm-32 check over nineteen zero indices is zero).",
+      "case_kind": "derive",
+      "input_person_id_hex": "00000000000000000000000000000000",
+      "expected_canonical_ascii": "00000000000000000000",
+      "expected_display_ascii": "MY-0000-0000-0000-0000-0000",
+      "expected_account_number_hash_hex": "a7d351f3de399c746064a53c69959ab1"
+    },
+    {
+      "vector_id": "person-account-number/v0.2/derive-top-bit-id",
+      "description": "Only bit 127 set. The leading five-bit group carries index 16 (`G`) and the rest are zero; a reader that took the LOW 95 bits would emit all zeros here instead.",
+      "case_kind": "derive",
+      "input_person_id_hex": "80000000000000000000000000000000",
+      "expected_canonical_ascii": "G000000000000000000F",
+      "expected_display_ascii": "MY-G000-0000-0000-0000-000F",
+      "expected_account_number_hash_hex": "7834cb9f93e0fd61ecb4606f7e711f22"
+    },
+    {
+      "vector_id": "person-account-number/v0.2/derive-below-window-id",
+      "description": "Only bits 0..=32 set, all of them outside the window. Must produce the all-zero canonical body; a mask that kept the low 95 bits would not.",
+      "case_kind": "derive",
+      "input_person_id_hex": "000000000000000000000001ffffffff",
+      "expected_canonical_ascii": "00000000000000000000",
+      "expected_display_ascii": "MY-0000-0000-0000-0000-0000",
+      "expected_account_number_hash_hex": "a7d351f3de399c746064a53c69959ab1"
+    }
+  ]
+}

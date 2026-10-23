@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-account-number.json",
+  "title": "person-account-number \u2014 case shape (v0.2)",
+  "description": "Pins protocol::account_number_from_person_id: the person account number is a display encoding of the LEADING 95 bits of the big-endian 16-byte person id, five bits at a time most-significant-first through the Crockford alphabet, plus the frozen Damm-32 check character over those 19 indices (account-number.md \u00a73.1, protocol.md \u00a73.1). Nothing else about the scheme moves: the MY- prefix, the alphabet, the 95-bit width, the check character, the 4-char grouping and the account_number_hash rule are the values account-number/v0.1 already pins, so one parser validates a person number and a generated one. `input_person_id_hex` is the NORMATIVE input (this family owns id to number); `input_phrase_utf8_hex` is carried on the cases that start from a phrase so a port can also pin the phrase-to-id hop. Reference implementation: protocol/src/account_number.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^person-account-number/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'person-account-number/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": { "type": "string", "enum": ["derive"] }
+  },
+  "oneOf": [
+    {
+      "title": "derive \u2014 person id in, canonical + display + hash out",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_person_id_hex",
+        "expected_canonical_ascii",
+        "expected_display_ascii",
+        "expected_account_number_hash_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "derive" },
+        "input_phrase_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})+$",
+          "description": "Informational: the normalized phrase whose SHA-256('myne.person-id|' || phrase)[:16] is input_person_id_hex. Present only on the cases that start from a phrase, so a port can pin the first hop too."
+        },
+        "input_person_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "16-byte person id. The number takes the TOP 95 bits of its big-endian value (u128 >> 33), not the low 95."
+        },
+        "expected_canonical_ascii": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{20}$",
+          "description": "19 Crockford entropy characters + 1 Damm-32 check character, uppercase."
+        },
+        "expected_display_ascii": {
+          "type": "string",
+          "pattern": "^MY-([0-9A-HJKMNP-TV-Z]{4}-){4}[0-9A-HJKMNP-TV-Z]{4}$",
+          "description": "27-character display form: MY- then five 4-character groups."
+        },
+        "expected_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "SHA-256(canonical_ascii)[:16]. The same rule account-number/v0.1 pins for a generated number."
+        }
+      }
+    }
+  ]
+}

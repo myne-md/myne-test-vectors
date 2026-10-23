@@ -35,7 +35,9 @@
         "person-member-unlock-store",
         "awareness-frame",
         "member-names",
-        "device-binding"
+        "device-binding",
+        "person-account-number",
+        "vault-meta-ntv7"
       ]
     },
     "protocol_version": {
@@ -316,6 +318,32 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/device-binding.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-account-number"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-account-number.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-meta-ntv7"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta-ntv7.json"
           }
         }
       }
