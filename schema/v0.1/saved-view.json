@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/saved-view.json",
   "title": "saved-view — case shape (v0.1)",
-  "description": "Pins one behavioral case for protocol::saved_view::parse_saved_views_array — the canonical-JSON decoder for the saved_views array embedded in vault.prefs (MYND-271, Saved Views; protocol.md §9.5.2). The decoder accepts a JSON array of SavedView objects (id, name, view_type, filters AST, plus optional sort/group_by/columns/card_size/image/image_aspect_ratio), tolerating insignificant whitespace and unknown future keys (forward-compat) while enforcing a closed allow-list (view_type ∈ {table,cards,list} — no map; the FilterNode kinds and PropertyOp operators are closed sets; no JSON floats). It returns the decoded views plus the number of bytes consumed — the cursor-advance contract the embedding prefs codec relies on. Not an on-disk codec and not cryptographic by itself (the bytes are decoded only after the vault.prefs AEAD verified) — it is deterministic cross-client behavior: every independent client decodes the same bytes to the same view-set and consumed length. Two case kinds: 'parse_ok' (decoded set pinned as its canonical re-encoding via canonical_encode_saved_views — NFC folding + lexicographic key order + id-sort — plus the consumed byte count) and 'parse_fail' (the closed error surface). Rust reference: protocol/src/saved_view.rs (main myne repository).",
+  "description": "Pins one behavioral case for protocol::saved_view::parse_saved_views_array — the canonical-JSON decoder for the saved_views array embedded in vault.prefs (MYND-271, Saved Views; protocol.md §9.5.2). The decoder accepts a JSON array of SavedView objects (id, name, view_type, filters AST, plus optional sort/group_by/columns/card_size/image/image_aspect_ratio), tolerating insignificant whitespace and unknown future keys (forward-compat) while enforcing a closed allow-list (view_type ∈ {table,cards,list} — no map; the FilterNode kinds and PropertyOp operators are closed sets; no JSON floats). It returns the decoded views plus the number of bytes consumed — the cursor-advance contract the embedding prefs codec relies on. Not an on-disk codec and not cryptographic by itself (the bytes are decoded only after the vault.prefs AEAD verified) — it is deterministic cross-client behavior: every independent client decodes the same bytes to the same view-set and consumed length. Three case kinds: 'parse_ok' (decoded set pinned as its canonical re-encoding via canonical_encode_saved_views — NFC folding + lexicographic key order + id-sort — plus the consumed byte count), 'parse_ok_opaque' (a decode that SUCCEEDS while retaining one or more entries this build cannot represent: the retained entries' raw bytes are re-emitted verbatim and id-sorted together with the represented ones, and the retained ids are pinned explicitly), and 'parse_fail' (the closed error surface). Rust reference: protocol/src/saved_view.rs (main myne repository).",
   "type": "object",
   "required": ["vector_id", "description", "case_kind"],
   "unevaluatedProperties": false,
@@ -18,7 +18,7 @@
     },
     "case_kind": {
       "type": "string",
-      "enum": ["parse_ok", "parse_fail"]
+      "enum": ["parse_ok", "parse_ok_opaque", "parse_fail"]
     }
   },
   "oneOf": [
@@ -51,6 +51,45 @@
           "type": "string",
           "pattern": "^([0-9a-f]{2})*$",
           "description": "The canonical re-encoding (canonical_encode_saved_views) of the decoded view-set as exact UTF-8 bytes (hex). Captures NFC folding, lexicographic key order, id-sort, and unknown-field drop — the normalization a conformant decoder MUST converge to."
+        }
+      }
+    },
+    {
+      "title": "parse_ok_opaque — pin the entries this build cannot represent, retained verbatim",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_consumed_len",
+        "expected_canonical_utf8_hex",
+        "expected_opaque_ids"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok_opaque" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex): a JSON array carrying at least one entry whose value this build cannot express (a newer view_type, an operator outside the closed set, an id that is not a string)."
+        },
+        "expected_consumed_len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The exact number of input bytes the decoder MUST report as consumed. Retention changes what is KEPT, never the cursor contract: it is still the array length."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical re-encoding of the decoded array with the retained entries spliced back in VERBATIM: a retained entry is not re-serialised, so a non-canonical key order inside it survives, and the id sort spans retained and represented entries together (a retained entry can sort ahead of a represented one). An implementation that dropped the entry, or re-serialised it, produces different bytes here."
+        },
+        "expected_opaque_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "The `id` of every retained entry, in the order the canonical encoder emits them (id-sorted together with the represented views). An entry whose `id` is not a string is pinned as the empty string: it is still retained and sorts first under an empty sort key rather than being dropped. A case that retains nothing belongs in `parse_ok`."
         }
       }
     },
