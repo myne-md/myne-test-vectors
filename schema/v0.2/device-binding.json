@@ -529,6 +529,16 @@
           "type": "string",
           "pattern": "^[0-9a-f]{6746}$",
           "description": "Ed25519 (64 bytes) || ML-DSA-65 (3309 bytes) = 3373 bytes, hex, lowercase - 6746 characters. A TOMBSTONE CARRIES THE SAME LENGTH: it is signed by the person the row names, or by the vault owner, so a port that accepts a short or absent signature on a removal accepts an unauthenticated device deletion."
+        },
+        "device_ed_pk": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "OPTIONAL, v2 schema only: the DEVICE's Ed25519 public key, 32 bytes lowercase hex. Present on a row that carries the device's signing halves (format_version 0x02), absent on a v1 row, and omitted from the canonical JSON when absent so a v1 map still encodes byte-identically. It sits INSIDE the person-signed message, so the person's signature attests it: a member holding the group key cannot point a binding row at a key they control."
+        },
+        "device_mldsa_vk": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{3904}$",
+          "description": "OPTIONAL, v2 schema only: the DEVICE's ML-DSA-65 verifying key, 1952 bytes lowercase hex. The PQ half of the same pair; a row carrying one half and not the other is refused as malformed rather than used with half a key."
         }
       }
     }

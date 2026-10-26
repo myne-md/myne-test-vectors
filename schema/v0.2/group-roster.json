@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/group-roster.json",
+  "title": "group-roster - case shape (v0.2)",
+  "description": "Pins the owner-signed group roster's TWO signature classes (decisions/protocol/0731 stage 2 and 0733; docs/spec/protocol.md 9.3.3). The frame is payload_len(u32 BE) || payload || ed25519_sig(64) || ml_dsa_65_sig(3309) in BOTH classes and the canonical payload is identical: what moves is the key that vouches for the roster, from the owner's person key under \"myne.group-roster v1|\" to one of the owner's devices under \"myne.group-roster v2|\". A reader MUST accept both and MUST resolve the device from an attestation it trusts: the owner_device field carried inside a person-signed group package, its own device key, or a verified vault.device-bindings row. Three case kinds: 'signed_bytes' (the exact message each class signs), 'verify' (the verdicts that separate the classes), 'package_payload' (the canonical package payload that carries or omits the attestation).",
+  "type": "object",
+  "required": [
+    "vector_id",
+    "description",
+    "case_kind"
+  ],
+  "properties": {
+    "vector_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "case_kind": {
+      "enum": [
+        "signed_bytes",
+        "verify",
+        "package_payload"
+      ]
+    }
+  },
+  "$defs": {
+    "signed_bytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_class",
+        "input_payload_hex",
+        "expected_signed_bytes_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "enum": [
+            "signed_bytes",
+            "verify",
+            "package_payload"
+          ]
+        },
+        "input_class": {
+          "enum": [
+            "v1",
+            "v2"
+          ],
+          "description": "Which signature CLASS: v1 is the owner's person key, v2 is one of the owner's devices."
+        },
+        "input_payload_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The canonical roster payload. IDENTICAL for both classes, which is the point: only the prefix differs."
+        },
+        "expected_signed_bytes_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "class prefix || payload. A port must reproduce this byte for byte to interoperate."
+        }
+      }
+    },
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_frame_hex",
+        "input_account_number_hash_hex",
+        "input_device_ed_pk_hex",
+        "input_device_mldsa_vk_hex",
+        "expected_verified"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "enum": [
+            "signed_bytes",
+            "verify",
+            "package_payload"
+          ]
+        },
+        "input_frame_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The whole signed frame, so a port exercises its own decoder rather than a payload it was handed."
+        },
+        "input_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "input_owner_device_ed_pk_hex": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The device half the reader was told to trust, or null for none."
+        },
+        "input_owner_device_mldsa_vk_hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expected_verified": {
+          "type": "boolean",
+          "description": "The verdict. A person signature never satisfies a device verifier and vice versa, and a device with no attestation verifies nothing."
+        },
+        "input_device_ed_pk_hex": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The device half the reader was told to trust, or null for none. Null is the case that proves a roster carries no key of its own: the frame still parses, and verification refuses."
+        },
+        "input_device_mldsa_vk_hex": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{3904}$",
+          "description": "The same device's ML-DSA-65 verifying key, or null."
+        }
+      }
+    },
+    "package_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_payload_hex"
+      ],
+      "properties": {
+        "vector_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "case_kind": {
+          "enum": [
+            "signed_bytes",
+            "verify",
+            "package_payload"
+          ]
+        },
+        "input_payload_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "One recipient's canonical group-key package payload, exactly as the person-signed package carries it."
+        },
+        "expected_person_fingerprint_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The owner whose person signature covers the package."
+        },
+        "expected_device_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Present when the payload carries the attestation."
+        },
+        "expected_device_ed_pk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The device half a recipient resolves out of the attested row."
+        },
+        "expects_no_field": {
+          "type": "string",
+          "description": "A field name that MUST be ABSENT from the canonical payload. 'owner_device' here: an absent attestation is omitted rather than null, so the bytes match the previous release exactly."
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/signed_bytes"
+    },
+    {
+      "$ref": "#/$defs/verify"
+    },
+    {
+      "$ref": "#/$defs/package_payload"
+    }
+  ]
+}

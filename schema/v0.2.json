@@ -35,7 +35,10 @@
         "person-member-unlock-store",
         "awareness-frame",
         "member-names",
-        "device-binding"
+        "device-binding",
+        "person-account-number",
+        "vault-meta-ntv7",
+        "group-roster"
       ]
     },
     "protocol_version": {
@@ -55,6 +58,25 @@
     "cases": {
       "type": "array",
       "minItems": 1
+    },
+    "informational_owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "OPTIONAL, category-wide: public material a case needs but must not invent. `group-roster` pins the owner's person halves here because a roster is verified against a PINNED key rather than one the frame carries, so the runner needs the real half to check the verdicts.",
+      "properties": {
+        "kem_ek_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2368}$"
+        },
+        "ed_pk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mldsa_vk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{3904}$"
+        }
+      }
     }
   },
   "oneOf": [
@@ -316,6 +338,45 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/device-binding.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "person-account-number"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-account-number.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-meta-ntv7"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta-ntv7.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "group-roster"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/group-roster.json"
           }
         }
       }

@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta-ntv7.json",
+  "title": "vault-meta-ntv7 \u2014 case shape (v0.2)",
+  "description": "Pins the NTV7 vault.meta generation: the NTV6 frame byte for byte (magic NTV7, protocol_version 0x02, reserved 0x00, the 345-byte base, the group-key package, the epoch and the sealed roster), with two changes. The three recovery-phrase wrap fields (recovery salt at offset 49, recovery nonce at 153, recovery-wrapped root_key at 177) MUST be all zero, and the frame carries a fixed 1208-byte person envelope after the roster: ml_kem_ct (1088) || ed_ephemeral_pk (32) || nonce (24) || wrapped_root_key (64). Total length is 445 + roster_len + 1208 with trailing bytes invalid. A live (non-zero) phrase-wrap field is a STRUCTURAL rejection, not a supported state: nothing on disk could say whether the saved phrase still opens the vault. The person wrap's AAD is role 'person-wrap-root-key' over the recipient fingerprint and the frame's own items_key_id, deliberately not the vault id and not the account number hash. Reference implementation: protocol/src/vault_meta_ntv7.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-meta-ntv7/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'vault-meta-ntv7/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["roundtrip", "parse_fail", "person_wrap_open", "person_wrap_open_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "roundtrip \u2014 parse then re-serialize is byte-identical",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_blob_hex",
+        "expected_group_key_epoch",
+        "expected_signed_roster_len",
+        "expected_base_account_number_hash_hex",
+        "expected_base_items_key_id_hex",
+        "expected_person_wrap_ml_kem_ct_hex",
+        "expected_person_wrap_ed_ephemeral_pk_hex",
+        "expected_person_wrap_nonce_hex",
+        "expected_person_wrap_wrapped_root_key_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "roundtrip" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The whole frame. Length must be 445 + roster_len + 1208."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "What a parse-then-serialize must reproduce exactly. Equal to input_blob_hex for a valid frame; the separate field is what makes the assertion explicit rather than a port re-echoing its input."
+        },
+        "expected_group_key_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The 8-byte big-endian epoch at offset 433."
+        },
+        "expected_signed_roster_len": {
+          "type": "integer",
+          "minimum": 56,
+          "description": "The u32 BE roster length at offset 441; the roster itself starts at 445."
+        },
+        "expected_base_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Base field at offset 6, read through the generation-agnostic base reader."
+        },
+        "expected_base_items_key_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Base field at offset 241. Also the AAD's vault binding for the person wrap."
+        },
+        "expected_person_wrap_ml_kem_ct_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2176}$",
+          "description": "1088-byte ML-KEM-768 ciphertext, the first field of the person envelope."
+        },
+        "expected_person_wrap_ed_ephemeral_pk_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "32-byte classical ephemeral Ed25519 public key."
+        },
+        "expected_person_wrap_nonce_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{48}$",
+          "description": "24-byte AEAD nonce for the person envelope."
+        },
+        "expected_person_wrap_wrapped_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$",
+          "description": "64 bytes: root_key ciphertext (32) || CTX commitment (32). The Poly1305 tag is NOT stored; aead_seal_ctx folds it into the commitment and recomputes it at open. That is why this is 64 and not 80."
+        }
+      }
+    },
+    {
+      "title": "parse_fail \u2014 a structural rejection the frame must refuse",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_kind", "informational_reason"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "expected_kind": { "const": "invalid_meta" },
+        "informational_reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which rule this case trips. Informational only: the rejection is deliberately ONE non-distinguishing result, so a port must not surface the reason."
+        }
+      }
+    },
+    {
+      "title": "person_wrap_open \u2014 the envelope opens to one root key",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_kem_seed_hex",
+        "input_ed25519_seed_hex",
+        "input_mldsa_seed_hex",
+        "input_items_key_id_hex",
+        "input_person_wrap_ml_kem_ct_hex",
+        "input_person_wrap_ed_ephemeral_pk_hex",
+        "input_person_wrap_nonce_hex",
+        "input_person_wrap_wrapped_root_key_hex",
+        "expected_root_key_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "person_wrap_open" },
+        "input_kem_seed_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$",
+          "description": "64-byte ML-KEM seed (d || z). Deterministic: the same seed derives the same keypair in any port."
+        },
+        "input_ed25519_seed_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_mldsa_seed_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "input_person_wrap_ml_kem_ct_hex": { "type": "string", "pattern": "^[0-9a-f]{2176}$" },
+        "input_person_wrap_ed_ephemeral_pk_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_person_wrap_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_person_wrap_wrapped_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "expected_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The 32-byte vault root_key the envelope seals."
+        }
+      }
+    },
+    {
+      "title": "person_wrap_open_fail \u2014 tampering or a foreign vault fails closed",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_kem_seed_hex",
+        "input_ed25519_seed_hex",
+        "input_mldsa_seed_hex",
+        "input_items_key_id_hex",
+        "input_person_wrap_ml_kem_ct_hex",
+        "input_person_wrap_ed_ephemeral_pk_hex",
+        "input_person_wrap_nonce_hex",
+        "input_person_wrap_wrapped_root_key_hex",
+        "expected_kind",
+        "informational_reason"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "person_wrap_open_fail" },
+        "input_kem_seed_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "input_ed25519_seed_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_mldsa_seed_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_items_key_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The AAD's vault binding. One case supplies ANOTHER vault's id, which is the only way a same-owner port would otherwise open."
+        },
+        "input_person_wrap_ml_kem_ct_hex": { "type": "string", "pattern": "^[0-9a-f]{2176}$" },
+        "input_person_wrap_ed_ephemeral_pk_hex": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "input_person_wrap_nonce_hex": { "type": "string", "pattern": "^[0-9a-f]{48}$" },
+        "input_person_wrap_wrapped_root_key_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" },
+        "expected_kind": { "const": "aead_fail" },
+        "informational_reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  ]
+}
