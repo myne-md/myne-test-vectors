@@ -23,6 +23,17 @@
       "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "expected_error": "magic_mismatch"
+    },
+    {
+      "vector_id": "agent-memory-catalog/v0.2/encrypt-origin-seed",
+      "description": "The migrated envelope (MYN5) over a roster row carrying the reviewed-seed provenance marker (myne-md/myne#915). The inner plaintext is opaque to the codec; the marker's meaning is the client layer's (protocol.md \u00a79.25).",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_hex": "7b223031383461326233633464356536663730383139326133623463356436653766223a7b22637265617465645f6174223a313732353431373630303030302c226f726967696e223a2273656564222c22757064617465645f6174223a313732353431373630303030302c2276657273696f6e223a317d7d",
+      "expected_magic_ascii": "MYN5",
+      "expected_version_byte_hex": "01",
+      "expected_blob_hex": "4d594e350101888888888888888888888888888888888888888888888888000000981add787bfd98dccd7f16ef0102f3ebdd915210f9f1db4c096f7c08b4fe3500b55e287a6fbf49c4e246a7c87abd7a1eabfca9a389b81c2128ad8f1a865658ab4fdde2fd46d916e6f4704cf6ad40666f755ab5de8a99ea598315d1fbd7aef62335b2ff5774af617d28736df898e0fe516d4c5467bce69f119228a996e8ea79fd149dea95c0619a1229b5560f53797c4f245c560c3d856656a9"
     }
   ]
 }
