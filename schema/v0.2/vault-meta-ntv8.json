@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta-ntv8.json",
+  "title": "vault-meta-ntv8 — case shape (v0.2)",
+  "description": "Pins the NTV8 vault.meta generation: the NTV6 frame byte for byte (magic NTV8, protocol_version 0x02, reserved 0x00, the 345-byte base, the group-key package, the epoch and the sealed roster) and NOTHING after the roster. The absence of the person wrap is the length, not a zeroed block: 445 + roster_len with any other length invalid, so a later writer cannot relax it without changing the number every parser compares against. The three recovery-phrase wrap fields (recovery salt at offset 49, recovery nonce at 153, recovery-wrapped root_key at 177) MUST be all zero in both directions, exactly as on NTV7 — they are kept rather than compacted away because their offsets belong to the shared §9.3 base layout, and removing them would move items_key_id and the itemsKey wrap, turning a truncation of one frame into a re-wrap of every vault. The master password is the only vault credential: the identity phrase is an identity, and it opens nothing here. Also pins the NTV7 to NTV8 upgrade, which is the same bytes with the 1208-byte person envelope removed and the magic rewritten — no key re-wrapped, so the password a user already has still opens the file, carried as one case that supplies both the expected bytes and the root_key they open to. Reference implementation: protocol/src/vault_meta_ntv8.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^vault-meta-ntv8/v0\\.2/[a-z0-9_-]+$",
+      "description": "Stable identifier of the form 'vault-meta-ntv8/v0.2/<descriptive-slug>'. Immutable once shipped."
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "case_kind": {
+      "type": "string",
+      "enum": ["roundtrip", "password_opens", "password_open_fail", "upgrade", "parse_fail"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "roundtrip — parse then re-serialize is byte-identical",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "expected_blob_hex",
+        "expected_group_key_epoch",
+        "expected_signed_roster_len",
+        "expected_base_account_number_hash_hex",
+        "expected_base_items_key_id_hex",
+        "expected_kdf_m_kib",
+        "expected_kdf_t",
+        "expected_kdf_p",
+        "expected_kdf_argon2_version",
+        "expected_phrase_wrap_zeroed",
+        "expected_person_wrap_absent"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "roundtrip" },
+        "input_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The whole frame. Length must be 445 + roster_len."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "What a parse-then-serialize must reproduce exactly. Equal to input_blob_hex for a valid frame; the separate field is what makes the assertion explicit rather than a port re-echoing its input."
+        },
+        "expected_group_key_epoch": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The 8-byte big-endian epoch at offset 433."
+        },
+        "expected_signed_roster_len": {
+          "type": "integer",
+          "minimum": 56,
+          "description": "The u32 BE roster length at offset 441; the roster itself starts at 445 and ends the frame."
+        },
+        "expected_base_account_number_hash_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Base field at offset 6, read through the generation-agnostic base reader."
+        },
+        "expected_base_items_key_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Base field at offset 241."
+        },
+        "expected_kdf_m_kib": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The frame's own Argon2id memory cost. Pinned because a port that ignores the frame's parameters and uses its own defaults derives a different wrap key while parsing every byte correctly — the same trap the `password_opens` case catches from the other side."
+        },
+        "expected_kdf_t": { "type": "integer", "minimum": 1 },
+        "expected_kdf_p": { "type": "integer", "minimum": 1 },
+        "expected_kdf_argon2_version": {
+          "type": "integer",
+          "description": "0x13 (19) on every frame this reference implementation writes."
+        },
+        "expected_phrase_wrap_zeroed": {
+          "const": true,
+          "description": "The three retired phrase-wrap fields must be all zero. Structural, not a flag."
+        },
+        "expected_person_wrap_absent": {
+          "const": true,
+          "description": "No person envelope after the roster. The length is what says so."
+        }
+      }
+    },
+    {
+      "title": "password_opens — the frame opens to one root key under the master password",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_password_utf8_hex",
+        "expected_root_key_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "password_opens" },
+        "input_blob_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "input_password_utf8_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The password's UTF-8 bytes, verbatim: this path performs no normalization, and a port that applies one derives a different wrap key."
+        },
+        "expected_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The 32-byte vault root_key. Carried so a mismatch names which half diverged: a wrong frame fails the parse, a wrong root key fails the salt domain, the AAD role or the KDF block."
+        }
+      }
+    },
+    {
+      "title": "password_open_fail — a wrong password fails closed",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_blob_hex",
+        "input_password_utf8_hex",
+        "expected_kind",
+        "informational_reason"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "password_open_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "input_password_utf8_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "expected_kind": { "const": "aead_fail" },
+        "informational_reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Informational only: the refusal is ONE non-distinguishing AEAD failure (§6.4), so a port must not distinguish a wrong password from a tampered frame."
+        }
+      }
+    },
+    {
+      "title": "upgrade — an NTV7 frame becomes the NTV8 frame, re-wrapping nothing",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_ntv7_blob_hex",
+        "expected_blob_hex",
+        "expected_dropped_person_wrap_len",
+        "input_password_utf8_hex",
+        "expected_root_key_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "upgrade" },
+        "input_ntv7_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The NTV7 frame, length 445 + roster_len + 1208."
+        },
+        "expected_blob_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "description": "The NTV8 frame it must become: the same bytes with the person envelope removed and the magic rewritten to NTV8. Every byte from offset 4 to the end of the roster is IDENTICAL to the input's, which is the whole claim: the upgrade truncates, it does not re-wrap."
+        },
+        "expected_dropped_person_wrap_len": {
+          "const": 1208,
+          "description": "ML-KEM ciphertext (1088) || classical ephemeral Ed25519 public key (32) || AEAD nonce (24) || wrapped root_key (64)."
+        },
+        "input_password_utf8_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "expected_root_key_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "The SAME root key the NTV7 frame opens to under the same password. A port that re-wraps the root key during the upgrade produces a frame this password no longer opens, and this field is what fails."
+        }
+      }
+    },
+    {
+      "title": "parse_fail — a structural rejection the frame must refuse",
+      "additionalProperties": false,
+      "required": ["vector_id", "description", "case_kind", "input_blob_hex", "expected_kind", "informational_reason"],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_fail" },
+        "input_blob_hex": { "type": "string", "pattern": "^[0-9a-f]+$" },
+        "expected_kind": { "const": "invalid_meta" },
+        "informational_reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which rule this case trips. Informational only: the rejection is deliberately ONE non-distinguishing result, so a port must not surface the reason."
+        }
+      }
+    }
+  ]
+}

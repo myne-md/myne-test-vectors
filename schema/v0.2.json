@@ -29,7 +29,6 @@
         "agent-memory-catalog",
         "agent-memory-blob",
         "agent-personality",
-        "person-member-key-store",
         "person-vault-carrier",
         "person-profile",
         "person-member-unlock-store",
@@ -38,7 +37,8 @@
         "device-binding",
         "person-account-number",
         "vault-meta-ntv7",
-        "group-roster"
+        "group-roster",
+        "vault-meta-ntv8"
       ]
     },
     "protocol_version": {
@@ -242,22 +242,6 @@
     {
       "properties": {
         "schema": {
-          "const": "person-member-key-store"
-        },
-        "cases": {
-          "type": "array",
-          "items": {
-            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/person-member-key-store.json"
-          }
-        }
-      },
-      "required": [
-        "schema"
-      ]
-    },
-    {
-      "properties": {
-        "schema": {
           "const": "person-vault-carrier"
         },
         "cases": {
@@ -377,6 +361,19 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/group-roster.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "vault-meta-ntv8"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.2/vault-meta-ntv8.json"
           }
         }
       }
