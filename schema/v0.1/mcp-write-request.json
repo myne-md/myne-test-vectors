@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/mcp-write-request.json",
+  "title": "mcp-write-request — case shape (v0.1)",
+  "description": "Pins one behavioral case for protocol::parse_mcp_write_request and the canonical encoding of the mcp_write_requests array embedded in vault.prefs (external MCP write queue, protocol.md §9.5.2, myne-md/myne#923 task 13, decisions/ai/0752). A queued entry is a PROPOSAL, never a pending write: it records that an external MCP client attempted a write into a folder it may READ but not WRITE, and accepting it extends that connection's write grant by exactly the folder it names. Nothing has been applied when the row exists, which is why the row is allowed to carry client-authored text. The bytes are decoded only after the surrounding vault.prefs AEAD verified, so this is deterministic cross-client behavior rather than a codec or a cryptographic operation — but it is load-bearing for consent in one direction: the queue decides which proposal a person is shown, and a reader that DROPS a row hides a decision while a reader that INVENTS one spends an approval nobody gave. Two case kinds: 'parse_ok' (decoded request pinned as its canonical re-encoding via the module's own encoder — member order connection < folder < requested_at < summary < verb, `summary` omitted when empty — plus the exact consumed byte count) and 'parse_reject' (the inputs a reader MUST refuse rather than read generously: an unknown member, a repeated member, a missing required member, and a member whose type is wrong). Required members are all four of connection, folder, requested_at and verb: a row that cannot be matched to a grant, or described to the person deciding, would reach a card with nothing to show. Rust reference: protocol/src/prefs.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^mcp-write-request/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'mcp-write-request/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse_ok", "parse_reject"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "parse_ok — pin the decoded request (as its canonical re-encoding) and the consumed byte count",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_consumed_len",
+        "expected_canonical_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex). A single canonical JSON object, optionally followed by trailing bytes the embedding codec continues past."
+        },
+        "expected_consumed_len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The exact number of input bytes the decoder MUST report as consumed (the object length, never including trailing bytes)."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical re-encoding of the decoded request as exact UTF-8 bytes (hex). Captures the fixed member order connection < folder < requested_at < summary < verb and the omission of an empty `summary`, which is what makes a row that carries no client text cost no bytes for it."
+        }
+      }
+    },
+    {
+      "title": "parse_reject — pin the inputs a reader MUST refuse rather than reinterpret",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_reject" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex) that the decoder MUST refuse. The reference decoder reports them as an absent object rather than as a typed error, so the assertion is 'must not be read', not a variant name."
+        }
+      }
+    }
+  ]
+}

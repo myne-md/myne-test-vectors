@@ -1,0 +1,136 @@
+{
+  "schema": "mcp-connection",
+  "protocol_version": "v0.1",
+  "spec_section": "protocol.md §9.5.2 (mcp_connections canonical JSON inside vault.prefs)",
+  "description": "Pins protocol::prefs::parse_mcp_connection_grant: the canonical-JSON decoder for one mcp_connections grant record inside vault.prefs (external MCP connection scopes, myne-md/myne#923). parse_ok cases pin the decoded grant as its canonical re-encoding (lexicographic member order approved_at < excluded_folders < folders < last_used_at < model < write_folders, NFC + sorted + deduped folder sets, model emitted only for exclude, write_folders omitted when empty) plus the exact consumed byte count; parse_reject cases pin the inputs a reader MUST refuse rather than reinterpret, which is where a second implementation drifts: a grant carrying both read arrays, a write list beside the retired model, an unknown model token, an unknown member, and a repeated member. The two scopes are deliberately asymmetric: the read scope is a DENY list (an exclusion is reversible by revoking it) and the write scope an ALLOW list (a write into a folder nobody anticipated is the surprise worth preventing), so an empty excluded_folders means the whole vault and an empty write_folders means write nowhere.",
+  "cases": [
+    {
+      "vector_id": "mcp-connection/v0.1/exclude-model-roundtrip",
+      "description": "An exclusion grant (the model this build writes) round-trips: model is emitted, the set is sorted, and the allow list is absent.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 76,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/exclude-empty-is-the-whole-vault",
+      "description": "An exclusion grant with no exclusions is a COMPLETE grant meaning the whole vault, and costs no array at all: folded paths are the only thing an empty set omits.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 44,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/legacy-folders-model-roundtrip",
+      "description": "A grant written under the retired allow-list model decodes and re-encodes byte for byte: `folders` is emitted even when empty, and `model` is absent.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313731373030303030302c22666f6c64657273223a5b2250726f6a656374732f225d7d",
+      "expected_consumed_len": 50,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313731373030303030302c22666f6c64657273223a5b2250726f6a656374732f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/legacy-folders-empty-array",
+      "description": "The legacy model REQUIRES its array: an empty `folders` is a different statement from an absent one and stays on the wire.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313731373030303030302c22666f6c64657273223a5b5d7d",
+      "expected_consumed_len": 39,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313731373030303030302c22666f6c64657273223a5b5d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/last-used-at-emitted-when-present",
+      "description": "The optional last_used_at is emitted only when the connection has reached the door, and sorts after the folder set.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226c6173745f757365645f6174223a313736353433323939392c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 102,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226c6173745f757365645f6174223a313736353433323939392c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/write-grant-rides-after-model",
+      "description": "A grant that also names where the connection may WRITE: write_folders sorts last, after model, and the set is canonical (sorted, deduped) like every other folder set here. An absent list means write nowhere, which is why it is omitted rather than written empty.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465222c2277726974655f666f6c64657273223a5b22417263686976652f222c22576f726b2f225d7d",
+      "expected_consumed_len": 113,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a313736353433323130302c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465222c2277726974655f666f6c64657273223a5b22417263686976652f222c22576f726b2f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/write-grant-empty-list-is-omitted",
+      "description": "An explicitly empty write list decodes to 'write nowhere' and re-encodes WITHOUT the member: the empty case costs no bytes, and a reader must not read its absence as 'everywhere'.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226d6f64656c223a226578636c756465222c2277726974655f666f6c64657273223a5b5d7d",
+      "expected_consumed_len": 54,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a312c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/served-once-a-read-write-grant-records-it",
+      "description": "last_used_at and write_folders together: the door stamps the read once it has served a call, and neither member reorders anything about the other.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226c6173745f757365645f6174223a322c226d6f64656c223a226578636c756465222c2277726974655f666f6c64657273223a5b22576f726b2f225d7d",
+      "expected_consumed_len": 78,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a312c226c6173745f757365645f6174223a322c226d6f64656c223a226578636c756465222c2277726974655f666f6c64657273223a5b22576f726b2f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/folders-nfc-sorted-deduped",
+      "description": "A folder set is canonicalized as a SET: an NFD sequence folds to NFC, an exact duplicate collapses to one entry, case is PRESERVED (so a differently-cased sibling stays distinct here and is folded only by the resolver, which lowercases), and the order is lexicographic rather than the caller's.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a372c226578636c756465645f666f6c64657273223a5b22576f726b2f323032362f222c225072697665cc812f222c22576f726b2f323032362f222c227072697665cc812f225d2c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 104,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a372c226578636c756465645f666f6c64657273223a5b2250726976c3a92f222c22576f726b2f323032362f222c2270726976c3a92f225d2c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/consumes-only-the-object-trailing",
+      "description": "Trailing bytes after the grant object are left for the caller: consumed reports only the object length.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a352c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d2c227822",
+      "expected_consumed_len": 67,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a352c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-both-arrays",
+      "description": "A grant carrying BOTH arrays is refused, not resolved by precedence: the two arrays mean opposite things and a precedence rule is how one ends up read as the other.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226578636c756465645f666f6c64657273223a5b22622f225d2c22666f6c64657273223a5b22612f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-exclusion-beside-allow-list",
+      "description": "An exclusion list beside no model is refused: without the discriminator the reader would have to guess which meaning the array carries.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226578636c756465645f666f6c64657273223a5b22507269766174652f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-allow-list-without-array",
+      "description": "The legacy model without its array is refused, because that shape was never written and reading it as empty would claim the connection can read nothing.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226d6f64656c223a22666f6c64657273227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-unknown-model-token",
+      "description": "An unknown model token is refused rather than defaulted, so a future third model cannot be read as whichever one this build happens to prefer.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226d6f64656c223a22616c6c6f77227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-unknown-member",
+      "description": "An unknown member is refused rather than dropped: a dropped member would silently narrow what the user approved. write_folders was this case's example until this build learnt it, and the family moved to a member NO build writes, because a fixture that names a member a reader now accepts stops testing the refusal at all.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c226d6f64656c223a226578636c756465222c226675747572655f6d656d626572223a5b22576f726b2f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-write-list-on-the-retired-model",
+      "description": "A write list beside the retired allow-list read model is refused, not merged: that model's array IS the connection's whole reach, the write grant was introduced with the deny list, and a grant claiming both would have two incompatible readings of one approval.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c22666f6c64657273223a5b2250726f6a656374732f225d2c2277726974655f666f6c64657273223a5b2250726f6a656374732f225d7d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-repeated-member",
+      "description": "A repeated member is refused, so a hand-edited blob cannot carry two answers to one question.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a312c22617070726f7665645f6174223a322c226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/reject-missing-approved-at",
+      "description": "approved_at is required: a grant nobody can date is not an approval, so its absence is refused rather than defaulted to zero.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b226d6f64656c223a226578636c756465227d"
+    }
+  ]
+}

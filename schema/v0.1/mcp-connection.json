@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/mcp-connection.json",
+  "title": "mcp-connection — case shape (v0.1)",
+  "description": "Pins one behavioral case for protocol::parse_mcp_connection_grant — the canonical-JSON decoder for one record of the mcp_connections map embedded in vault.prefs (external MCP connection grants, protocol.md §9.5.2, myne-md/myne#923). The record stores which folders an external MCP client may NOT read, which folders it MAY write, when the user approved it, and when it last reached the door. The two scopes are deliberately asymmetric: read is a deny list (an exclusion is reversible by revoking it) and write is an allow list (a write into a folder nobody anticipated is the surprise worth preventing), so an empty excluded_folders means the whole vault and an empty write_folders means write nowhere. The bytes are decoded only after the surrounding vault.prefs AEAD verified, so this is deterministic cross-client behavior rather than a codec or a cryptographic operation — but it is load-bearing for consent. The MODEL DISCRIMINATOR is the point of the family: 'folders' (retired) means the array is the connection's whole reach, 'exclude' (current) means the array is what it may not read, and both are arrays of folder paths, so a reader that guesses from the shape inverts consent with nothing in the bytes looking wrong. Two case kinds: 'parse_ok' (decoded grant pinned as its canonical re-encoding via canonical_encode_mcp_connection_grant — lexicographic member order approved_at < excluded_folders < folders < last_used_at < model < write_folders, NFC + exact-dedup + sorted folder sets, model emitted only for exclude, excluded_folders only when non-empty, folders always, write_folders only when non-empty — plus the consumed byte count) and 'parse_reject' (the inputs a reader MUST refuse: both arrays, an exclusion list beside no model, the legacy model with no array, an unknown model token, an unknown member, a repeated member, a missing approved_at, a write list beside the retired allow-list model). Rust reference: protocol/src/prefs.rs (main myne repository).",
+  "type": "object",
+  "required": ["vector_id", "description", "case_kind"],
+  "unevaluatedProperties": false,
+  "properties": {
+    "vector_id": {
+      "type": "string",
+      "pattern": "^mcp-connection/v0\\.1/[a-z0-9-]+$",
+      "description": "Stable identifier of the form 'mcp-connection/v0.1/<descriptive-slug>'. Immutable once shipped — downstream test runners may reference these strings."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_kind": {
+      "type": "string",
+      "enum": ["parse_ok", "parse_reject"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "parse_ok — pin the decoded grant (as its canonical re-encoding) and the consumed byte count",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex",
+        "expected_consumed_len",
+        "expected_canonical_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_ok" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex). A canonical JSON object, optionally followed by trailing bytes the embedding codec continues past."
+        },
+        "expected_consumed_len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The exact number of input bytes the decoder MUST report as consumed (the object length, never including trailing bytes)."
+        },
+        "expected_canonical_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The canonical re-encoding (canonical_encode_mcp_connection_grant) of the decoded grant as exact UTF-8 bytes (hex). Captures the member order, the model-conditional omission of `model`, the omitted-when-empty `excluded_folders` and `write_folders` against the always-emitted `folders`, and the NFC + exact-dedup + sorted folder set encoding."
+        }
+      }
+    },
+    {
+      "title": "parse_reject — pin the inputs a reader MUST refuse rather than reinterpret",
+      "additionalProperties": false,
+      "required": [
+        "vector_id",
+        "description",
+        "case_kind",
+        "input_bytes_utf8_hex"
+      ],
+      "properties": {
+        "vector_id": { "type": "string" },
+        "description": { "type": "string" },
+        "case_kind": { "const": "parse_reject" },
+        "input_bytes_utf8_hex": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{2})*$",
+          "description": "The input bytes as exact UTF-8 (hex) that the decoder MUST refuse. The reference decoder reports them as an absent grant rather than as a typed error, so the assertion is 'must not be read', not a variant name."
+        }
+      }
+    }
+  ]
+}

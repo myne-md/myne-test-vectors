@@ -49,6 +49,8 @@
         "color-group",
         "saved-view",
         "paired-extension",
+        "mcp-connection",
+        "mcp-write-request",
         "footnote",
         "highlight",
         "wikilink",
@@ -511,6 +513,32 @@
           "type": "array",
           "items": {
             "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/paired-extension.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "mcp-connection"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/mcp-connection.json"
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "schema": {
+          "const": "mcp-write-request"
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "https://myne-md.github.io/myne-test-vectors/schema/v0.1/mcp-write-request.json"
           }
         }
       }

@@ -1,0 +1,70 @@
+{
+  "schema": "mcp-write-request",
+  "protocol_version": "v0.1",
+  "spec_section": "protocol.md §9.5.2 (mcp_write_requests canonical JSON inside vault.prefs)",
+  "description": "Pins protocol::prefs::parse_mcp_write_request — the canonical-JSON decoder for one entry of the mcp_write_requests array inside vault.prefs (external MCP write queue, myne-md/myne#923 task 13, decisions/ai/0752). A queued entry is a PROPOSAL, never a pending write: accepting one extends that connection's write grant by exactly the folder it names. parse_ok cases pin the decoded request as its canonical re-encoding (member order connection < folder < requested_at < summary < verb, summary omitted when empty) plus the exact consumed byte count; parse_reject cases pin the inputs a reader MUST refuse rather than read generously: an unknown member, a repeated member, and a request missing a required member.",
+  "cases": [
+    {
+      "vector_id": "mcp-write-request/v0.1/create-with-summary",
+      "description": "a create into a readable-but-not-writable folder, carrying the title the client offered",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a22636c617564652d6465736b746f70222c22666f6c646572223a22696e626f782f222c227265717565737465645f6174223a313736353433323130302c2273756d6d617279223a2253686f7070696e67206c697374222c2276657262223a226e6f74655f637265617465227d",
+      "expected_consumed_len": 122,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a22636c617564652d6465736b746f70222c22666f6c646572223a22696e626f782f222c227265717565737465645f6174223a313736353433323130302c2273756d6d617279223a2253686f7070696e67206c697374222c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/append-without-summary",
+      "description": "an append whose client offered no summary: the member is absent, so the queue costs no bytes for a value that does not exist",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a226c6d2d73747564696f222c22666f6c646572223a22776f726b2f222c227265717565737465645f6174223a313736353433323030302c2276657262223a226e6f74655f617070656e64227d",
+      "expected_consumed_len": 90,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a226c6d2d73747564696f222c22666f6c646572223a22776f726b2f222c227265717565737465645f6174223a313736353433323030302c2276657262223a226e6f74655f617070656e64227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/root-folder",
+      "description": "a write into the vault ROOT, which is a folder key like any other (the empty string) and the one a prefix rule must not swallow",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d",
+      "expected_consumed_len": 68,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/member-order-not-enforced",
+      "description": "the decoder reads what an encoder wrote, so a differently ordered object decodes to the same canonical bytes",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b2276657262223a226e6f74655f7365745f6669656c64222c2273756d6d617279223a226475653a20323032362d31312d3031222c227265717565737465645f6174223a372c22666f6c646572223a2270726f6a656374732f222c22636f6e6e656374696f6e223a2261227d",
+      "expected_consumed_len": 108,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a2270726f6a656374732f222c227265717565737465645f6174223a372c2273756d6d617279223a226475653a20323032362d31312d3031222c2276657262223a226e6f74655f7365745f6669656c64227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/unknown-member",
+      "description": "a member this build does not know: refusing is what stops the card approving half a request",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22622f222c227265717565737465645f6174223a312c2273756d6d617279223a2278222c2276657262223a226e6f74655f637265617465222c227769647468223a327d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/repeated-member",
+      "description": "two values for one key: a blob this build did not write, and last-wins would silently pick one",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22636f6e6e656374696f6e223a2262222c22666f6c646572223a22632f222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/missing-connection",
+      "description": "no connection name: the row could not be matched to a grant, so there is nothing to accept",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22666f6c646572223a22632f222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/missing-verb",
+      "description": "no verb: the card could not say what was attempted, so there is nothing to describe to the person deciding",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22622f222c227265717565737465645f6174223a317d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/non-string-folder",
+      "description": "a folder that is not a string: a path is user text, and a number here is a different shape entirely",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a372c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    }
+  ]
+}
