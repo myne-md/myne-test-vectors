@@ -1,2 +1,5 @@
 .DS_Store
 .claude/
+
+# Local agent tooling: worktrees and symlinked agents, never committed.
+/.opencode/
