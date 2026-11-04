@@ -47,6 +47,92 @@
       "input_markdown_utf8_hex": "6120232062",
       "informational_markdown": "a # b",
       "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "inline-tag/v0.1/inert-paren-before-hash",
+      "description": "A # that follows a `(` is not a tag start: the boundary is line start or Unicode whitespace, so `a (#tag` recognizes nothing.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "612028237461672068657265",
+      "informational_markdown": "a (#tag here",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "inline-tag/v0.1/inert-body-starts-with-denied",
+      "description": "A tag body needs at least one allowed code point, so a `#` followed immediately by a denied character (`#.hidden`) is not a tag.",
+      "case_kind": "inert",
+      "input_markdown_utf8_hex": "73656520232e68696464656e20746f646179",
+      "informational_markdown": "see #.hidden today",
+      "expected_dialect_spans": []
+    },
+    {
+      "vector_id": "inline-tag/v0.1/stops-at-paren",
+      "description": "A `(` ends the tag body: `#tag)` recognizes `tag` alone.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "612023746167292068657265",
+      "informational_markdown": "a #tag) here",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 6
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/stops-at-open-paren",
+      "description": "A `(` ends the tag body on the way in too: `#tag(b` recognizes `tag` alone.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "61202374616728622068657265",
+      "informational_markdown": "a #tag(b here",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 6
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/stops-at-plus",
+      "description": "A `+` ends the tag body: `#c++` recognizes `c` alone.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "612023632b2b2068657265",
+      "informational_markdown": "a #c++ here",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 4
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/stops-at-hash",
+      "description": "A second `#` cannot appear in a body: `#a#b` recognizes `a` alone.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "6120236123622068657265",
+      "informational_markdown": "a #a#b here",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 4
+        }
+      ]
+    },
+    {
+      "vector_id": "inline-tag/v0.1/stops-at-space",
+      "description": "Whitespace ends the tag body: `#two words` recognizes `two` alone.",
+      "case_kind": "recognize",
+      "input_markdown_utf8_hex": "61202374776f20776f726473",
+      "informational_markdown": "a #two words",
+      "expected_dialect_spans": [
+        {
+          "node": "InlineTag",
+          "from": 2,
+          "to": 6
+        }
+      ]
     }
   ]
 }
