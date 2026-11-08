@@ -544,6 +544,13 @@
               },
               "description": "Bottom-bar element order (bottom-bar customization). Sequence array (NFC, order preserved verbatim, NOT sorted/deduped), omitted-when-empty. Canonical key 'bar_items_order'."
             },
+            "calendar_settings": {
+              "type": "object",
+              "description": "The calendar's own settings map (myne-md/myne#1037): one entry per setting, today `day_reminder_anchor` (a wall-clock `HH:MM` the all-day reminder counts back from) and `colours.<calendar name>` (a design-token NAME, never a literal colour, so a custom theme repaints the calendar with the rest of the app). Optional, omitted-when-EMPTY rather than encoded as an empty object, so a vault that never set a calendar setting stays byte-identical to its pre-feature self. SHARED in the sync merge (sync-protocol.md §10.2) with a per-key map clock, so a colour set on one device and an anchor set on another in the same round both survive. Canonical key calendar_settings between bar_items_order (b < ca) and chat_history_budget (ca < ch); the slot is load-bearing because the decoder scans this region forward and skips what it does not recognise, so a pre-feature reader steps over the unknown key and reads the fields behind it correctly. Non-load-bearing. Pinned by encrypt-calendar-settings and decrypt-calendar-settings, which carry both canonical neighbours so the slot is pinned rather than only the value.",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
             "hidden_bar_items": {
               "type": "array",
               "items": {
