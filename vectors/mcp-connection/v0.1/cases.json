@@ -1,7 +1,7 @@
 {
   "schema": "mcp-connection",
   "protocol_version": "v0.1",
-  "spec_section": "protocol.md §9.5.2 (mcp_connections canonical JSON inside vault.prefs)",
+  "spec_section": "protocol.md \u00a79.5.2 (mcp_connections canonical JSON inside vault.prefs)",
   "description": "Pins protocol::prefs::parse_mcp_connection_grant: the canonical-JSON decoder for one mcp_connections grant record inside vault.prefs (external MCP connection scopes, myne-md/myne#923). parse_ok cases pin the decoded grant as its canonical re-encoding (lexicographic member order approved_at < excluded_folders < folders < last_used_at < model < write_folders, NFC + sorted + deduped folder sets, model emitted only for exclude, write_folders omitted when empty) plus the exact consumed byte count; parse_reject cases pin the inputs a reader MUST refuse rather than reinterpret, which is where a second implementation drifts: a grant carrying both read arrays, a write list beside the retired model, an unknown model token, an unknown member, and a repeated member. The two scopes are deliberately asymmetric: the read scope is a DENY list (an exclusion is reversible by revoking it) and the write scope an ALLOW list (a write into a folder nobody anticipated is the surprise worth preventing), so an empty excluded_folders means the whole vault and an empty write_folders means write nowhere.",
   "cases": [
     {
@@ -131,6 +131,14 @@
       "description": "approved_at is required: a grant nobody can date is not an approval, so its absence is refused rather than defaulted to zero.",
       "case_kind": "parse_reject",
       "input_bytes_utf8_hex": "7b226d6f64656c223a226578636c756465227d"
+    },
+    {
+      "vector_id": "mcp-connection/v0.1/disabled-verbs-sorted",
+      "description": "The verbs a connection may not use ride inside the grant, canonical as a sorted set, so two devices that switched the same verbs off agree to the byte. Omitted entirely when empty, which is why every older case still parses.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 110,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
     }
   ]
 }
