@@ -11,8 +11,10 @@ Pins `protocol::parse_mcp_write_request` and the canonical encoding of the
 
 ## What this category pins
 
-One entry says: **this connection tried to write into this folder, at this time,
-with this verb, and said this about it.** It is a *proposal*, not a pending write.
+One entry says: **this connection tried to reach into this folder, at this time,
+with this verb, and said this about it.** Two kinds of attempt queue here and they
+move the grant in opposite directions: a `write` row asks to ADD one folder to the
+write list, and a `read` row asks to REMOVE one folder from the exclusion set. It is a *proposal*, not a pending write.
 Nothing has been applied; accepting the row extends that connection's write grant
 by exactly the folder it names, and dismissing it drops the row without telling
 the client.
@@ -37,6 +39,7 @@ free-form.
 |---|---|---|
 | `connection` | string | the grant that would be widened. Resolved against `mcp_connections` at render time, never carried as authority |
 | `folder` | string | the one folder to add, canonical. `""` is the vault root, and it is a folder key like any other |
+| `kind` | string, optional | `read` or `write`. **Omitted when it is `write`**, so a row queued before the member existed keeps its meaning and re-encodes byte for byte. Any other token is refused: reading an unknown kind as a write would ask the person to widen the wrong half of the grant |
 | `requested_at` | integer | Unix epoch seconds, stamped by the host. Orders the card so the newest proposal is the first one read |
 | `summary` | string, optional | what the client said it wanted to write. Omitted when empty |
 | `verb` | string | the tool it called (`note_create`, `note_append`, ...). Rendered as a sentence, never as a raw identifier |

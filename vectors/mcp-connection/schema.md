@@ -18,6 +18,18 @@ deterministic cross-client behaviour rather than a codec or a cryptographic
 operation — but it is load-bearing for consent, because getting it wrong is
 invisible.
 
+## The members
+
+| member | type | why it is here |
+|---|---|---|
+| `approved_at` | integer | Unix epoch seconds of the approval, stamped from the host's own clock. Required |
+| `excluded_folders` | array | the deny list under `model: exclude`. Empty means the WHOLE vault |
+| `folders` | array | the retired allow list under `model: folders`. Empty means NO folder |
+| `last_used_at` | integer, optional | epoch seconds of the last call that reached the host. Omitted when never used |
+| `model` | string, optional | the discriminator. Emitted only for `exclude`, so an older blob re-encodes byte for byte |
+| `write_folders` | array, optional | the write ALLOW list, present under `exclude` only. Empty or absent means write nowhere |
+| `disabled_verbs` | array of strings, optional | the catalog verbs this connection may NOT use, as a canonical **set** (sorted, exact-deduplicated). **Omitted when empty**, which means every verb is available: a grant written before the member existed must keep its full set, because the other reading would turn an upgrade into a revocation. A reader MUST refuse it beside the retired `folders` model, which has no verb vocabulary to subtract from |
+
 ## The model discriminator, and why shape-inference is not allowed
 
 Two models have shipped:

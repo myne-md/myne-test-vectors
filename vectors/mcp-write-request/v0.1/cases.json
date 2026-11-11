@@ -5,6 +5,22 @@
   "description": "Pins protocol::prefs::parse_mcp_write_request — the canonical-JSON decoder for one entry of the mcp_write_requests array inside vault.prefs (external MCP write queue, myne-md/myne#923 task 13, decisions/ai/0752). A queued entry is a PROPOSAL, never a pending write: accepting one extends that connection's write grant by exactly the folder it names. parse_ok cases pin the decoded request as its canonical re-encoding (member order connection < folder < requested_at < summary < verb, summary omitted when empty) plus the exact consumed byte count; parse_reject cases pin the inputs a reader MUST refuse rather than read generously: an unknown member, a repeated member, and a request missing a required member.",
   "cases": [
     {
+      "vector_id": "mcp-write-request/v0.1/read-kind",
+      "description": "a READ request: the grant did not cover the folder for a read, so the card asks to remove it from the exclusion set rather than to add it to the write list. kind rides between folder and requested_at.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a22636c617564652d6465736b746f70222c22666f6c646572223a22696e626f782f222c226b696e64223a2272656164222c227265717565737465645f6174223a313736353433323130302c2276657262223a226e6f74655f72656164227d",
+      "expected_consumed_len": 108,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a22636c617564652d6465736b746f70222c22666f6c646572223a22696e626f782f222c226b696e64223a2272656164222c227265717565737465645f6174223a313736353433323130302c2276657262223a226e6f74655f72656164227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/write-kind-omitted",
+      "description": "a row that names kind: write decodes to the bytes of a row that omits it: write is the default, so a row queued before the member existed keeps its meaning and re-encodes byte for byte.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22622f222c226b696e64223a227772697465222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d",
+      "expected_consumed_len": 85,
+      "expected_canonical_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22622f222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
       "vector_id": "mcp-write-request/v0.1/create-with-summary",
       "description": "a create into a readable-but-not-writable folder, carrying the title the client offered",
       "case_kind": "parse_ok",
@@ -65,6 +81,12 @@
       "description": "a folder that is not a string: a path is user text, and a number here is a different shape entirely",
       "case_kind": "parse_reject",
       "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a372c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
+    },
+    {
+      "vector_id": "mcp-write-request/v0.1/unknown-kind",
+      "description": "a kind this build does not know: reading it as a write would ask the person to widen the wrong half of the grant, so the field is refused rather than defaulted.",
+      "case_kind": "parse_reject",
+      "input_bytes_utf8_hex": "7b22636f6e6e656374696f6e223a2261222c22666f6c646572223a22622f222c226b696e64223a2264656c657465222c227265717565737465645f6174223a312c2276657262223a226e6f74655f637265617465227d"
     }
   ]
 }
