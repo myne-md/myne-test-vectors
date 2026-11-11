@@ -85,6 +85,14 @@
       "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a352c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
     },
     {
+      "vector_id": "mcp-connection/v0.1/disabled-verbs-canonicalised",
+      "description": "The verbs a connection may not use are a canonical SET: an input that lists them out of order and repeats one re-encodes sorted and deduplicated, because two devices that switched the same verbs off must agree to the byte. Omitted entirely when empty, which is why every older case still parses.",
+      "case_kind": "parse_ok",
+      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f6d6f7665222c226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d",
+      "expected_consumed_len": 122,
+      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
+    },
+    {
       "vector_id": "mcp-connection/v0.1/reject-both-arrays",
       "description": "A grant carrying BOTH arrays is refused, not resolved by precedence: the two arrays mean opposite things and a precedence rule is how one ends up read as the other.",
       "case_kind": "parse_reject",
@@ -131,14 +139,6 @@
       "description": "approved_at is required: a grant nobody can date is not an approval, so its absence is refused rather than defaulted to zero.",
       "case_kind": "parse_reject",
       "input_bytes_utf8_hex": "7b226d6f64656c223a226578636c756465227d"
-    },
-    {
-      "vector_id": "mcp-connection/v0.1/disabled-verbs-sorted",
-      "description": "The verbs a connection may not use ride inside the grant, canonical as a sorted set, so two devices that switched the same verbs off agree to the byte. Omitted entirely when empty, which is why every older case still parses.",
-      "case_kind": "parse_ok",
-      "input_bytes_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d",
-      "expected_consumed_len": 110,
-      "expected_canonical_utf8_hex": "7b22617070726f7665645f6174223a352c2264697361626c65645f7665726273223a5b226e6f74655f65646974222c226e6f74655f6d6f7665225d2c226578636c756465645f666f6c64657273223a5b22507269766174652f225d2c226d6f64656c223a226578636c756465227d"
     }
   ]
 }
