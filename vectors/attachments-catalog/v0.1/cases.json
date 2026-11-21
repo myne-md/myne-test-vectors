@@ -190,6 +190,17 @@
       "input_account_number_hash_hex": "33333333333333333333333333333333",
       "informational_sealed_plaintext_utf8_hex": "7b2265653535223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273636f7065223a322c2273697a65223a34327d7d",
       "expected_plaintext_canonical_utf8_hex": "7b2265653535223a7b22636f6e74656e745f74797065223a22746578742f706c61696e222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a226e6f74652e747874222c2273697a65223a34327d7d"
+    },
+    {
+      "vector_id": "attachments-catalog/v0.1/encrypt-folder",
+      "description": "An attachment filed in a folder pins the canonical slot of the optional `folder` field: \"folder\":\"Ders Notları/\" between `filename` and `scope`/`size` (myne-md/myne#1075, §9.10.2). The value is the SAME folder namespace a note carries, NFC, with a trailing slash. A root attachment emits no key at all, so it is byte-identical to `encrypt-populated`; this case is the one a second implementation checks its slot and its emission rule against.",
+      "case_kind": "encrypt",
+      "input_root_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+      "input_account_number_hash_hex": "33333333333333333333333333333333",
+      "input_plaintext_canonical_utf8_hex": "7b2263633333223a7b22636f6e74656e745f74797065223a226170706c69636174696f6e2f706466222c22637265617465645f6174223a313730303030303030302c2266696c656e616d65223a22646572732d6e6f7465732e706466222c22666f6c646572223a2244657273204e6f746c6172c4b12f222c2273697a65223a31323334357d7d",
+      "input_catalog_nonce_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "informational_catalog_key_hex": "7166331f75468f64efbd7989b270412089ded4667519066ce8c34bdf730aff0b",
+      "expected_catalog_blob_hex": "4d5943310100bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000000a65fa39aa93e3c877a35a37d42482d5fbd003e04d05fe819f0b8d541b54c0370fb3a63b4dace8359ec8469b7af36aa44fac7842389cb0a0fcb158a2b18c27d4d35b09ee3eacf9a4b6b82bf9980c5c2e9f82382193106a3acc1b0937fc3977a3925b70f037b9d774dff601d6ffeb1f030d54f5fbb40a296b5c6da27534928abbe2f28b2fc6b4e98a08138e9d35cb9e2b3c805bf8a79241671bdf8d5bba554577df1ea185cbe6b71"
     }
   ]
 }
