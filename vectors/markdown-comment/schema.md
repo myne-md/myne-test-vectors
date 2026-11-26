@@ -3,7 +3,7 @@
 Pins the **Myne dialect `%%…%%` editor-only comment** (`docs/spec/markdown-dialect.md` §3.1 block / §3.2 inline / §3.7.5 exclusion zones / §6 strip, MYND-315, in the [main `myne` repo](https://github.com/myne-md/myne)): which `%%` runs a conformant client recognizes as a comment, and what it strips on a lossy projection.
 
 **Reference implementation:** TS-side, in the dialect layer (`src/dialect/lezer/comment.ts` parser config + `src/dialect/stripComments.ts` strip primitive). There is **no Rust reference implementation** — like `property-coercion`, this is a TS-runner category, not a `protocol`-crate codec.
-**Contract:** `design notes.md` 2026-06-17 "Comments enter the dialect: `%%…%%`".
+**Contract:** `design notes` 2026-06-17 "Comments enter the dialect: `%%…%%`".
 
 ## What this category is — and is not
 

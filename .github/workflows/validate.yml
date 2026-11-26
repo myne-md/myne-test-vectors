@@ -1,0 +1,81 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install ajv-cli
+        run: npm install --global ajv-cli@5
+
+      - name: Validate every cases.json against its version root schema
+        run: |
+          set -eu
+          for d in vectors/*/v*/cases.json; do
+            ver=$(basename "$(dirname "$d")")
+            test -f "schema/$ver.json" || {
+              echo "NO ROOT SCHEMA for $ver (needed by $d)"
+              exit 1
+            }
+            echo "validating $d against schema/$ver.json"
+            ajv validate \
+              -s "schema/$ver.json" \
+              -r "schema/$ver/*.json" \
+              -d "$d" \
+              --spec=draft2020
+          done
+
+      - name: Check category / schema / enum / oneOf invariant
+        run: |
+          python3 - <<'PY'
+          import glob
+          import json
+          import os
+          import sys
+
+          ok = True
+          versions = sorted({
+              os.path.basename(os.path.dirname(p))
+              for p in glob.glob("vectors/*/v*/cases.json")
+          })
+          for ver in versions:
+              cats = {
+                  p.split(os.sep)[1]
+                  for p in glob.glob(f"vectors/*/{ver}/cases.json")
+              }
+              schemas = {
+                  os.path.basename(p)[:-5]
+                  for p in glob.glob(f"schema/{ver}/*.json")
+              }
+              root = json.load(open(f"schema/{ver}.json", encoding="utf-8"))
+              enum = set(root["properties"]["schema"]["enum"])
+              oneof = {
+                  b["properties"]["schema"]["const"] for b in root["oneOf"]
+              }
+              print(
+                  f"{ver}: categories={len(cats)} schemas={len(schemas)} "
+                  f"enum={len(enum)} oneOf={len(oneof)}"
+              )
+              for name, found in (
+                  ("categories", cats),
+                  ("schemas", schemas),
+                  ("enum", enum),
+                  ("oneOf", oneof),
+              ):
+                  if found != cats:
+                      print(f"  MISMATCH {name}: {sorted(found ^ cats)}")
+                      ok = False
+          sys.exit(0 if ok else 1)
+          PY

@@ -3,7 +3,7 @@
 Pins the byte mapping of `protocol::parse_account_number` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) — the liberal-parse normalizer that converts user-typed account-number strings into a canonical 20-character Crockford-base32 form + 16-byte hash. Together with `generate_account_number` (not exercised in this category because it pulls from CSPRNG) these define the v0.1 account-identity contract.
 
 **Reference implementation:** `protocol/src/account_number.rs::parse_account_number`.
-**Spec:** `docs/spec/protocol.md` (high-level binding into Argon2id salts + `vault.meta` offset 6) + `docs/spec/account-number.md` § 3 (canonical form definition) + § 5 (liberal-parse normalization pipeline) + `design notes.md` 2026-04-28 entry "Account-number Damm-32 polynomial form freeze".
+**Spec:** `docs/spec/protocol.md` (high-level binding into Argon2id salts + `vault.meta` offset 6) + `docs/spec/account-number.md` § 3 (canonical form definition) + § 5 (liberal-parse normalization pipeline) + `design notes` 2026-04-28 entry "Account-number Damm-32 polynomial form freeze".
 
 ## Pipeline (as fixed by `account-number.md` § 5)
 
@@ -15,7 +15,7 @@ For each input candidate string:
 4. **Strip hyphens** (`-` separators between groups are optional).
 5. **Validate length** = `CANONICAL_LEN` (20 chars) after the above normalizations.
 6. **Validate each char** against the Crockford-base32 alphabet `0123456789ABCDEFGHJKMNPQRSTVWXYZ` STRICTLY — **no `I → 1` / `L → 1` / `O → 0` / `U → V` lookalike substitutions per spec § 5 step 7**. The Rust parser uses the alphabet exactly as documented; `I`, `L`, `O`, `U` are all rejected.
-7. **Validate Damm-32 check digit** — entropy[0..18] running through the canonical Damm-32 polynomial must yield the value at entropy[19]. Polynomial form is frozen per `design notes.md` 2026-04-28.
+7. **Validate Damm-32 check digit** — entropy[0..18] running through the canonical Damm-32 polynomial must yield the value at entropy[19]. Polynomial form is frozen per `design notes` 2026-04-28.
 
 Any rule failure surfaces as a single non-distinguishing `ProtocolError::AccountNumberInvalid` — ports MUST NOT distinguish which step fired beyond a single user-facing 'invalid account number' message (spec § 5 step 8 closed-error discipline).
 
@@ -61,4 +61,4 @@ The regenerator test lives in `protocol/src/account_number.rs::tests::emit_accou
 - **`generate_account_number` CSPRNG path.** That function uses `getrandom` and produces a fresh random account number each invocation — non-deterministic and not pinnable as a byte-level vector. The CSPRNG-availability path is exercised by in-crate unit tests; the byte-level interop contract is fully captured by `parse_account_number` cases.
 - **NFKD + full-width char + no-break-space normalization edge cases.** Exercised by the in-crate unit tests `parse_accepts_fullwidth_*` and `parse_accepts_no_break_space_separator`. Future expansion may promote selected NFKD cases here if cross-impl drift is observed (e.g., a port that doesn't NFKD-normalize would fail those in-crate tests, but cross-impl conformance gains from explicit byte-level vectors).
 - **AccountNumber → Argon2id salt binding.** That's exercised by the future `argon2id` vector category (MYND-69), which uses `account_number_hash` as a binding input to the canonical Argon2id wrap derivations.
-- **Cross-major vectors.** A later major version may redefine the entropy length or the polynomial; those would land under `vectors/account-number/<version>/` beside `v0.1/`, validated by that version's own root schema. (The next major is `v0.2`; the `v005` codename this line once used is retired — `design notes.md` 2026-08-01.)
+- **Cross-major vectors.** A later major version may redefine the entropy length or the polynomial; those would land under `vectors/account-number/<version>/` beside `v0.1/`, validated by that version's own root schema. (The next major is `v0.2`; the `v005` codename this line once used is retired — `design notes` 2026-08-01.)

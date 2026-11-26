@@ -3,7 +3,7 @@
 Pins `protocol::template::render` + `protocol::template::supported_tokens` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) — the deterministic **note-template variable engine** (MYND-188): `{{token}}` substitution against a closed, case-sensitive 7-token registry.
 
 **Reference implementation:** `protocol/src/template.rs::{render, supported_tokens, RenderContext}`.
-**Contract:** `design notes.md` 2026-06-07 "Note templates" (the deterministic-substitution / no-scripting commitment).
+**Contract:** `design notes` 2026-06-07 "Note templates" (the deterministic-substitution / no-scripting commitment).
 
 ## What this category is — and is not
 

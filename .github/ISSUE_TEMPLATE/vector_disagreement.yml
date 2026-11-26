@@ -8,7 +8,7 @@ body:
       value: |
         A failed vector in any port is a **stop-the-world bug** — either the port has drifted or the spec is wrong. Please don't propose regenerating a vector to "fix" a failing port without establishing which side is correct.
 
-        The normative protocol is in the main repo: [`docs/spec/protocol.md`](https://github.com/myne-md/myne/blob/main/docs/spec/protocol.md) and [`docs/spec/account-number.md`](https://github.com/myne-md/myne/blob/main/docs/spec/account-number.md).
+        The normative protocol is in the main repo: [`docs/spec/protocol.md`](https://github.com/myne-md/myne/blob/develop/docs/spec/protocol.md) and [`docs/spec/account-number.md`](https://github.com/myne-md/myne/blob/develop/docs/spec/account-number.md).
   - type: input
     id: vector-id
     attributes:

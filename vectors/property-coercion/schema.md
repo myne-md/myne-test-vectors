@@ -3,7 +3,7 @@
 Pins the **Saved Views property value-typing / coercion ruleset** (`docs/spec/markdown-dialect.md` §3.6.4, MYND-271, in the [main `myne` repo](https://github.com/myne-md/myne)): how a YAML frontmatter value coerces to exactly one of five Myne property types — `string` / `number` / `date` / `list` / `checkbox`.
 
 **Reference implementation:** TS-side, in the property-index sub-feature (`src/notes/` — Build-B: TS parses + types, Rust stores opaque pre-typed values). There is **no Rust reference implementation** — this is the first category whose reference impl is TypeScript, not the `protocol` crate.
-**Contract:** `design notes.md` 2026-06-14 "Saved Views property-index: pull the deferred §3.6/§8 YAML-body parse forward + full value typing".
+**Contract:** `design notes` 2026-06-14 "Saved Views property-index: pull the deferred §3.6/§8 YAML-body parse forward + full value typing".
 
 ## What this category is — and is not
 

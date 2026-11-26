@@ -3,7 +3,7 @@
 Pins the **frozen Damm-32 order-32 quasigroup table** that backs the account-number check character (`account-number.md` §4.2), as a language-agnostic ground truth. An independent port derives its own order-32 quasigroup over GF(2⁵) and diffs it, cell-for-cell, against `expected_table_hex` — without trusting the reference Rust. This is the **only** account-identity artifact that is independent of a port's own field-arithmetic implementation.
 
 **Reference implementation:** `protocol/src/account_number.rs` — `damm32_table()` (the frozen `DAMM32_TABLE` const) and `damm32_step` (the equivalent runtime construction).
-**Spec:** `docs/spec/account-number.md` §4 (§4.1 construction, §4.2 normative frozen table) + `design notes.md` 2026-04-28 "Damm-32 polynomial form" (the construction anchor) and its table-freeze follow-on.
+**Spec:** `docs/spec/account-number.md` §4 (§4.1 construction, §4.2 normative frozen table) + `design notes` 2026-04-28 "Damm-32 polynomial form" (the construction anchor) and its table-freeze follow-on.
 
 ## Construction (informative — the table is the contract)
 
@@ -55,4 +55,4 @@ The regenerator (`protocol/src/account_number.rs::tests::emit_damm32_table_vecto
 
 - **Full account-number parsing / normalization** — that is the `account-number` category.
 - **The `generate_account_number` CSPRNG path** — non-deterministic, not pinnable.
-- **Cross-major tables** — a later major version may redefine the polynomial or entropy length; those would land under `vectors/damm32-table/<version>/` beside `v0.1/`. (The next major is `v0.2`; the retired `v005` codename is recorded in `design notes.md` 2026-08-01.)
+- **Cross-major tables** — a later major version may redefine the polynomial or entropy length; those would land under `vectors/damm32-table/<version>/` beside `v0.1/`. (The next major is `v0.2`; the retired `v005` codename is recorded in `design notes` 2026-08-01.)

@@ -3,7 +3,7 @@
 Pins `protocol::validate_min_length` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) — the master-password **minimum-length floor** enforced backend-side before any Argon2id work begins.
 
 **Reference implementation:** `protocol/src/password_policy.rs::{validate_min_length, MIN_PASSWORD_LEN}`.
-**Contract:** `design notes.md` 2026-05-06 "Auth-pipeline backend `MIN_PASSWORD_LEN` floor; project-wide retroactive".
+**Contract:** `design notes` 2026-05-06 "Auth-pipeline backend `MIN_PASSWORD_LEN` floor; project-wide retroactive".
 
 ## What this category is — and is not
 

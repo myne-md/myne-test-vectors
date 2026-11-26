@@ -18,13 +18,11 @@ What exists today:
 - **Two protocol versions.** Some categories carry a `v0.1/` side, some a `v0.2/` side, and some both. The `v0.2`-only categories are the ones with no v0.1 form at all: `crdt-note-blob` and `awareness-frame`, the B2B identity families (`person-identity`, `person-keypair`, `person-member-unlock-store`, `person-profile`, `person-vault-carrier`), the group-tier families `member-names` and `device-binding`, and the two vault-meta generations that only exist inside v0.2 (`vault-meta-ntv7`, `vault-meta-ntv8`).
 - A **canonical machine-readable contract** per version: the root schema `schema/<version>.json` dispatches per-category sub-schemas under `schema/<version>/` (one file per category) via `oneOf` keyed on the `schema` field. The two roots are separate documents because `protocol_version` is a `const` in each — see [Validating vectors](#validating-vectors).
 - **Git hooks** (`lefthook.yml`): JSON well-formedness and text hygiene on commit, plus the full `ajv` schema sweep on push.
-- **CI** (`.woodpecker.yml`): the same per-category `ajv` sweep on every push, pull request and manual run.
+- **CI** (`.github/workflows/validate.yml`): the same per-category `ajv` sweep on every push and pull request.
 
 What is deferred:
 
 - **Vectors for the rest of v0.2.** The next major is partly allocated — the `NC05` note type, the `NTV5` / `MYT5` envelopes, the `"myne.v0.2|"` AAD prefix, the `"myne.v0.2 "` HKDF context prefix and the `0x02` version byte are frozen and vectored; its KDF and remaining blob families are not allocated yet, so they are not vectored either.
-- **Public availability, and with it the byte-level CI gate.** This repository is private for now, along with the rest of the pre-alpha project. The schema sweep above runs on every push, and so does the *byte-level* conformance run: the main repo's `vector-verification` CI step checks this repository out beside it and runs the Rust runners with `MYNE_VECTORS_REQUIRED=1`, which turns a missing fixture into a failure rather than a green run that verified nothing. That step is gated on a `vectors_token` secret, so it runs on `push` and on a manual trigger and prints `skipping` on a pull request. The local equivalent is `cargo test -p protocol --test vectors` with this repository checked out beside the main one.
-
 Every v0.1 blob family in the [`protocol.md` §10.3 magic-allocation table](https://github.com/myne-md/myne/blob/develop/docs/spec/protocol.md) has a category, every `SubkeyRole` variant has an `hkdf-sha256` case, and every vault-scoped `aad_*` builder — v0.1 and v0.2 alike — has an `aad-construction` decomposition. Those three registries are enforced from the runner side (`SubkeyRole::ALL` and the builder lists are iterated, not restated), so a new role or family fails the suite instead of quietly shipping unvectored.
 
 ## How it works
@@ -60,7 +58,7 @@ myne-test-vectors/
 │       ├── v0.1/cases.json    ← the vectors themselves
 │       └── v0.2/cases.json    ← …where a next-major side exists
 ├── lefthook.yml               ← commit-time JSON + text hygiene, push-time ajv sweep
-├── .woodpecker.yml            ← CI: the same ajv sweep
+├── .github/workflows/validate.yml ← CI: the same ajv sweep
 └── LICENSE                    ← CC-BY-4.0
 ```
 
@@ -143,4 +141,14 @@ Independent ports verify compatibility by running these vectors through their ow
 
 ## License
 
-[CC-BY-4.0](LICENSE) — Creative Commons Attribution 4.0. These vectors are reference material for independent implementations and should be maximally reusable as long as Myne is credited. (The wider Myne project keeps its `docs/` specs under the same CC-BY-4.0 content license; application code is AGPL-3.0. This repo carries data only.)
+This repository is multi-licensed by path; the table is normative and lives in
+[`LICENSING.md`](LICENSING.md).
+
+- **Data, schemas and documentation** — [CC-BY-4.0](LICENSE). The vectors are
+  reference material for independent implementations and should be maximally
+  reusable as long as Myne is credited. See [`NOTICE`](NOTICE).
+- **Scripts and CI configuration** — [MIT](LICENSE-CODE).
+- **Visual and brand assets** — all rights reserved; see
+  [`LICENSE-ASSETS`](LICENSE-ASSETS) and [`TRADEMARK.md`](TRADEMARK.md).
+
+The CC-BY-4.0 text in `LICENSE` is unmodified. Copyright (C) 2026 Myne contributors.

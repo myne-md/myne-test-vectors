@@ -8,7 +8,7 @@ every Myne SCRAM-SHA-256-**PLUS** handshake binds to.
 `core/src/plugins/sync/enroll.rs` (`TLS_EXPORTER_LABEL` / `TLS_EXPORTER_LEN`) in
 the [main `myne` repo](https://github.com/myne-md/myne), and
 `internal/auth/scram/scram.go` (`ExporterLabel` / `ExporterLen`) in
-[`myne-server`](https://github.com/myne-md/myne-server).
+the `myne-server` companion repository.
 **Spec:** RFC 9266 §3 (`tls-exporter` channel binding for TLS 1.3) ·
 `docs/spec/server-protocol.md` §3.1 (SCRAM-SHA-256-PLUS).
 
@@ -117,4 +117,4 @@ There is no generator. Both values are frozen constants transcribed from RFC 926
 §3 — regenerating them from an implementation would defeat the purpose, since the
 implementation is precisely what the case exists to check. Changing either value
 is a protocol-compatibility event that invalidates every deployed pairing between
-a client and a server, and belongs in `design notes.md` before it belongs here.
+a client and a server, and belongs in `design notes` before it belongs here.

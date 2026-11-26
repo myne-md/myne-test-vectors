@@ -3,7 +3,7 @@
 Pins the byte mapping of `protocol::derive_password_wrap_key` + `protocol::derive_recovery_wrap_key_from_normalized` (Rust crate `protocol`, in the [main `myne` repo](https://github.com/myne-md/myne)) under canonical Phase 1 Argon2id parameters. Each case fixes a `(password-or-phrase, salt_random, account_number_hash, KdfParams, path)` tuple and pins the resulting 32-byte AEAD wrap key.
 
 **Reference implementation:** `protocol/src/kdf.rs::{derive_password_wrap_key, derive_recovery_wrap_key_from_normalized}`.
-**Spec:** `docs/spec/protocol.md` § 3 (salt prefixes + KDF) + § 4 (KdfParams) + `design notes.md` 2026-04-26 KDF-calibration entry.
+**Spec:** `docs/spec/protocol.md` § 3 (salt prefixes + KDF) + § 4 (KdfParams) + `design notes` 2026-04-26 KDF-calibration entry.
 
 ## Pipeline (as fixed by spec § 3.1)
 
